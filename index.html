@@ -1,0 +1,2663 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+// GENERATED from dc-runtime/src/*.ts — do not edit. Rebuild with `cd dc-runtime && bun run build`.
+"use strict";
+(() => {
+  var __defProp = Object.defineProperty;
+  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+
+  // src/react.ts
+  function getReact() {
+    const R = window.React;
+    if (!R) throw new Error("dc-runtime: window.React is not available yet");
+    return R;
+  }
+  function getReactDOM() {
+    const RD = window.ReactDOM;
+    if (!RD) throw new Error("dc-runtime: window.ReactDOM is not available yet");
+    return RD;
+  }
+  var h = ((...args) => getReact().createElement(
+    ...args
+  ));
+
+  // src/parse.ts
+  function parseDcDocument(doc) {
+    const dc = doc.querySelector("x-dc");
+    if (!dc) return null;
+    const scriptEl = doc.querySelector("script[data-dc-script]");
+    const { props, preview } = parseDataProps(
+      scriptEl?.getAttribute("data-props") ?? null
+    );
+    return {
+      template: dc.innerHTML,
+      js: scriptEl ? scriptEl.textContent || "" : "",
+      props,
+      preview
+    };
+  }
+  function parseDcText(src) {
+    const openMatch = /<x-dc(?:\s[^>]*)?>/.exec(src);
+    if (!openMatch) return null;
+    const close = src.lastIndexOf("</x-dc>");
+    if (close === -1 || close < openMatch.index) return null;
+    const template = src.slice(openMatch.index + openMatch[0].length, close);
+    const doc = new DOMParser().parseFromString(src, "text/html");
+    const scriptEl = doc.querySelector("script[data-dc-script]");
+    const { props, preview } = parseDataProps(
+      scriptEl?.getAttribute("data-props") ?? null
+    );
+    return {
+      template,
+      js: scriptEl ? scriptEl.textContent || "" : "",
+      props,
+      preview
+    };
+  }
+  function parseDataProps(raw) {
+    if (!raw) return { props: null, preview: null };
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return { props: null, preview: null };
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return { props: null, preview: null };
+    }
+    const obj = parsed;
+    const preview = obj.$preview && typeof obj.$preview === "object" ? obj.$preview : null;
+    const rest = {};
+    for (const k of Object.keys(obj)) {
+      if (k[0] !== "$") rest[k] = obj[k];
+    }
+    return { props: Object.keys(rest).length ? rest : null, preview };
+  }
+  function dcNameFromPath(pathname) {
+    let p = pathname || "";
+    try {
+      p = decodeURIComponent(p);
+    } catch {
+    }
+    const base = p.split("/").pop() || "Root";
+    return base.replace(/\.dc\.html$/, "").replace(/\.html?$/, "") || "Root";
+  }
+
+  // src/boot.ts
+  var BASE_CSS = `
+    .sc-placeholder{background:color-mix(in srgb,currentColor 8%,transparent);
+      border:1px solid color-mix(in srgb,currentColor 50%,transparent);
+      border-radius:2px;box-sizing:border-box;overflow:hidden}
+    @keyframes sc-shine{0%{background-position:100% 50%}100%{background-position:0% 50%}}
+    html.sc-dc-streaming .sc-placeholder,
+    html.sc-dc-streaming .sc-interp.sc-missing{position:relative;
+      background:color-mix(in srgb,currentColor 5%,transparent);
+      border-color:transparent}
+    html.sc-dc-streaming .sc-placeholder::before,
+    html.sc-dc-streaming .sc-interp.sc-missing::before{content:'';
+      position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(90deg,rgba(217,119,87,0) 25%,rgba(247,225,211,.95) 37%,rgba(217,119,87,0) 63%);
+      background-size:400% 100%;animation:sc-shine 1.4s ease infinite}
+    html.sc-dc-streaming .sc-placeholder:nth-child(n+9 of .sc-placeholder)::before,
+    html.sc-dc-streaming .sc-interp.sc-missing:nth-child(n+9 of .sc-interp.sc-missing)::before{animation:none;
+      background:color-mix(in srgb,currentColor 8%,transparent)}
+    .sc-placeholder-error{padding:4px 8px;font:11px/1.4 ui-monospace,monospace;
+      color:color-mix(in srgb,currentColor 70%,transparent);word-break:break-word}
+    .sc-interp.sc-missing{display:inline-block;width:2em;height:1em;overflow:hidden;
+      vertical-align:text-bottom;background:rgba(255,255,255,.3);border:1px solid rgba(0,0,0,.5);
+      border-radius:2px;box-sizing:border-box;color:transparent;
+      user-select:none}
+    .sc-interp.sc-unresolved{font-family:ui-monospace,monospace;font-size:.85em;
+      color:color-mix(in srgb,currentColor 50%,transparent);
+      background:color-mix(in srgb,currentColor 10%,transparent);border-radius:3px;
+      padding:0 3px}
+    .sc-host.sc-has-error{position:relative}
+    .sc-logic-error{position:absolute;top:8px;left:8px;z-index:2147483647;max-width:60ch;
+      padding:6px 10px;background:#b00020;color:#fff;font:12px/1.4 ui-monospace,monospace;
+      border-radius:4px;white-space:pre-wrap;pointer-events:none}
+    /* Mirrors PRINT_BASELINE_CSS in apps/web deck-stage-export.ts \u2014 keep both
+       in sync until dc-runtime regains a build step. */
+    @media print {
+      @page { margin: 0.5cm; }
+      figure, table { break-inside: avoid; }
+      #dc-root, #dc-root > .sc-host { height: auto; }
+      *, *::before, *::after {
+        print-color-adjust: exact; -webkit-print-color-adjust: exact;
+        backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+        animation-delay: -99s !important; animation-duration: .001s !important;
+        animation-iteration-count: 1 !important; animation-fill-mode: both !important;
+        animation-play-state: running !important; transition-duration: 0s !important;
+      }
+    }
+  `;
+  var FULL_PAGE_CSS = "html,body{height:100%;margin:0}#dc-root,#dc-root>.sc-host{height:100%}";
+  function rootNameForDocument(doc, loc) {
+    let bootPath = loc.pathname || "";
+    if (!/\.dc\.html?$/i.test(safeDecode(bootPath))) {
+      try {
+        bootPath = new URL(doc.baseURI || "/").pathname;
+      } catch {
+      }
+    }
+    return dcNameFromPath(bootPath);
+  }
+  function safeDecode(s) {
+    try {
+      return decodeURIComponent(s);
+    } catch {
+      return s;
+    }
+  }
+  function boot(runtime, doc = document) {
+    const parsed = parseDcDocument(doc);
+    if (!parsed) return null;
+    const React = getReact();
+    const rootName = rootNameForDocument(doc, location);
+    runtime.markFetched(rootName);
+    runtime.setRootName(rootName);
+    runtime.adoptParsed(rootName, parsed);
+    fetch(location.href).then((res) => res.ok ? res.text() : "").then((t) => {
+      const raw = t ? parseDcText(t) : null;
+      if (raw?.template) runtime.updateHtml(rootName, raw.template);
+    }).catch(() => {
+    });
+    const dc = doc.querySelector("x-dc");
+    const hostEl = doc.createElement("div");
+    hostEl.id = "dc-root";
+    dc.replaceWith(hostEl);
+    if (!parsed.preview) {
+      const s = doc.createElement("style");
+      s.textContent = FULL_PAGE_CSS;
+      doc.head.appendChild(s);
+    }
+    const Root = runtime.getDC(rootName);
+    const entry = runtime.registry.get(rootName);
+    function StandaloneRoot() {
+      const [, setTick] = React.useState(0);
+      React.useEffect(() => {
+        const sub = () => setTick((n) => n + 1);
+        entry.subs.add(sub);
+        return () => {
+          entry.subs.delete(sub);
+        };
+      }, []);
+      const defaults = React.useMemo(() => {
+        const d = {};
+        for (const k in entry.propsMeta || {}) {
+          const v = entry.propsMeta?.[k]?.default;
+          if (v !== void 0) d[k] = v;
+        }
+        return d;
+      }, [entry.propsMeta]);
+      return h(Root, { ...defaults, ...entry.propOverrides || {} });
+    }
+    const ReactDOM = getReactDOM();
+    if (ReactDOM.createRoot)
+      ReactDOM.createRoot(hostEl).render(h(StandaloneRoot));
+    else ReactDOM.render(h(StandaloneRoot), hostEl);
+    return rootName;
+  }
+
+  // src/expr.ts
+  var IDENT_RE = /^[A-Za-z_$][A-Za-z0-9_$]*/;
+  var NUMBER_RE = /^-?\d+(\.\d+)?$/;
+  function resolve(vals, src) {
+    const expr = String(src).trim();
+    if (!expr) return void 0;
+    if (expr[0] === "(" && expr[expr.length - 1] === ")" && parensWrapWhole(expr)) {
+      return resolve(vals, expr.slice(1, -1));
+    }
+    const eq = findTopLevelEquality(expr);
+    if (eq) {
+      const lv = resolve(vals, expr.slice(0, eq.index));
+      const rv = resolve(vals, expr.slice(eq.index + eq.op.length));
+      switch (eq.op) {
+        case "===":
+          return lv === rv;
+        case "!==":
+          return lv !== rv;
+        case "==":
+          return lv == rv;
+        default:
+          return lv != rv;
+      }
+    }
+    if (expr[0] === "!") return !resolve(vals, expr.slice(1));
+    if (expr === "true") return true;
+    if (expr === "false") return false;
+    if (expr === "null") return null;
+    if (expr === "undefined") return void 0;
+    if (NUMBER_RE.test(expr)) return Number(expr);
+    if (expr.length >= 2 && (expr[0] === '"' || expr[0] === "'") && expr[expr.length - 1] === expr[0]) {
+      return expr.slice(1, -1);
+    }
+    return resolvePath(vals, expr);
+  }
+  function parensWrapWhole(expr) {
+    let depth = 0;
+    for (let i = 0; i < expr.length - 1; i++) {
+      if (expr[i] === "(") depth++;
+      else if (expr[i] === ")") {
+        depth--;
+        if (depth === 0) return false;
+      }
+    }
+    return true;
+  }
+  function findTopLevelEquality(expr) {
+    let depth = 0;
+    for (let i = 0; i < expr.length; i++) {
+      const c = expr[i];
+      if (c === "[" || c === "(") depth++;
+      else if (c === "]" || c === ")") depth--;
+      else if (depth === 0 && (c === "=" || c === "!") && expr[i + 1] === "=") {
+        if (i > 0 && (expr[i - 1] === "=" || expr[i - 1] === "!")) continue;
+        if (!expr.slice(0, i).trim()) continue;
+        const op = expr[i + 2] === "=" ? c + "==" : c + "=";
+        return { index: i, op };
+      }
+    }
+    return null;
+  }
+  function resolvePath(vals, expr) {
+    const head = expr.match(IDENT_RE);
+    if (!head) return void 0;
+    let cur = vals == null ? void 0 : vals[head[0]];
+    let i = head[0].length;
+    while (i < expr.length) {
+      if (expr[i] === ".") {
+        const m = expr.slice(i + 1).match(IDENT_RE) || expr.slice(i + 1).match(/^\d+/);
+        if (!m) return void 0;
+        cur = cur == null ? void 0 : cur[m[0]];
+        i += 1 + m[0].length;
+      } else if (expr[i] === "[") {
+        let depth = 1;
+        let j = i + 1;
+        while (j < expr.length && depth > 0) {
+          if (expr[j] === "[") depth++;
+          else if (expr[j] === "]") {
+            depth--;
+            if (depth === 0) break;
+          }
+          j++;
+        }
+        if (depth !== 0) return void 0;
+        const key = resolve(vals, expr.slice(i + 1, j));
+        cur = cur == null ? void 0 : cur[key];
+        i = j + 1;
+      } else {
+        return void 0;
+      }
+    }
+    return cur;
+  }
+
+  // src/encode.ts
+  var CAMEL_ATTR = "sc-camel-";
+  var INLINE_TEXT_TAGS = new Set(
+    "a abbr b bdi bdo br cite code del dfn em i ins kbd mark q s samp small span strike strong sub sup u var wbr".split(
+      " "
+    )
+  );
+  var RAW_WRAP = {
+    select: "sc-raw-select",
+    table: "sc-raw-table",
+    tbody: "sc-raw-tbody",
+    thead: "sc-raw-thead",
+    tfoot: "sc-raw-tfoot",
+    tr: "sc-raw-tr",
+    td: "sc-raw-td",
+    th: "sc-raw-th",
+    caption: "sc-raw-caption"
+  };
+  var RAW_UNWRAP = Object.fromEntries(
+    Object.entries(RAW_WRAP).map(([k, v]) => [v, k])
+  );
+  var EVENT_MAP = {
+    onclick: "onClick",
+    onchange: "onChange",
+    oninput: "onInput",
+    onsubmit: "onSubmit",
+    onkeydown: "onKeyDown",
+    onkeyup: "onKeyUp",
+    onkeypress: "onKeyPress",
+    onmousedown: "onMouseDown",
+    onmouseup: "onMouseUp",
+    onmouseenter: "onMouseEnter",
+    onmouseleave: "onMouseLeave",
+    onfocus: "onFocus",
+    onblur: "onBlur",
+    ondoubleclick: "onDoubleClick",
+    oncontextmenu: "onContextMenu"
+  };
+  var ATTRS = `(?:[^>"']|"[^"]*"|'[^']*')*`;
+  var IMPORT_SELF_CLOSE_RE = new RegExp(
+    "<(x-import|dc-import)(" + ATTRS + ")/>",
+    "gi"
+  );
+  var CAMEL_ATTR_RE = /(\s)([a-z]+[A-Z][A-Za-z0-9]*)(\s*=)/g;
+  function encodeCase(html) {
+    html = html.replace(
+      IMPORT_SELF_CLOSE_RE,
+      (_, t, a) => "<" + t + a + "></" + t + ">"
+    );
+    html = html.replace(/<helmet(\s|>)/gi, "<sc-helmet$1");
+    html = html.replace(/<\/helmet\s*>/gi, "</sc-helmet>");
+    html = html.replace(
+      CAMEL_ATTR_RE,
+      (_, sp, name, eq) => sp + CAMEL_ATTR + name.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase()) + eq
+    );
+    for (const [real, alias] of Object.entries(RAW_WRAP)) {
+      html = html.replace(
+        new RegExp("(</?)" + real + "(?=[\\s>])", "gi"),
+        "$1" + alias
+      );
+    }
+    return html;
+  }
+  function kebabToCamel(s) {
+    return s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+  }
+  function cssToObj(css) {
+    const o = {};
+    for (const decl of css.split(";")) {
+      const i = decl.indexOf(":");
+      if (i < 0) continue;
+      const prop = decl.slice(0, i).trim();
+      o[prop.startsWith("--") ? prop : kebabToCamel(prop)] = decl.slice(i + 1).trim();
+    }
+    return o;
+  }
+  function compileAttr(raw) {
+    const whole = raw.match(/^\s*\{\{([\s\S]+?)\}\}\s*$/);
+    if (whole) {
+      const path = whole[1];
+      return (vals) => resolve(vals, path);
+    }
+    if (raw.includes("{{")) {
+      const parts = raw.split(/\{\{([\s\S]+?)\}\}/g);
+      return (vals) => parts.map((s, i) => i & 1 ? resolve(vals, s) ?? "" : s).join("");
+    }
+    return () => raw;
+  }
+
+  // src/compile.ts
+  function collectProps(node, kind, host) {
+    const propGetters = [];
+    const pseudoClasses = [];
+    let hintSize = null;
+    for (const { name, value } of [...node.attributes]) {
+      if (name === "sc-name" || name === "data-dc-tpl") continue;
+      let key = name;
+      if (key.startsWith(CAMEL_ATTR))
+        key = kebabToCamel(key.slice(CAMEL_ATTR.length));
+      if (key === "hint-size") {
+        hintSize = value;
+        continue;
+      }
+      if (key.startsWith("style-")) {
+        pseudoClasses.push(host.pseudoClass(key.slice(6), value));
+        continue;
+      }
+      if (kind !== "dom") {
+        if (key.includes("-") && !(kind === "x-import" && (key.startsWith("aria-") || key.startsWith("data-"))))
+          key = kebabToCamel(key);
+      } else {
+        if (key === "class") key = "className";
+        else if (key === "for") key = "htmlFor";
+        else if (key.startsWith("on"))
+          key = EVENT_MAP[key] || "on" + key[2].toUpperCase() + key.slice(3);
+      }
+      propGetters.push([key, compileAttr(value)]);
+    }
+    return { propGetters, pseudoClasses, hintSize };
+  }
+  var HOST_STYLE_PROPS = /* @__PURE__ */ new Set([
+    "position",
+    "left",
+    "right",
+    "top",
+    "bottom",
+    "inset",
+    "width",
+    "height",
+    "z-index",
+    "transform"
+  ]);
+  function hostPositionStyle(style) {
+    const all = typeof style === "string" ? cssToObj(style) : style != null && typeof style === "object" ? style : null;
+    if (!all) return void 0;
+    const out = {};
+    for (const [k, v] of Object.entries(all)) {
+      const kebab = k.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
+      if (HOST_STYLE_PROPS.has(kebab)) out[k] = v;
+    }
+    return Object.keys(out).length ? out : void 0;
+  }
+  function compileTemplate(html, host) {
+    const tpl = document.createElement("template");
+    //! nosemgrep: direct-inner-html-assignment
+    tpl.innerHTML = encodeCase(html);
+    let tplN = 0;
+    (function stamp(node) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        node.setAttribute("data-dc-tpl", String(tplN++));
+      }
+      for (const c of node.childNodes) stamp(c);
+    })(tpl.content);
+    const builders = walkChildren(tpl.content, host);
+    const render = ((vals, ctx) => builders.map((b, i) => b(vals || {}, ctx, i)));
+    render.__annotated = tpl.innerHTML;
+    return render;
+  }
+  function walkChildren(node, host) {
+    return [...node.childNodes].map((c) => walk(c, host)).filter((b) => b != null);
+  }
+  function walk(node, host) {
+    if (node.nodeType === Node.TEXT_NODE) return walkText(node);
+    if (node.nodeType !== Node.ELEMENT_NODE) return null;
+    const el = node;
+    const tag = el.tagName.toLowerCase();
+    if (tag === "sc-for") return walkFor(el, host);
+    if (tag === "sc-if") return walkIf(el, host);
+    if (tag === "x-import") return walkXImport(el, host);
+    if (tag === "sc-helmet") return host.helmet(el);
+    if (tag === "dc-import") return walkComponent(el, host);
+    return walkElement(el, host);
+  }
+  var warnedHoles = /* @__PURE__ */ new Set();
+  function warnUnresolved(ctx, what) {
+    const key = (ctx?.__name || "?") + "\0" + what;
+    if (warnedHoles.has(key)) return;
+    warnedHoles.add(key);
+    console.warn("[dc-runtime] " + (ctx?.__name || "template") + ": " + what);
+  }
+  function walkText(node) {
+    const txt = node.nodeValue ?? "";
+    if (!txt.includes("{{")) {
+      if (!txt.trim() && !txt.includes(" ")) return null;
+      return () => txt;
+    }
+    const parts = txt.split(/\{\{([\s\S]+?)\}\}/g);
+    return (vals, ctx, key) => h(
+      getReact().Fragment,
+      { key },
+      ...parts.map((p, i) => {
+        if (!(i & 1)) return p;
+        const v = resolve(vals, p);
+        if (v === void 0) {
+          if (!ctx?.__streamingNow) {
+            if (document.body?.hasAttribute("data-dc-editor-on")) {
+              return h(
+                "span",
+                { key: i, className: "sc-interp sc-unresolved" },
+                "{{ " + p.trim() + " }}"
+              );
+            }
+            warnUnresolved(
+              ctx,
+              "{{ " + p.trim() + " }} never resolved \u2014 rendered as empty"
+            );
+            return null;
+          }
+          return h(
+            "span",
+            { key: i, className: "sc-interp sc-missing" },
+            p.trim()
+          );
+        }
+        if (getReact().isValidElement(v) || Array.isArray(v)) {
+          return h(getReact().Fragment, { key: i }, v);
+        }
+        if (v === null || typeof v === "boolean") return null;
+        return h("span", { key: i, className: "sc-interp" }, String(v));
+      })
+    );
+  }
+  function walkFor(el, host) {
+    const listGet = compileAttr(el.getAttribute("list") || "");
+    const asName = el.getAttribute("as") || "item";
+    const hintN = parseInt(el.getAttribute("hint-placeholder-count") || "0", 10);
+    const kids = walkChildren(el, host);
+    const listSrc = el.getAttribute("list") || "";
+    return (vals, ctx, key) => {
+      let list = listGet(vals);
+      if (!Array.isArray(list)) {
+        if (!ctx?.__streamingNow) {
+          if (list !== void 0 && list !== null) {
+            warnUnresolved(
+              ctx,
+              'sc-for list="' + listSrc + '" is not an array (' + typeof list + ")"
+            );
+          }
+          list = [];
+        } else {
+          list = hintN > 0 ? Array(hintN).fill(void 0) : [];
+        }
+      }
+      return h(
+        getReact().Fragment,
+        { key },
+        list.map((item, i) => {
+          const sub = { ...vals, [asName]: item, $index: i };
+          return h(
+            getReact().Fragment,
+            { key: i },
+            kids.map((b, j) => b(sub, ctx, j))
+          );
+        })
+      );
+    };
+  }
+  function walkIf(el, host) {
+    const valGet = compileAttr(el.getAttribute("value") || "");
+    const hintRaw = el.getAttribute("hint-placeholder-val");
+    const hintGet = hintRaw != null ? compileAttr(hintRaw) : null;
+    const kids = walkChildren(el, host);
+    return (vals, ctx, key) => {
+      let v = valGet(vals);
+      if (v === void 0 && hintGet && ctx?.__streamingNow) v = hintGet(vals);
+      return v ? h(
+        getReact().Fragment,
+        { key },
+        kids.map((b, j) => b(vals, ctx, j))
+      ) : null;
+    };
+  }
+  function walkComponent(el, host) {
+    const name = el.getAttribute("name") || el.getAttribute("component") || "";
+    el.removeAttribute("name");
+    el.removeAttribute("component");
+    const tplId = el.getAttribute("data-dc-tpl");
+    const styleRaw = el.getAttribute("style");
+    el.removeAttribute("style");
+    const styleGet = styleRaw != null ? compileAttr(styleRaw) : null;
+    const { propGetters, hintSize } = collectProps(el, "dc-import", host);
+    const kids = walkChildren(el, host);
+    return (vals, ctx, key) => {
+      const props = {
+        key,
+        __hintSize: hintSize,
+        __tplId: tplId,
+        __hostStyle: styleGet ? hostPositionStyle(styleGet(vals)) : void 0
+      };
+      for (const [k, g] of propGetters) {
+        const v = g(vals);
+        if (k === "dcProps") {
+          if (v && typeof v === "object") Object.assign(props, v);
+          continue;
+        }
+        props[k] = v;
+      }
+      if (kids.length) props.children = kids.map((b, j) => b(vals, ctx, j));
+      return h(host.component(name), props);
+    };
+  }
+  function walkXImport(el, host) {
+    const globalNameGet = compileAttr(
+      el.getAttribute("component-from-global-scope") || ""
+    );
+    const exportNameGet = compileAttr(
+      el.getAttribute("component") || el.getAttribute("name") || ""
+    );
+    const fromRaw = el.getAttribute("from") || el.getAttribute("src") || el.getAttribute("import") || "";
+    const urls = fromRaw.trim() ? fromRaw.trim().split(/\s+/) : [];
+    const url = urls.length ? urls[urls.length - 1] : "";
+    const kindOf = (u) => /\.(jsx|tsx)(\?|#|$)/i.test(u) ? "jsx" : "js";
+    const tplId = el.getAttribute("data-dc-tpl");
+    const styleRaw = el.getAttribute("style");
+    el.removeAttribute("style");
+    const styleGet = styleRaw != null ? compileAttr(styleRaw) : null;
+    const wrap = tplId != null || styleGet != null;
+    const { propGetters, hintSize } = collectProps(el, "x-import", host);
+    const hasContent = el.children.length > 0 || !!(el.textContent || "").trim();
+    const kids = hasContent ? walkChildren(el, host) : [];
+    const urlBindable = fromRaw.includes("{{");
+    if (urls.length && !urlBindable) {
+      let prev;
+      for (const u of urls) prev = host.loadExternal(kindOf(u), u, prev);
+    }
+    const evalName = (g, vals) => {
+      const v = g(vals);
+      const s = v == null ? "" : String(v);
+      return s.includes("{{") ? "" : s;
+    };
+    return (vals, ctx, key) => {
+      const globalName = evalName(globalNameGet, vals);
+      const name = globalName || evalName(exportNameGet, vals);
+      const C = !name || urlBindable ? null : globalName ? host.resolveExternalGlobal(url, globalName) : host.resolveExternal(url, name);
+      const hostStyle = styleGet ? hostPositionStyle(styleGet(vals)) : void 0;
+      const wrapper = wrap ? {
+        key,
+        className: "sc-host-x",
+        "data-dc-tpl": tplId,
+        style: hostStyle || { display: "contents" }
+      } : null;
+      if (!C) {
+        const error = urlBindable ? "x-import `from` cannot contain {{ \u2026 }} \u2014 module URLs are resolved at parse time; use a literal URL" : host.resolveExternalError(url, name);
+        const ph = host.placeholder({
+          key: wrapper ? void 0 : key,
+          name,
+          hintSize,
+          error
+        });
+        return wrapper ? h("div", wrapper, ph) : ph;
+      }
+      const props = wrapper ? {} : { key };
+      let unresolvedHole = false;
+      for (const [k, g] of propGetters) {
+        if (k === "component" || k === "componentFromGlobalScope" || k === "from") {
+          continue;
+        }
+        const v = g(vals);
+        if (v === void 0) unresolvedHole = true;
+        if (k === "dcProps") {
+          if (v && typeof v === "object") Object.assign(props, v);
+          continue;
+        }
+        props[k] = v;
+      }
+      if (unresolvedHole && ctx?.__htmlStreamingNow) {
+        const ph = host.placeholder({
+          key: wrapper ? void 0 : key,
+          name,
+          hintSize,
+          error: null
+        });
+        return wrapper ? h("div", wrapper, ph) : ph;
+      }
+      if (kids.length) props.children = kids.map((b, j) => b(vals, ctx, j));
+      return wrapper ? h("div", wrapper, h(C, props)) : h(C, props);
+    };
+  }
+  function contentKey(el) {
+    const clone = el.cloneNode(true);
+    for (const d of clone.querySelectorAll("*")) {
+      while (d.attributes.length) d.removeAttribute(d.attributes[0].name);
+    }
+    const s = clone.innerHTML;
+    let h2 = 5381;
+    for (let i = 0; i < s.length; i++) h2 = (h2 << 5) + h2 + s.charCodeAt(i) | 0;
+    return s.length + "." + (h2 >>> 0).toString(36);
+  }
+  var NEVER_CONTENT_KEYED = new Set(
+    "script style textarea option title select canvas iframe video audio".split(
+      " "
+    )
+  );
+  var NOT_INLINE_SELECTOR = ":not(" + [...INLINE_TEXT_TAGS].join(",") + ")";
+  function walkElement(el, host) {
+    const realTag = RAW_UNWRAP[el.localName] || el.localName;
+    const tplId = el.getAttribute("data-dc-tpl");
+    const inlineOnly = el.childNodes.length > 0 && !NEVER_CONTENT_KEYED.has(realTag) && el.querySelector(NOT_INLINE_SELECTOR) === null;
+    const keySuffix = inlineOnly ? "|" + contentKey(el) : "";
+    const { propGetters, pseudoClasses } = collectProps(el, "dom", host);
+    const kids = walkChildren(el, host);
+    return (vals, ctx, key) => {
+      const props = {
+        key: key + keySuffix,
+        "data-dc-tpl": tplId
+      };
+      for (const [k, g] of propGetters) {
+        let v = g(vals);
+        if (k === "style" && typeof v === "string") v = cssToObj(v);
+        if ((k === "value" || k === "checked") && v === void 0) {
+          v = k === "checked" ? false : "";
+        }
+        props[k] = v;
+      }
+      if (pseudoClasses.length) {
+        props.className = [props.className, ...pseudoClasses].filter(Boolean).join(" ");
+      }
+      return h(realTag, props, ...kids.map((b, j) => b(vals, ctx, j)));
+    };
+  }
+
+  // src/logic.ts
+  var StreamableLogic = class {
+    constructor(props) {
+      __publicField(this, "props");
+      __publicField(this, "state", {});
+      /** Back-pointer to the wrapper component, installed after construction. */
+      __publicField(this, "__host");
+      this.props = props || {};
+    }
+    setState(update, cb) {
+      this.__host && this.__host.__setLogicState(update, cb);
+    }
+    forceUpdate() {
+      this.__host && this.__host.forceUpdate();
+    }
+    componentDidMount() {
+    }
+    componentDidUpdate(_prevProps) {
+    }
+    componentWillUnmount() {
+    }
+    /** The flat object the template renders against (merged over props). */
+    renderVals() {
+      return {};
+    }
+  };
+  function evalDcLogic(src) {
+    //! nosemgrep: eval-and-function-constructor
+    const fn = new Function(
+      "DCLogic",
+      "StreamableLogic",
+      "React",
+      src + '\n;return (typeof Component!=="undefined"&&Component)||undefined;'
+    );
+    return fn(StreamableLogic, StreamableLogic, getReact());
+  }
+
+  // src/component.ts
+  function shallowEqual(a, b) {
+    if (!b) return false;
+    const ak = Object.keys(a).filter((k) => k !== "children");
+    const bk = Object.keys(b).filter((k) => k !== "children");
+    if (ak.length !== bk.length) return false;
+    for (const k of ak) if (a[k] !== b[k]) return false;
+    return true;
+  }
+  function Placeholder({
+    name,
+    hintSize,
+    streaming,
+    error
+  }) {
+    const [w, hgt] = (hintSize || "100%,60px").split(",");
+    return h(
+      "div",
+      {
+        className: "sc-placeholder" + (streaming ? " sc-streaming" : ""),
+        style: { width: w.trim(), height: hgt && hgt.trim() },
+        title: name
+      },
+      error ? h(
+        "div",
+        { className: "sc-placeholder-error" },
+        (name ? name + ": " : "") + error
+      ) : null
+    );
+  }
+  function hintToMin(hint) {
+    if (!hint) return void 0;
+    const [w, hgt] = hint.split(",");
+    return { minWidth: w.trim(), minHeight: hgt && hgt.trim() };
+  }
+  function createComponentFactory(registry, ensureFetched) {
+    const React = getReact();
+    const AncestorContext = React.createContext([]);
+    class StreamableComponent extends React.Component {
+      constructor(props) {
+        super(props);
+        __publicField(this, "__name");
+        __publicField(this, "__sub");
+        __publicField(this, "__needsDidMount", false);
+        /** Snapshot of the registry's streaming flags taken at render time —
+         *  builders read it off the RenderCtx (this) to pick placeholder vs
+         *  render-nothing for unresolved values. */
+        __publicField(this, "__streamingNow", false);
+        __publicField(this, "__htmlStreamingNow", false);
+        /** When a construct throws, remember the (class, registry.ver, props)
+         *  triple so render-time reconcile doesn't re-attempt it on every parent
+         *  re-render. A registry bump (new class, template, external module
+         *  resolving via bumpAll) changes `ver` and breaks the memo so an
+         *  env-dependent constructor can self-heal. */
+        __publicField(this, "__failedLogic", null);
+        __publicField(this, "__failedUserProps", null);
+        __publicField(this, "__failedVer", -1);
+        /** Per-instance constructor error — kept here (not on the registry entry)
+         *  so one instance's successful construct can't hide a sibling's failure,
+         *  and a construct can never wipe an eval error `updateJs` recorded on
+         *  `r.logicError`. */
+        __publicField(this, "__ctorError", null);
+        __publicField(this, "logic");
+        this.__name = props.__name;
+        this.state = { __v: 0, __err: null };
+        this.__sub = () => {
+          if (this.state.__err) this.setState({ __err: null });
+          this.forceUpdate();
+        };
+        this.__makeLogic(registry.get(this.__name).Logic, null);
+        ensureFetched(this.__name);
+      }
+      /** Error-boundary hook: a render crash anywhere in this DC's subtree
+       *  (its own template, an x-import'd component, a child DC without its
+       *  own deeper boundary) lands here instead of unmounting the page. */
+      static getDerivedStateFromError(e) {
+        return { __err: e instanceof Error && e.message ? e.message : String(e) };
+      }
+      componentDidCatch(e, info) {
+        console.error(
+          "[dc-runtime] render error in <" + this.__name + ">:",
+          e,
+          info?.componentStack || ""
+        );
+      }
+      /** Instantiate the logic class (or the no-op base) and adopt `prevState`
+       *  over its initial state — used both at mount and on hot-swap. */
+      __makeLogic(Logic, prevState) {
+        const L = Logic || StreamableLogic;
+        try {
+          this.logic = new L(this.__userProps());
+          this.__failedLogic = null;
+          this.__failedUserProps = null;
+          this.__ctorError = null;
+        } catch (e) {
+          console.error(e);
+          this.__failedLogic = Logic;
+          this.__failedUserProps = this.__userProps();
+          this.__failedVer = registry.get(this.__name).ver;
+          this.__ctorError = this.__name + ": " + (e instanceof Error && e.message ? e.message : String(e));
+          this.logic = new StreamableLogic(
+            this.__userProps()
+          );
+        }
+        this.logic.__host = this;
+        if (prevState)
+          this.logic.state = { ...this.logic.state || {}, ...prevState };
+      }
+      /** The props the author's logic + template see — internal __-prefixed
+       *  wiring stripped. */
+      __userProps() {
+        const { __name, __hintSize, __tplId, __hostStyle, ...rest } = this.props;
+        return rest;
+      }
+      __setLogicState(update, cb) {
+        const prev = this.logic.state;
+        const patch = typeof update === "function" ? update(prev) : update;
+        this.logic.state = { ...prev, ...patch };
+        this.setState((s) => ({ __v: s.__v + 1 }), cb);
+      }
+      /** Swap the logic instance when the registry's Logic class changed
+       *  (streaming completion, hot reload). State carries over; didMount
+       *  re-fires after the swap commits so refs exist. */
+      __reconcileLogic() {
+        const r = registry.get(this.__name);
+        const Next = r.Logic;
+        const Cur = this.logic.constructor;
+        if (Next === Cur || !Next && Cur === StreamableLogic || Next === this.__failedLogic && r.ver === this.__failedVer && shallowEqual(this.__userProps(), this.__failedUserProps)) {
+          return;
+        }
+        if (!this.__needsDidMount) {
+          try {
+            this.logic.componentWillUnmount();
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        this.__makeLogic(Next, this.logic.state);
+        this.__needsDidMount = true;
+      }
+      componentDidMount() {
+        registry.get(this.__name).subs.add(this.__sub);
+        try {
+          this.logic.componentDidMount();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      componentDidUpdate(prevProps) {
+        this.logic.props = this.__userProps();
+        if (this.__needsDidMount) {
+          if (this.state.__err || !registry.get(this.__name).tpl) return;
+          this.__needsDidMount = false;
+          try {
+            this.logic.componentDidMount();
+          } catch (e) {
+            console.error(e);
+          }
+        } else {
+          try {
+            this.logic.componentDidUpdate(prevProps);
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+      componentWillUnmount() {
+        registry.get(this.__name).subs.delete(this.__sub);
+        if (!this.__needsDidMount) {
+          try {
+            this.logic.componentWillUnmount();
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+      render() {
+        const r = registry.get(this.__name);
+        const cls = "sc-host" + (r.htmlStreaming ? " sc-streaming-html" : "") + (r.jsStreaming ? " sc-streaming-js" : "");
+        const hintStyle = r.htmlStreaming ? hintToMin(this.props.__hintSize) : void 0;
+        const hostStyle = this.props.__hostStyle || hintStyle ? { ...hintStyle || {}, ...this.props.__hostStyle || {} } : void 0;
+        const hostBase = {
+          className: cls,
+          style: hostStyle,
+          "data-sc-name": this.__name,
+          "data-dc-tpl": this.props.__tplId
+        };
+        const chain = Array.isArray(this.context) ? this.context : [];
+        if (chain.includes(this.__name)) {
+          const cycle = [
+            ...chain.slice(chain.indexOf(this.__name)),
+            this.__name
+          ].join(" \u2192 ");
+          return h(
+            "div",
+            { ...hostBase, className: cls + " sc-has-error" },
+            h(Placeholder, {
+              name: this.__name,
+              hintSize: this.props.__hintSize,
+              error: "circular import: " + cycle
+            })
+          );
+        }
+        if (this.state.__err) {
+          return h(
+            "div",
+            { ...hostBase, className: cls + " sc-has-error" },
+            h(
+              "div",
+              { className: "sc-logic-error", "data-omelette-chrome": "" },
+              this.__name + ": " + this.state.__err
+            ),
+            h(Placeholder, {
+              name: this.__name,
+              hintSize: this.props.__hintSize,
+              error: this.state.__err
+            })
+          );
+        }
+        this.__reconcileLogic();
+        if (!r.tpl) {
+          return h(
+            "div",
+            hostBase,
+            h(Placeholder, { name: this.__name, hintSize: this.props.__hintSize })
+          );
+        }
+        const userProps = this.__userProps();
+        this.logic.props = userProps;
+        let vals = userProps;
+        let renderErr = r.logicError || this.__ctorError;
+        try {
+          vals = { ...userProps, ...this.logic.renderVals() || {} };
+        } catch (e) {
+          console.error(e);
+          renderErr = this.__name + ".renderVals(): " + (e instanceof Error && e.message ? e.message : String(e));
+        }
+        this.__streamingNow = !!(r.htmlStreaming || r.jsStreaming);
+        this.__htmlStreamingNow = !!r.htmlStreaming;
+        return h(
+          "div",
+          { ...hostBase, className: cls + (renderErr ? " sc-has-error" : "") },
+          renderErr && h(
+            "div",
+            { className: "sc-logic-error", "data-omelette-chrome": "" },
+            renderErr
+          ),
+          h(
+            AncestorContext.Provider,
+            { value: [...chain, this.__name] },
+            r.tpl(vals, this)
+          )
+        );
+      }
+    }
+    __publicField(StreamableComponent, "contextType", AncestorContext);
+    const named = /* @__PURE__ */ new Map();
+    function getDC(name) {
+      const hit = named.get(name);
+      if (hit) return hit;
+      function Dispatcher(p) {
+        const [, setTick] = React.useState(0);
+        React.useEffect(() => {
+          const sub = () => setTick((n) => n + 1);
+          registry.get(name).subs.add(sub);
+          return () => {
+            registry.get(name).subs.delete(sub);
+          };
+        }, []);
+        ensureFetched(name);
+        return h(StreamableComponent, { ...p, __name: name });
+      }
+      Dispatcher.displayName = name;
+      named.set(name, Dispatcher);
+      return Dispatcher;
+    }
+    return {
+      getDC,
+      StreamableComponent
+    };
+  }
+
+  // src/external.ts
+  var isCustomElementName = (n) => !n.includes(".") && n.includes("-");
+  function isRenderableType(g) {
+    if (typeof g === "function") return !isElementClass(g);
+    return typeof g === "object" && g !== null && typeof g.$typeof === "symbol";
+  }
+  function resolveDottedPath(root, name) {
+    let cur = root;
+    for (const seg of name.split(".")) {
+      if (cur == null) return void 0;
+      cur = cur[seg];
+    }
+    return cur;
+  }
+  var BABEL_URL = "https://unpkg.com/@babel/standalone@7.29.0/babel.min.js";
+  var BABEL_SRI = "sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y";
+  var GLOBAL_POLL_INTERVAL_MS = 50;
+  var GLOBAL_POLL_TIMEOUT_MS = 3e4;
+  function createExternalModules(onResolved) {
+    const cache = /* @__PURE__ */ new Map();
+    let babelLoading = null;
+    const reportedMissing = /* @__PURE__ */ new Map();
+    const polling = /* @__PURE__ */ new Set();
+    function ensureBabel() {
+      if (window.Babel) return Promise.resolve();
+      if (babelLoading) return babelLoading;
+      babelLoading = new Promise((res, rej) => {
+        const s = document.createElement("script");
+        s.src = BABEL_URL;
+        s.integrity = BABEL_SRI;
+        s.crossOrigin = "anonymous";
+        s.onload = () => res();
+        s.onerror = rej;
+        document.head.appendChild(s);
+      });
+      return babelLoading;
+    }
+    const pending = /* @__PURE__ */ new Map();
+    function load(kind, url, after) {
+      const existing = pending.get(url);
+      if (existing) return existing;
+      cache.set(url, null);
+      console.info("[dc-runtime] x-import: loading", url, "(" + kind + ")");
+      const ready = Promise.all([
+        kind === "jsx" ? ensureBabel() : Promise.resolve(),
+        after ?? Promise.resolve()
+      ]);
+      const p = ready.then(() => fetch(url)).then((r) => {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.text();
+      }).then((src) => {
+        const code = kind === "jsx" ? window.Babel.transform(src, {
+          filename: url,
+          presets: ["react", "typescript"]
+        }).code : src;
+        const module = { exports: {} };
+        const before = new Set(Object.keys(window));
+        //! nosemgrep: eval-and-function-constructor
+        new Function("React", "module", "exports", "require", code)(
+          getReact(),
+          module,
+          module.exports,
+          () => ({})
+        );
+        const globals = {};
+        for (const k of Object.keys(window)) {
+          if (!before.has(k) && typeof window[k] === "function") {
+            globals[k] = window[k];
+          }
+        }
+        cache.set(url, { mod: module.exports, globals });
+        console.info(
+          "[dc-runtime] x-import: loaded",
+          url,
+          "\u2014 exports:",
+          Object.keys(module.exports),
+          "window globals:",
+          Object.keys(globals)
+        );
+        onResolved();
+      }).catch((e) => {
+        cache.set(url, {
+          mod: {},
+          globals: {},
+          error: "failed to load: " + (e instanceof Error && e.message ? e.message : String(e))
+        });
+        console.error(
+          "[dc-runtime] x-import: FAILED to load",
+          url,
+          "(" + kind + ")",
+          e
+        );
+        onResolved();
+      });
+      pending.set(url, p);
+      return p;
+    }
+    function resolve2(url, name) {
+      const entry = cache.get(url);
+      if (!entry) return null;
+      const { mod, globals } = entry;
+      const C = mod && mod[name] || globals && globals[name] || typeof window !== "undefined" && window[name] || mod && mod.default;
+      if (typeof C === "function") return C;
+      const key = url + "\0" + name;
+      if (!reportedMissing.has(key)) {
+        reportedMissing.set(
+          key,
+          entry.error || 'no export named "' + name + '" (has: ' + Object.keys(mod).join(", ") + ")"
+        );
+        console.error(
+          "[dc-runtime] x-import: module",
+          url,
+          "loaded but has no component named",
+          JSON.stringify(name),
+          "\u2014 available exports:",
+          Object.keys(mod),
+          "window globals:",
+          Object.keys(globals),
+          ". The module must `module.exports = {" + name + "}` or set `window." + name + "`."
+        );
+      }
+      return null;
+    }
+    function waitForGlobal(name) {
+      if (polling.has(name)) return;
+      polling.add(name);
+      const started = Date.now();
+      const isCE = isCustomElementName(name);
+      const tick = () => {
+        const found = isCE ? customElements.get(name) : isRenderableType(resolveDottedPath(window, name));
+        if (found) {
+          polling.delete(name);
+          onResolved();
+          return;
+        }
+        if (Date.now() - started >= GLOBAL_POLL_TIMEOUT_MS) {
+          console.warn(
+            "[dc-runtime] x-import: global",
+            JSON.stringify(name),
+            "never appeared on window after " + GLOBAL_POLL_TIMEOUT_MS + "ms"
+          );
+          return;
+        }
+        setTimeout(tick, GLOBAL_POLL_INTERVAL_MS);
+      };
+      setTimeout(tick, GLOBAL_POLL_INTERVAL_MS);
+    }
+    function resolveGlobal(url, name) {
+      const isCE = isCustomElementName(name);
+      if (!url) {
+        if (isCE) {
+          if (customElements.get(name)) return name;
+          waitForGlobal(name);
+          return null;
+        }
+        const g2 = resolveDottedPath(window, name);
+        if (isRenderableType(g2)) return g2;
+        waitForGlobal(name);
+        return null;
+      }
+      const entry = cache.get(url);
+      if (!entry) return null;
+      if (isCE && customElements.get(name)) return name;
+      const g = entry.globals[name] ?? resolveDottedPath(window, name);
+      if (isRenderableType(g)) return g;
+      if (name.includes(".")) return null;
+      const key = url + "\0global\0" + name;
+      if (!reportedMissing.has(key)) {
+        reportedMissing.set(key, null);
+        if (isCE && !customElements.get(name)) {
+          console.warn(
+            "[dc-runtime] x-import:",
+            url,
+            "loaded but no custom element",
+            JSON.stringify(name),
+            "is registered and window." + name + " is not a function \u2014 rendering <" + name + "> as an unknown element."
+          );
+        }
+      }
+      return name;
+    }
+    function getError(url, name) {
+      const entry = cache.get(url);
+      if (entry?.error) return entry.error;
+      return reportedMissing.get(url + "\0" + name) || null;
+    }
+    return { load, resolve: resolve2, resolveGlobal, getError };
+  }
+  function isElementClass(g) {
+    try {
+      return typeof g === "function" && typeof HTMLElement !== "undefined" && g.prototype instanceof HTMLElement;
+    } catch {
+      return false;
+    }
+  }
+
+  // src/atomics.ts
+  var ATOMIC_CSS = (
+    // layout
+    ".fx{display:flex}.col{display:flex;flex-direction:column}.grid{display:grid}.ac{align-items:center}.jc{justify-content:center}.jb{justify-content:space-between}.f1{flex:1}.noshrink{flex-shrink:0}.wrap{flex-wrap:wrap}.fw5{font-weight:500}.fw6{font-weight:600}.fw7{font-weight:700}.fw8{font-weight:800}.fs11{font-size:11px}.fs12{font-size:12px}.fs13{font-size:13px}.fs14{font-size:14px}.fs15{font-size:15px}.fs16{font-size:16px}.fs20{font-size:20px}.fs22{font-size:22px}.upper{text-transform:uppercase}.tc{text-align:center}.nowrap{white-space:nowrap}.gap8{gap:8px}.gap10{gap:10px}.gap12{gap:12px}.gap16{gap:16px}.gap24{gap:24px}.m0{margin:0}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.posrel{position:relative}.posabs{position:absolute}.round{border-radius:50%}.ohide{overflow:hidden}.bbox{box-sizing:border-box}.pointer{cursor:pointer}.w100{width:100%}.b0{border:none}"
+  );
+
+  // src/helmet.ts
+  var DESIGN_DOC_MODE_RE = /<meta\b[^>]*\bname\s*=\s*["']design_doc_mode["'][^>]*\b(?:content|value)\s*=\s*["'](\w+)["']/i;
+  var CANVAS_BG_LIGHT = "#f0eee6";
+  var CANVAS_BG_DARK = "#2e2c26";
+  function createHelmetManager(doc, isStreaming) {
+    const mounted = /* @__PURE__ */ new Set();
+    const live = /* @__PURE__ */ new Map();
+    let designDocMode = null;
+    let canvasStyleEl = null;
+    let appTheme = "light";
+    try {
+      const ds = doc.documentElement.dataset.theme;
+      appTheme = ds === "dark" || ds === "light" ? ds : new URLSearchParams(doc.defaultView?.location.search ?? "").get(
+        "theme"
+      ) === "dark" ? "dark" : "light";
+    } catch {
+    }
+    function applyCanvasBg() {
+      if (!canvasStyleEl) return;
+      const bg = appTheme === "dark" ? CANVAS_BG_DARK : CANVAS_BG_LIGHT;
+      canvasStyleEl.textContent = `html,body{background:${bg}}#dc-root>.sc-host{position:relative}`;
+    }
+    function postDesignMode(mode) {
+      if (window.parent === window) return;
+      try {
+        window.parent.postMessage({ type: "__dc_design_mode", mode }, "*");
+      } catch {
+      }
+    }
+    function setDesignDocMode(mode) {
+      if (mode === designDocMode) return;
+      designDocMode = mode;
+      postDesignMode(mode);
+      if (mode === "canvas") {
+        doc.documentElement.setAttribute("data-dc-canvas", "");
+        canvasStyleEl = doc.createElement("style");
+        canvasStyleEl.setAttribute("data-dc-canvas", "");
+        applyCanvasBg();
+        doc.head.appendChild(canvasStyleEl);
+      } else {
+        doc.documentElement.removeAttribute("data-dc-canvas");
+        canvasStyleEl?.remove();
+        canvasStyleEl = null;
+      }
+    }
+    window.addEventListener("message", (e) => {
+      const type = e.data && e.data.type;
+      if (type === "__dc_theme") {
+        const t = e.data.theme;
+        if (t === "light" || t === "dark") {
+          appTheme = t;
+          doc.documentElement.dataset.theme = t;
+          applyCanvasBg();
+        }
+        return;
+      }
+      if (!designDocMode || type !== "__dc_probe") return;
+      postDesignMode(designDocMode);
+    });
+    function compile(node) {
+      const raw = [...node.children];
+      const helmetClosed = node.nextSibling != null || node.parentNode?.nextSibling != null;
+      if (node.hasAttribute("data-dc-atomics") && !mounted.has("__dc-atomics")) {
+        mounted.add("__dc-atomics");
+        const el = doc.createElement("style");
+        el.id = "__dc-atomics";
+        el.textContent = ATOMIC_CSS;
+        doc.head.appendChild(el);
+      }
+      return (_vals, ctx) => {
+        const name = ctx && ctx.__name || "";
+        const streaming = !!(name && isStreaming(name));
+        for (let i = 0; i < raw.length; i++) {
+          const child = raw[i];
+          const tag = child.tagName;
+          const mayBePartial = streaming && !helmetClosed && i === raw.length - 1;
+          if (tag === "SCRIPT") {
+            if (mayBePartial) continue;
+            const key = "SCRIPT|" + (child.getAttribute("src") || child.textContent || "");
+            if (mounted.has(key)) continue;
+            mounted.add(key);
+            const el = doc.createElement("script");
+            for (const { name: an, value } of [...child.attributes])
+              el.setAttribute(an, value);
+            if (child.textContent) el.textContent = child.textContent;
+            doc.head.appendChild(el);
+          } else if (tag === "LINK" || tag === "META") {
+            if (mayBePartial) continue;
+            const key = tag + "|" + (child.getAttribute("href") || child.getAttribute("src") || child.outerHTML);
+            if (mounted.has(key)) continue;
+            mounted.add(key);
+            doc.head.appendChild(child.cloneNode(true));
+          } else {
+            const key = name + "|" + i;
+            let el = live.get(key);
+            if (!el || el.tagName !== tag) {
+              if (el) el.remove();
+              el = doc.createElement(tag.toLowerCase());
+              live.set(key, el);
+              doc.head.appendChild(el);
+            }
+            for (const { name: an, value } of [...child.attributes]) {
+              if (el.getAttribute(an) !== value) el.setAttribute(an, value);
+            }
+            if (el.textContent !== child.textContent)
+              el.textContent = child.textContent;
+          }
+        }
+        return null;
+      };
+    }
+    return { compile, setDesignDocMode };
+  }
+
+  // src/pseudo.ts
+  function createPseudoSheet(doc) {
+    let el = null;
+    const cache = /* @__PURE__ */ new Map();
+    let n = 0;
+    return (pseudo, css) => {
+      const k = pseudo + "|" + css;
+      const hit = cache.get(k);
+      if (hit) return hit;
+      if (!el) {
+        el = doc.createElement("style");
+        doc.head.appendChild(el);
+      }
+      const cls = "scp" + (n++).toString(36);
+      const sel = pseudo === "before" || pseudo === "after" ? "." + cls + "::" + pseudo : "." + cls + ":" + pseudo;
+      el.sheet.insertRule(sel + "{" + css + "}", el.sheet.cssRules.length);
+      cache.set(k, cls);
+      return cls;
+    };
+  }
+
+  // src/registry.ts
+  function createRegistry() {
+    const entries = /* @__PURE__ */ Object.create(null);
+    function get(name) {
+      return entries[name] || (entries[name] = {
+        html: "",
+        tpl: null,
+        Logic: null,
+        jsStreaming: false,
+        htmlStreaming: false,
+        ver: 0,
+        subs: /* @__PURE__ */ new Set(),
+        fetched: false
+      });
+    }
+    function bump(name) {
+      const r = get(name);
+      r.ver++;
+      for (const fn of r.subs) fn();
+    }
+    return {
+      entries,
+      get,
+      bump,
+      bumpAll() {
+        for (const n in entries) bump(n);
+      }
+    };
+  }
+
+  // src/runtime.ts
+  var COMPONENT_DIR = ".";
+  function createRuntime(doc = document) {
+    const registry = createRegistry();
+    const pseudoClass = createPseudoSheet(doc);
+    const helmet = createHelmetManager(
+      doc,
+      (name) => registry.get(name).htmlStreaming
+    );
+    const external = createExternalModules(() => registry.bumpAll());
+    const factory = createComponentFactory(registry, ensureFetched);
+    const host = {
+      component: (name) => factory.getDC(name),
+      placeholder: (props) => h(Placeholder, props),
+      helmet: (node) => helmet.compile(node),
+      loadExternal: (kind, url, after) => external.load(kind, url, after),
+      resolveExternal: (url, name) => external.resolve(url, name),
+      resolveExternalGlobal: (url, name) => external.resolveGlobal(url, name),
+      resolveExternalError: (url, name) => external.getError(url, name),
+      pseudoClass
+    };
+    function ensureFetched(name) {
+      const r = registry.get(name);
+      if (r.fetched) return;
+      r.fetched = true;
+      const url = COMPONENT_DIR + "/" + encodeURIComponent(name) + ".dc.html";
+      fetch(url).then((res) => {
+        if (!res.ok) {
+          console.error(
+            "[dc-runtime] sibling fetch for <" + name + "/> failed:",
+            url,
+            "returned",
+            res.status,
+            "\u2014 the reference renders as an empty placeholder."
+          );
+          return "";
+        }
+        return res.text();
+      }).then((t) => {
+        if (!t) return;
+        const parsed = parseDcText(t);
+        if (!parsed) {
+          console.error(
+            "[dc-runtime] sibling fetch for <" + name + "/>:",
+            url,
+            "has no <x-dc> block \u2014 not a Design Component."
+          );
+          return;
+        }
+        if (parsed.props) r.propsMeta = parsed.props;
+        if (parsed.preview) r.preview = parsed.preview;
+        if (parsed.template && !r.html) updateHtml(name, parsed.template);
+        if (parsed.js && !r.Logic) updateJs(name, parsed.js);
+      }).catch(
+        (e) => console.error(
+          "[dc-runtime] sibling fetch for <" + name + "/> threw:",
+          url,
+          e
+        )
+      );
+    }
+    let rootName = null;
+    function updateHtml(name, html) {
+      const r = registry.get(name);
+      r.html = html;
+      if (name === rootName) {
+        const mode = DESIGN_DOC_MODE_RE.exec(html)?.[1] ?? null;
+        if (mode || !r.htmlStreaming) helmet.setDesignDocMode(mode);
+      }
+      try {
+        r.tpl = compileTemplate(html, host);
+      } catch (e) {
+        console.error("[dc-runtime] template compile FAILED for", name, e);
+      }
+      registry.bump(name);
+    }
+    function updateJs(name, src) {
+      const r = registry.get(name);
+      const seq = r.jsSeq = (r.jsSeq || 0) + 1;
+      try {
+        const Cls = evalDcLogic(src);
+        if (r.jsSeq !== seq) return;
+        if (typeof Cls !== "function") {
+          r.logicError = name + ".dc.html: <script data-dc-script> must define `class Component extends DCLogic`";
+        } else {
+          r.logicError = null;
+          r.Logic = Cls;
+        }
+      } catch (e) {
+        if (r.jsSeq !== seq) return;
+        console.error(
+          "[dc-runtime] logic class eval FAILED for",
+          name,
+          "\u2014 the template renders with props only.",
+          e
+        );
+        r.logicError = name + ": " + (e instanceof Error && e.message ? e.message : String(e));
+      }
+      registry.bump(name);
+    }
+    function setStreaming(name, kind, on) {
+      const r = registry.get(name);
+      if (kind === "html") r.htmlStreaming = !!on;
+      else r.jsStreaming = !!on;
+      let any = false;
+      for (const n in registry.entries) {
+        const e = registry.entries[n];
+        if (e && (e.htmlStreaming || e.jsStreaming)) {
+          any = true;
+          break;
+        }
+      }
+      doc.documentElement.classList.toggle("sc-dc-streaming", any);
+      registry.bump(name);
+    }
+    function dcUpdate(name, kind, content, streaming) {
+      if (streaming) registry.get(name).fetched = true;
+      if (kind === "html") {
+        setStreaming(name, "html", !!streaming);
+        updateHtml(name, content);
+      } else if (kind === "js") {
+        setStreaming(name, "js", !!streaming);
+        if (!streaming) updateJs(name, content);
+      } else if (kind === "props") {
+        const { props, preview } = parseDataProps(content);
+        const r = registry.get(name);
+        r.propsMeta = props ?? void 0;
+        r.preview = preview;
+        registry.bump(name);
+      }
+    }
+    function setProps(name, overrides) {
+      registry.get(name).propOverrides = overrides && typeof overrides === "object" ? { ...overrides } : null;
+      registry.bump(name);
+    }
+    function adoptParsed(name, parsed) {
+      if (!parsed) return;
+      const r = registry.get(name);
+      if (parsed.props) r.propsMeta = parsed.props;
+      if (parsed.preview) r.preview = parsed.preview;
+      if (parsed.template) updateHtml(name, parsed.template);
+      if (parsed.js) updateJs(name, parsed.js);
+    }
+    return {
+      registry,
+      getDC: factory.getDC,
+      updateHtml,
+      updateJs,
+      dcUpdate,
+      setProps,
+      adoptParsed,
+      setRootName: (name) => {
+        rootName = name;
+      },
+      markFetched: (name) => {
+        registry.get(name).fetched = true;
+      },
+      annotatedTemplate: (name) => {
+        const r = registry.get(name);
+        return r.tpl && r.tpl.__annotated || null;
+      },
+      templateSource: (name) => registry.get(name).html || null,
+      StreamableLogic
+    };
+  }
+
+  // src/index.ts
+  var REACT_URL = "https://unpkg.com/react@18.3.1/umd/react.production.min.js";
+  var REACT_SRI = "sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z";
+  var REACT_DOM_URL = "https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js";
+  var REACT_DOM_SRI = "sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1";
+  function hideRawTemplate() {
+    const s = document.createElement("style");
+    s.textContent = "x-dc{display:none!important}";
+    document.head.appendChild(s);
+  }
+  function loadScript(src, integrity) {
+    return new Promise((resolve2, reject) => {
+      //! nosemgrep: create-script-element
+      const s = document.createElement("script");
+      s.src = src;
+      s.integrity = integrity;
+      s.crossOrigin = "anonymous";
+      s.async = false;
+      s.onload = () => resolve2();
+      s.onerror = () => reject(new Error(`failed to load ${src}`));
+      document.head.appendChild(s);
+    });
+  }
+  function loadReactUmd() {
+    const w = window;
+    if (w.React && w.ReactDOM) return Promise.resolve();
+    return Promise.all([
+      loadScript(REACT_URL, REACT_SRI),
+      loadScript(REACT_DOM_URL, REACT_DOM_SRI)
+    ]).then(() => void 0);
+  }
+  function init() {
+    const runtime = createRuntime(document);
+    let rootName = "Root";
+    const baseCss = document.createElement("style");
+    baseCss.textContent = BASE_CSS;
+    document.head.prepend(baseCss);
+    const notifyHost = () => {
+      if (window.parent === window) return;
+      const r = runtime.registry.entries[rootName];
+      try {
+        window.parent.postMessage(
+          {
+            type: "__dc_booted",
+            rootName,
+            propsMeta: r && r.propsMeta || null,
+            preview: r && r.preview || null
+          },
+          "*"
+        );
+      } catch {
+      }
+    };
+    const api = {
+      __dcUpdate: (name, kind, content, streaming) => {
+        runtime.dcUpdate(name, kind, content, streaming);
+        if (name === rootName && !streaming && kind === "props") notifyHost();
+      },
+      __dcSetProps: (name, overrides) => runtime.setProps(name, overrides),
+      /** Name of the component currently mounted as the page root — DC tools
+       *  push their template-stream here when targeting "the open page". */
+      __dcRootName: () => rootName,
+      /** Editor bridge — the encoded, `data-dc-tpl`-annotated template source.
+       *  The host editor parses this into its own template DOM so it can map a
+       *  rendered node (carrying the same `data-dc-tpl`) back to the source
+       *  node that emitted it. Returns the encoded form (`<sc-comp>`,
+       *  `sc-camel-*` attrs); the editor decodes on serialize. */
+      __dcAnnotatedTemplate: (name) => runtime.annotatedTemplate(name),
+      /** Editor bridge — the *original* (decoded) template source. */
+      __dcTemplateSource: (name) => runtime.templateSource(name),
+      __dcBoot: () => {
+        rootName = boot(runtime, document) ?? rootName;
+        notifyHost();
+      },
+      __dcRegistry: runtime.registry.entries,
+      getDC: (name) => runtime.getDC(name),
+      // `DCLogic` is the documented base class name; `StreamableLogic` is the
+      // implementation alias kept for any project that already references it.
+      DCLogic: runtime.StreamableLogic,
+      StreamableLogic: runtime.StreamableLogic
+    };
+    Object.assign(window, api);
+    window.__dcContentKeyed = true;
+    if (document.readyState !== "loading") api.__dcBoot();
+    else document.addEventListener("DOMContentLoaded", () => api.__dcBoot());
+  }
+  hideRawTemplate();
+  loadReactUmd().then(init).catch((err) => {
+    console.error("[dc] failed to load React or boot:", err);
+    throw err;
+  });
+})();
+
+</script>
+</head>
+<body>
+<x-dc>
+<template id="__bundler_thumbnail">
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+<rect width="100" height="100" fill="#07080f"/>
+<circle cx="50" cy="50" r="22" fill="none" stroke="#a78bfa" stroke-width="2.5"/>
+<line x1="14" y1="50" x2="86" y2="50" stroke="#56d6d6" stroke-width="2.5"/>
+<rect x="44" y="44" width="12" height="12" transform="rotate(45 50 50)" fill="#5aa6e6"/>
+</svg>
+</template>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#07080f}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(167,139,250,.25);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#07080f;font-family:'IBM Plex Sans','Noto Sans SC',sans-serif;position:relative;overflow-x:hidden">
+
+  <div style="position:fixed;top:-160px;right:-120px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(167,139,250,.18),transparent 65%);filter:blur(40px);pointer-events:none;z-index:0"></div>
+  <div style="position:fixed;bottom:-200px;left:-150px;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(86,170,230,.13),rgba(86,214,214,.07) 50%,transparent 72%);filter:blur(46px);pointer-events:none;z-index:0"></div>
+
+  <div style="position:relative;z-index:1">
+
+    <header style="position:sticky;top:0;z-index:40;background:rgba(7,8,15,.72);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.07)">
+      <div style="max-width:1080px;margin:0 auto;padding:15px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+        <div style="display:flex;align-items:center;gap:13px;min-width:0">
+          <div style="width:34px;height:34px;border-radius:10px;background:conic-gradient(from 200deg,#a78bfa,#5aa6e6,#56d6d6,#a78bfa);box-shadow:0 6px 20px rgba(120,120,250,.45);flex:none"></div>
+          <div style="min-width:0">
+            <div style="font:700 19px/1.1 'Space Grotesk','Noto Sans SC',sans-serif;color:#f2f3fb">量子光学实验器材库</div>
+            <div style="font:400 9px/1 'IBM Plex Mono',monospace;letter-spacing:2px;color:#9aa0c8;margin-top:4px">{{ L.brandSub }}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:7px;flex:none;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+          <sc-if value="{{ canEdit }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ startAdd }}" style="display:flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;border:1px solid rgba(86,214,214,.35);background:rgba(86,214,214,.1);color:#7fe0e0;font:600 12px/1 'Noto Sans SC',sans-serif;cursor:pointer" style-hover="background:rgba(86,214,214,.2)"><span style="font-size:14px;line-height:1">＋</span>{{ L.addDevice }}</button>
+          </sc-if>
+          <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ cloud }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ openAdmin }}" style="position:relative;padding:7px 13px;border-radius:9px;border:1px solid rgba(167,139,250,.35);background:rgba(167,139,250,.1);color:#c4b5fd;font:600 12px/1 'Noto Sans SC',sans-serif;cursor:pointer" style-hover="background:rgba(167,139,250,.2)">{{ L.users }}<sc-if value="{{ hasPendingBadge }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#e0a040;color:#1a1206;font:700 11px/18px 'IBM Plex Mono',monospace;text-align:center;box-shadow:0 0 10px rgba(224,160,64,.6)">{{ pendingCount }}</span></sc-if></button>
+            </sc-if>
+          </sc-if>
+          <sc-if value="{{ authed }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:7px;padding:5px 7px 5px 11px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)">
+              <span style="width:7px;height:7px;border-radius:50%;background:{{ roleColor }};box-shadow:0 0 8px {{ roleColor }};flex:none"></span>
+              <span style="font:500 11px/1.2 'Noto Sans SC',sans-serif;color:#cdd1e6;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ userEmail }}</span>
+              <span style="font:600 9px/1 'IBM Plex Mono',monospace;padding:3px 6px;border-radius:5px;background:rgba(255,255,255,.07);color:{{ roleColor }}">{{ roleLabel }}</span>
+              <button onClick="{{ doSignOut }}" title="{{ L.signout }}" style="width:24px;height:24px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:none;color:#9aa0c8;cursor:pointer;font-size:13px;line-height:1">⎋</button>
+            </div>
+          </sc-if>
+          <div style="display:flex;gap:6px">
+            <button onClick="{{ setCn }}" style="{{ cnBtnStyle }}">中文</button>
+            <button onClick="{{ setEn }}" style="{{ enBtnStyle }}">EN</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <sc-if value="{{ showStats }}" hint-placeholder-val="{{ true }}">
+    <div style="max-width:1080px;margin:0 auto;padding:20px 24px 0">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden">
+        <div style="background:rgba(13,15,28,.7);backdrop-filter:blur(8px);padding:15px 18px">
+          <div style="font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:1.5px;color:#8a90b8">{{ L.devices }}</div>
+          <div style="font:600 27px/1 'Space Grotesk',sans-serif;color:#eef0fa;margin-top:7px">{{ stats.total }}</div>
+        </div>
+        <div style="background:rgba(13,15,28,.7);backdrop-filter:blur(8px);padding:15px 18px">
+          <div style="font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:1.5px;color:#8a90b8">{{ L.categories }}</div>
+          <div style="font:600 27px/1 'Space Grotesk',sans-serif;color:#eef0fa;margin-top:7px">{{ stats.cats }}</div>
+        </div>
+        <div style="background:rgba(13,15,28,.7);backdrop-filter:blur(8px);padding:15px 18px">
+          <div style="font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:1.5px;color:#8a90b8">{{ L.online }}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:7px"><span style="width:9px;height:9px;border-radius:50%;background:#4fd4d4;box-shadow:0 0 10px #4fd4d4;flex:none"></span><span style="font:600 27px/1 'Space Grotesk',sans-serif;color:#4fd4d4">{{ stats.online }}</span></div>
+        </div>
+        <div style="background:rgba(13,15,28,.7);backdrop-filter:blur(8px);padding:15px 18px">
+          <div style="font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:1.5px;color:#8a90b8">{{ L.standby }}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:7px"><span style="width:9px;height:9px;border-radius:50%;background:#e0a040;box-shadow:0 0 10px #e0a040;flex:none"></span><span style="font:600 27px/1 'Space Grotesk',sans-serif;color:#e0a040">{{ stats.standby }}</span></div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <div style="max-width:1080px;margin:0 auto;padding:22px 24px 6px">
+      <div style="display:flex;align-items:center;gap:11px;padding:12px 16px;border:1px solid rgba(255,255,255,.1);border-radius:13px;background:rgba(255,255,255,.04)">
+        <span style="width:13px;height:13px;border:1.6px solid #7a7fa8;border-radius:50%;flex:none"></span>
+        <input value="{{ q }}" onInput="{{ onSearch }}" placeholder="{{ L.search }}" style="flex:1;background:none;border:none;outline:none;color:#e7e9f3;font:400 14px/1 'Noto Sans SC',sans-serif;min-width:0" />
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:9px;margin-top:16px">
+        <sc-for list="{{ cats }}" as="cat" hint-placeholder-count="6">
+          <button onClick="{{ cat.select }}" style="{{ cat.style }}">{{ cat.label }} <span style="opacity:.55;font-family:'IBM Plex Mono',monospace;font-size:11px">{{ cat.n }}</span></button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="max-width:1080px;margin:0 auto;padding:18px 24px 8px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:18px">
+        <sc-for list="{{ cards }}" as="c" hint-placeholder-count="8">
+          <div style="{{ c.wrapStyle }}">
+            <div onClick="{{ c.open }}" style="position:relative;cursor:pointer;background:rgba(255,255,255,.045);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.09);border-radius:18px;overflow:hidden;transition:all .4s cubic-bezier(.2,.7,.2,1)" style-hover="transform:translateY(-6px);border-color:rgba(167,139,250,.5);box-shadow:0 22px 50px rgba(120,120,250,.25)">
+              <div style="position:absolute;top:11px;right:11px;z-index:2;display:flex;align-items:center;gap:6px;padding:4px 9px;border-radius:20px;background:rgba(7,8,16,.6);backdrop-filter:blur(6px)">
+                <span style="width:7px;height:7px;border-radius:50%;background:{{ c.statusColor }};box-shadow:0 0 8px {{ c.statusColor }};flex:none"></span>
+                <span style="font:600 8.5px/1 'IBM Plex Mono',monospace;letter-spacing:.5px;color:{{ c.statusColor }}">{{ c.statusLabel }}</span>
+              </div>
+              <sc-if value="{{ c.hasImg }}" hint-placeholder-val="{{ false }}">
+                <div style="height:140px;background-size:cover;background-position:center;background-color:#0d0f1c;background-image:{{ c.imgUrl }}"></div>
+              </sc-if>
+              <sc-if value="{{ c.noImg }}" hint-placeholder-val="{{ true }}">
+                <div style="height:140px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(86,214,214,.08))"><span style="font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:1.5px;color:rgba(255,255,255,.45)">◳ 设备照片 / PHOTO</span></div>
+              </sc-if>
+              <div style="padding:14px 15px 16px">
+                <div style="font:600 8px/1 'IBM Plex Mono',monospace;letter-spacing:1.5px;color:#9aa0c8;text-transform:uppercase">{{ c.id }} · {{ c.catLabel }}</div>
+                <div style="font:600 16px/1.2 'Noto Sans SC',sans-serif;margin-top:7px;color:#eef0fa">{{ c.nameCn }}</div>
+                <div style="font:400 10px/1 'IBM Plex Mono',monospace;color:#9aa0c8;margin-top:3px">{{ c.nameEn }}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:11px">
+                  <sc-for list="{{ c.chips }}" as="ch" hint-placeholder-count="2"><span style="font:500 9.5px/1 'IBM Plex Mono',monospace;padding:3px 8px;border-radius:7px;background:rgba(167,139,250,.13);color:#c4b5fd">{{ ch.v }}</span></sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ noCards }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:center;padding:64px 0;color:#7a7fa8;font:400 14px/1 'Noto Sans SC',sans-serif">{{ L.empty }}</div>
+      </sc-if>
+    </div>
+
+    <div style="max-width:1080px;margin:0 auto;padding:14px 24px 60px;text-align:center">
+      <span style="font:400 11px/1.6 'IBM Plex Mono',monospace;letter-spacing:.5px;color:#5a5f80">{{ L.tip }}</span>
+    </div>
+
+  </div>
+
+  <div style="{{ overlayStyle }}" onClick="{{ close }}">
+    <div style="{{ panelStyle }}" onClick="{{ stop }}">
+      <button onClick="{{ close }}" style="position:absolute;top:14px;right:14px;z-index:5;width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(7,8,16,.55);backdrop-filter:blur(6px);color:#cdd;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.12)">×</button>
+
+      <sc-if value="{{ canEditSel }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;top:14px;left:14px;z-index:5;display:flex;gap:8px">
+          <button onClick="{{ editSel }}" style="display:flex;align-items:center;gap:5px;height:34px;padding:0 13px;border-radius:10px;border:1px solid rgba(167,139,250,.4);background:rgba(167,139,250,.16);backdrop-filter:blur(6px);color:#d6c8ff;font:600 12px/1 'Noto Sans SC',sans-serif;cursor:pointer" style-hover="background:rgba(167,139,250,.3)">✎ {{ L.edit }}</button>
+          <button onClick="{{ delSel }}" style="height:34px;padding:0 13px;border-radius:10px;border:1px solid rgba(240,109,109,.4);background:rgba(240,109,109,.14);backdrop-filter:blur(6px);color:#f3a8a8;font:600 12px/1 'Noto Sans SC',sans-serif;cursor:pointer" style-hover="background:rgba(240,109,109,.26)">{{ L.del }}</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ sel.hasImg }}" hint-placeholder-val="{{ false }}">
+        <div style="height:200px;position:relative;background-size:cover;background-position:center;background-color:#0d0f1c;background-image:{{ sel.imgUrl }}"><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,#10121f)"></div></div>
+      </sc-if>
+      <sc-if value="{{ sel.noImg }}" hint-placeholder-val="{{ true }}">
+        <div style="height:170px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(167,139,250,.18),rgba(86,214,214,.1));position:relative"><span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:2px;color:rgba(255,255,255,.5)">◳ 设备照片 / PHOTO</span><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,#10121f)"></div></div>
+      </sc-if>
+
+      <div style="padding:20px 28px 30px;margin-top:-44px;position:relative">
+        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+          <span style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:1px;padding:5px 10px;border-radius:7px;background:rgba(7,8,16,.7);color:#c4b5fd;border:1px solid rgba(167,139,250,.3)">{{ sel.id }}</span>
+          <span style="font:500 11px/1 'IBM Plex Sans','Noto Sans SC',sans-serif;padding:5px 10px;border-radius:7px;background:rgba(255,255,255,.06);color:#aab;border:1px solid rgba(255,255,255,.1)">{{ sel.catLabel }}</span>
+          <span style="display:flex;align-items:center;gap:6px;font:600 11px/1 'IBM Plex Mono',monospace;padding:5px 10px;border-radius:7px;background:rgba(7,8,16,.7);color:{{ sel.statusColor }};border:1px solid {{ sel.statusBorder }}"><span style="width:7px;height:7px;border-radius:50%;background:{{ sel.statusColor }};box-shadow:0 0 8px {{ sel.statusColor }}"></span>{{ sel.statusLabel }}</span>
+        </div>
+        <div style="font:700 27px/1.15 'Noto Sans SC',sans-serif;margin-top:14px;color:#f2f3fb">{{ sel.nameCn }}</div>
+        <div style="font:400 13px/1 'IBM Plex Mono',monospace;color:#9aa0c8;margin-top:6px">{{ sel.nameEn }}</div>
+        <p style="font:400 14.5px/1.75 'Noto Sans SC',sans-serif;color:#c3c7dd;margin:18px 0 0">{{ sel.intro }}</p>
+
+        <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px"><span style="width:4px;height:15px;border-radius:2px;background:linear-gradient(180deg,#a78bfa,#56d6d6)"></span><span style="font:600 14px/1 'Noto Sans SC',sans-serif;letter-spacing:.5px;color:#eef0fa">{{ L.specs }}</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden">
+          <sc-for list="{{ selSpecs }}" as="s" hint-placeholder-count="4">
+            <div style="background:#0d0f1c;padding:11px 14px">
+              <div style="font:500 10.5px/1.3 'IBM Plex Sans','Noto Sans SC',sans-serif;color:#8a90b8">{{ s.k }}</div>
+              <div style="font:600 14px/1.3 'IBM Plex Mono',monospace;color:#e8eaf6;margin-top:4px">{{ s.v }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:9px;margin:26px 0 14px"><span style="width:4px;height:15px;border-radius:2px;background:linear-gradient(180deg,#a78bfa,#56d6d6)"></span><span style="font:600 14px/1 'Noto Sans SC',sans-serif;letter-spacing:.5px;color:#eef0fa">{{ L.operation }}</span></div>
+
+        <div>
+          <div style="display:inline-block;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:1px;color:#0a0b14;background:linear-gradient(90deg,#a78bfa,#5aa6e6);padding:5px 12px;border-radius:7px">{{ L.boot }}</div>
+          <div style="margin-top:11px;display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ bootSteps }}" as="st" hint-placeholder-count="3">
+              <div style="display:flex;gap:11px;align-items:flex-start">
+                <span style="flex:none;width:22px;height:22px;border-radius:50%;background:rgba(167,139,250,.16);border:1px solid rgba(167,139,250,.35);color:#c4b5fd;font:600 11px/22px 'IBM Plex Mono',monospace;text-align:center">{{ st.n }}</span>
+                <span style="font:400 13.5px/1.6 'Noto Sans SC',sans-serif;color:#cdd1e6;padding-top:1px">{{ st.text }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <sc-if value="{{ hasCalib }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:18px">
+          <div style="display:inline-block;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:1px;color:#0a0b14;background:linear-gradient(90deg,#5aa6e6,#56d6d6);padding:5px 12px;border-radius:7px">{{ L.calib }}</div>
+          <div style="margin-top:11px;display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ calibSteps }}" as="st" hint-placeholder-count="3">
+              <div style="display:flex;gap:11px;align-items:flex-start">
+                <span style="flex:none;width:22px;height:22px;border-radius:50%;background:rgba(86,214,214,.15);border:1px solid rgba(86,214,214,.35);color:#7fe0e0;font:600 11px/22px 'IBM Plex Mono',monospace;text-align:center">{{ st.n }}</span>
+                <span style="font:400 13.5px/1.6 'Noto Sans SC',sans-serif;color:#cdd1e6;padding-top:1px">{{ st.text }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <div style="margin-top:18px">
+          <div style="display:inline-block;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:1px;color:#cdd1e6;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);padding:5px 12px;border-radius:7px">{{ L.shutdown }}</div>
+          <div style="margin-top:11px;display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ shutdownSteps }}" as="st" hint-placeholder-count="2">
+              <div style="display:flex;gap:11px;align-items:flex-start">
+                <span style="flex:none;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#aab;font:600 11px/22px 'IBM Plex Mono',monospace;text-align:center">{{ st.n }}</span>
+                <span style="font:400 13.5px/1.6 'Noto Sans SC',sans-serif;color:#cdd1e6;padding-top:1px">{{ st.text }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <sc-if value="{{ hasWarnings }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:9px;margin:26px 0 13px"><span style="width:4px;height:15px;border-radius:2px;background:linear-gradient(180deg,#e0a040,#f06d6d)"></span><span style="font:600 14px/1 'Noto Sans SC',sans-serif;letter-spacing:.5px;color:#f3d9ad">{{ L.warnings }}</span></div>
+        <div style="border:1px solid rgba(224,160,64,.3);background:rgba(224,160,64,.07);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ warnings }}" as="w" hint-placeholder-count="3">
+            <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:#e0a040;font-size:14px;line-height:1.5;flex:none">⚠</span><span style="font:400 13px/1.6 'Noto Sans SC',sans-serif;color:#e7d3b0">{{ w.text }}</span></div>
+          </sc-for>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ hasFaq }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:9px;margin:26px 0 8px"><span style="width:4px;height:15px;border-radius:2px;background:linear-gradient(180deg,#a78bfa,#56d6d6)"></span><span style="font:600 14px/1 'Noto Sans SC',sans-serif;letter-spacing:.5px;color:#eef0fa">{{ L.faq }}</span></div>
+        <div>
+          <sc-for list="{{ faqs }}" as="f" hint-placeholder-count="2">
+            <div style="border-bottom:1px solid rgba(255,255,255,.07);padding:13px 0">
+              <div style="display:flex;gap:9px"><span style="color:#a78bfa;font:700 12px/1.5 'IBM Plex Mono',monospace;flex:none">Q</span><span style="font:600 13.5px/1.55 'Noto Sans SC',sans-serif;color:#e3e6f4">{{ f.q }}</span></div>
+              <div style="display:flex;gap:9px;margin-top:5px"><span style="color:#56d6d6;font:700 12px/1.5 'IBM Plex Mono',monospace;flex:none">A</span><span style="font:400 13px/1.6 'Noto Sans SC',sans-serif;color:#b4b9d4">{{ f.a }}</span></div>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+
+        <div style="display:flex;align-items:center;gap:9px;margin:26px 0 13px"><span style="width:4px;height:15px;border-radius:2px;background:linear-gradient(180deg,#a78bfa,#56d6d6)"></span><span style="font:600 14px/1 'Noto Sans SC',sans-serif;letter-spacing:.5px;color:#eef0fa">{{ L.contact }}</span></div>
+        <div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px">
+          <div style="width:42px;height:42px;border-radius:12px;background:conic-gradient(from 200deg,#a78bfa,#5aa6e6,#56d6d6,#a78bfa);flex:none;box-shadow:0 6px 16px rgba(120,120,250,.4)"></div>
+          <div style="min-width:0">
+            <div style="font:600 15px/1.2 'Noto Sans SC',sans-serif;color:#eef0fa">{{ sel.contactName }} <span style="font:400 11px/1 'IBM Plex Sans','Noto Sans SC',sans-serif;color:#9aa0c8;margin-left:6px">{{ sel.contactRole }}</span></div>
+            <div style="font:400 12px/1.5 'IBM Plex Mono',monospace;color:#9fa4c4;margin-top:5px">{{ sel.contactPhone }} · {{ sel.contactEmail }}</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================== 登录 LOGIN ===================== -->
+<div style="{{ loginOverlayStyle }}">
+  <div style="width:100%;max-width:380px;background:linear-gradient(180deg,#10121f,#0b0c16);border:1px solid rgba(167,139,250,.22);border-radius:20px;padding:30px 28px;box-shadow:0 40px 120px rgba(0,0,0,.6)">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:34px;height:34px;border-radius:10px;background:conic-gradient(from 200deg,#a78bfa,#5aa6e6,#56d6d6,#a78bfa);flex:none;box-shadow:0 6px 18px rgba(120,120,250,.45)"></div>
+      <div>
+        <div style="font:700 18px/1.1 'Space Grotesk','Noto Sans SC',sans-serif;color:#f2f3fb">{{ L.loginTitle }}</div>
+        <div style="font:400 11px/1.4 'Noto Sans SC',sans-serif;color:#9aa0c8;margin-top:4px">{{ L.loginSub }}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin:22px 0 16px;background:rgba(255,255,255,.04);border-radius:11px;padding:4px">
+      <button onClick="{{ tabIn }}" style="{{ signinTabStyle }}">{{ L.signin }}</button>
+      <button onClick="{{ tabUp }}" style="{{ signupTabStyle }}">{{ L.signup }}</button>
+    </div>
+    <label style="font:600 10.5px/1 'IBM Plex Mono',monospace;letter-spacing:.5px;color:#8a90b8;display:block;margin-bottom:6px">{{ L.email }}</label>
+    <input value="{{ authEmail }}" onInput="{{ onAuthEmail }}" type="email" placeholder="you@lab.edu" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:11px 13px;color:#e7e9f3;font:400 13px/1.4 'IBM Plex Mono',monospace;outline:none;margin-bottom:14px" />
+    <label style="font:600 10.5px/1 'IBM Plex Mono',monospace;letter-spacing:.5px;color:#8a90b8;display:block;margin-bottom:6px">{{ L.password }}</label>
+    <input value="{{ authPw }}" onInput="{{ onAuthPw }}" type="password" placeholder="••••••••" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:11px 13px;color:#e7e9f3;font:400 13px/1.4 'IBM Plex Mono',monospace;outline:none" />
+    <sc-if value="{{ authErr }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:13px;font:400 12px/1.5 'Noto Sans SC',sans-serif;color:#f3b8a0">{{ authErr }}</div>
+    </sc-if>
+    <sc-if value="{{ isTabIn }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ doSignIn }}" style="width:100%;margin-top:20px;padding:13px;border-radius:11px;border:none;background:linear-gradient(90deg,#a78bfa,#5aa6e6);color:#0a0b14;font:700 14px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.signin }}</button>
+    </sc-if>
+    <sc-if value="{{ isTabIn }}" hint-placeholder-val="{{ false }}">
+    </sc-if>
+    <sc-if value="{{ isTabUp }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ doSignUp }}" style="width:100%;margin-top:20px;padding:13px;border-radius:11px;border:none;background:linear-gradient(90deg,#56d6d6,#5aa6e6);color:#0a0b14;font:700 14px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.signup }}</button>
+    </sc-if>
+  </div>
+</div>
+
+<!-- ===================== 待批准 PENDING ===================== -->
+<div style="{{ pendingOverlayStyle }}">
+  <div style="width:100%;max-width:400px;background:linear-gradient(180deg,#10121f,#0b0c16);border:1px solid rgba(224,160,64,.25);border-radius:20px;padding:32px 28px;text-align:center;box-shadow:0 40px 120px rgba(0,0,0,.6)">
+    <div style="width:52px;height:52px;border-radius:14px;background:rgba(224,160,64,.14);border:1px solid rgba(224,160,64,.35);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:24px">⏳</div>
+    <div style="font:700 19px/1.2 'Noto Sans SC',sans-serif;color:#f2f3fb">{{ L.waitTitle }}</div>
+    <div style="font:400 13.5px/1.7 'Noto Sans SC',sans-serif;color:#b4b9d4;margin:12px 0 22px">{{ L.waitSub }}</div>
+    <div style="font:400 12px/1.4 'IBM Plex Mono',monospace;color:#9aa0c8;margin-bottom:20px">{{ userEmail }}</div>
+    <button onClick="{{ doSignOut }}" style="width:100%;padding:12px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#cdd1e6;font:600 13px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.signout }}</button>
+  </div>
+</div>
+
+<!-- ===================== 编辑 EDIT ===================== -->
+<div style="{{ editOverlayStyle }}" onClick="{{ cancelEdit }}">
+  <div style="{{ editPanelStyle }}" onClick="{{ stop }}">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;background:#0e1020;z-index:3;border-radius:20px 20px 0 0">
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:4px;height:18px;border-radius:2px;background:linear-gradient(180deg,#a78bfa,#56d6d6)"></span><span style="font:700 17px/1 'Noto Sans SC',sans-serif;color:#f2f3fb">{{ editHeading }}</span></div>
+      <button onClick="{{ cancelEdit }}" style="width:32px;height:32px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:none;color:#cdd;font-size:19px;line-height:1;cursor:pointer">×</button>
+    </div>
+
+    <div style="padding:22px 24px 24px">
+      <!-- 基本 -->
+      <div style="font:600 12px/1 'Noto Sans SC',sans-serif;color:#c4b5fd;letter-spacing:.5px;margin-bottom:13px">{{ L.secBasic }}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div><label style="font:600 10px/1 'IBM Plex Mono',monospace;color:#8a90b8;display:block;margin-bottom:6px">{{ L.fId }}</label><input value="{{ df.id }}" onInput="{{ onId }}" placeholder="LSR-02" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;color:#e7e9f3;font:500 13px/1.4 'IBM Plex Mono',monospace;outline:none" /></div>
+        <div><label style="font:600 10px/1 'IBM Plex Mono',monospace;color:#8a90b8;display:block;margin-bottom:6px">{{ L.fStatus }}</label><select value="{{ df.status }}" onChange="{{ onStatus }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;color:#e7e9f3;font:500 13px/1.4 'Noto Sans SC',sans-serif;outline:none"><sc-for list="{{ statusOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}" style="background:#10121f">{{ o.l }}</option></sc-for></select></div>
+        <div><label style="font:600 10px/1 'IBM Plex Mono',monospace;color:#8a90b8;display:block;margin-bottom:6px">{{ L.fCat }}</label><select value="{{ df.cat }}" onChange="{{ onCat }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;color:#e7e9f3;font:500 13px/1.4 'Noto Sans SC',sans-serif;outline:none"><sc-for list="{{ catOpts }}" as="o" hint-placeholder-count="6"><option value="{{ o.v }}" style="background:#10121f">{{ o.l }}</option></sc-for></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div><label style="font:600 10px/1 'Noto Sans SC',sans-serif;color:#8a90b8;display:block;margin-bottom:6px">{{ L.fNameCn }}</label><input value="{{ df.nameCn }}" onInput="{{ onNameCn }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;color:#e7e9f3;font:500 13px/1.4 'Noto Sans SC',sans-serif;outline:none" /></div>
+        <div><label style="font:600 10px/1 'IBM Plex Mono',monospace;color:#8a90b8;display:block;margin-bottom:6px">{{ L.fNameEn }}</label><input value="{{ df.nameEn }}" onInput="{{ onNameEn }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;color:#e7e9f3;font:500 13px/1.4 'IBM Plex Mono',monospace;outline:none" /></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div><label style="font:600 10px/1 'Noto Sans SC',sans-serif;color:#8a90b8;display:block;margin-bottom:6px">{{ L.fIntroCn }}</label><textarea value="{{ df.introCn }}" onInput="{{ onIntroCn }}" rows="3" style="width:100%;resize:vertical;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;color:#e7e9f3;font:400 13px/1.55 'Noto Sans SC',sans-serif;outline:none"></textarea></div>
+        <div><label style="font:600 10px/1 'IBM Plex Mono',monospace;color:#8a90b8;display:block;margin-bottom:6px">{{ L.fIntroEn }}</label><textarea value="{{ df.introEn }}" onInput="{{ onIntroEn }}" rows="3" style="width:100%;resize:vertical;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;color:#e7e9f3;font:400 13px/1.55 'Noto Sans SC',sans-serif;outline:none"></textarea></div>
+      </div>
+      <!-- 照片 -->
+      <div style="margin-top:14px;display:flex;align-items:center;gap:14px">
+        <sc-if value="{{ df.hasImg }}" hint-placeholder-val="{{ false }}"><div style="width:84px;height:60px;border-radius:9px;flex:none;border:1px solid rgba(255,255,255,.12);background-size:cover;background-position:center;background-image:{{ df.imgUrl }}"></div></sc-if>
+        <div style="flex:1;min-width:0">
+          <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:8px 13px;border-radius:9px;border:1px solid rgba(86,214,214,.3);background:rgba(86,214,214,.1);color:#7fe0e0;font:600 12px/1 'Noto Sans SC',sans-serif">📷 {{ L.fUpload }}<input type="file" accept="image/*" onChange="{{ onPhotoFile }}" style="display:none" /></label>
+          <input value="{{ df.img }}" onInput="{{ onImgUrl }}" placeholder="{{ L.fImgUrl }}" style="width:100%;margin-top:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:8px 11px;color:#9fa4c4;font:400 11px/1.4 'IBM Plex Mono',monospace;outline:none" />
+        </div>
+      </div>
+
+      <!-- 参数 -->
+      <div style="font:600 12px/1 'Noto Sans SC',sans-serif;color:#c4b5fd;letter-spacing:.5px;margin:24px 0 11px">{{ L.secSpecs }}</div>
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <sc-for list="{{ dfSpecs }}" as="s" hint-placeholder-count="2">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input value="{{ s.kcn }}" onInput="{{ s.onKcn }}" placeholder="参数(中)" style="flex:1;min-width:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 10px;color:#e7e9f3;font:400 12px/1.4 'Noto Sans SC',sans-serif;outline:none" />
+            <input value="{{ s.ken }}" onInput="{{ s.onKen }}" placeholder="Param (EN)" style="flex:1;min-width:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 10px;color:#e7e9f3;font:400 12px/1.4 'IBM Plex Mono',monospace;outline:none" />
+            <input value="{{ s.v }}" onInput="{{ s.onV }}" placeholder="值 value" style="flex:1;min-width:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 10px;color:#e7e9f3;font:500 12px/1.4 'IBM Plex Mono',monospace;outline:none" />
+            <button onClick="{{ s.remove }}" style="flex:none;width:30px;height:30px;border-radius:8px;border:1px solid rgba(240,109,109,.3);background:rgba(240,109,109,.1);color:#f0a0a0;cursor:pointer;font-size:15px;line-height:1">×</button>
+          </div>
+        </sc-for>
+      </div>
+      <button onClick="{{ addSpec }}" style="align-self:flex-start;margin-top:10px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);color:#c4b5fd;border-radius:8px;padding:7px 13px;font:600 11px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.addRow }}</button>
+
+      <!-- 操作：开机 -->
+      <div style="font:600 12px/1 'Noto Sans SC',sans-serif;color:#c4b5fd;letter-spacing:.5px;margin:24px 0 11px">{{ L.secOp }} · {{ L.boot }}</div>
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <sc-for list="{{ dfBoot }}" as="s" hint-placeholder-count="2">
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <textarea value="{{ s.cn }}" onInput="{{ s.onCn }}" rows="2" placeholder="步骤(中)" style="flex:1;min-width:0;resize:vertical;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 10px;color:#e7e9f3;font:400 12px/1.5 'Noto Sans SC',sans-serif;outline:none"></textarea>
+            <textarea value="{{ s.en }}" onInput="{{ s.onEn }}" rows="2" placeholder="Step (EN)" style="flex:1;min-width:0;resize:vertical;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 10px;color:#e7e9f3;font:400 12px/1.5 'Noto Sans SC',sans-serif;outline:none"></textarea>
+            <button onClick="{{ s.remove }}" style="flex:none;width:30px;height:30px;border-radius:8px;border:1px solid rgba(240,109,109,.3);background:rgba(240,109,109,.1);color:#f0a0a0;cursor:pointer;font-size:15px;line-height:1">×</button>
+          </div>
+        </sc-for>
+      </div>
+      <button onClick="{{ addBoot }}" style="align-self:flex-start;margin-top:10px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);color:#c4b5fd;border-radius:8px;padding:7px 13px;font:600 11px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.addRow }}</button>
+
+      <!-- 操作：校准 -->
+      <div style="font:600 12px/1 'Noto Sans SC',sans-serif;color:#7fe0e0;letter-spacing:.5px;margin:24px 0 11px">{{ L.secOp }} · {{ L.calib }}</div>
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <sc-for list="{{ dfCalib }}" as="s" hint-placeholder-count="1">
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <textarea value="{{ s.cn }}" onInput="{{ s.onCn }}" rows="2" placeholder="步骤(中)" style="flex:1;min-width:0;resize:vertical;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 10px;color:#e7e9f3;font:400 12px/1.5 'Noto Sans SC',sans-serif;outline:none"></textarea>
+            <textarea value="{{ s.en }}" onInput="{{ s.onEn }}" rows="2" placeholder="Step (EN)" style="flex:1;min-width:0;resize:vertical;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 10px;color:#e7e9f3;font:400 12px/1.5 'Noto Sans SC',sans-serif;outline:none"></textarea>
+            <button onClick="{{ s.remove }}" style="flex:none;width:30px;height:30px;border-radius:8px;border:1px solid rgba(240,109,109,.3);background:rgba(240,109,109,.1);color:#f0a0a0;cursor:pointer;font-size:15px;line-height:1">×</button>
+          </div>
+        </sc-for>
+      </div>
+      <button onClick="{{ addCalib }}" style="align-self:flex-start;margin-top:10px;background:rgba(86,214,214,.1);border:1px solid rgba(86,214,214,.3);color:#7fe0e0;border-radius:8px;padding:7px 13px;font:600 11px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.addRow }}</button>
+
+      <!-- 操作：关机 -->
+      <div style="font:600 12px/1 'Noto Sans SC',sans-serif;color:#aab;letter-spacing:.5px;margin:24px 0 11px">{{ L.secOp }} · {{ L.shutdown }}</div>
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <sc-for list="{{ dfShutdown }}" as="s" hint-placeholder-count="1">
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <textarea value="{{ s.cn }}" onInput="{{ s.onCn }}" rows="2" placeholder="步骤(中)" style="flex:1;min-width:0;resize:vertical;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 10px;color:#e7e9f3;font:400 12px/1.5 'Noto Sans SC',sans-serif;outline:none"></textarea>
+            <textarea value="{{ s.en }}" onInput="{{ s.onEn }}" rows="2" placeholder="Step (EN)" style="flex:1;min-width:0;resize:vertical;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 10px;color:#e7e9f3;font:400 12px/1.5 'Noto Sans SC',sans-serif;outline:none"></textarea>
+            <button onClick="{{ s.remove }}" style="flex:none;width:30px;height:30px;border-radius:8px;border:1px solid rgba(240,109,109,.3);background:rgba(240,109,109,.1);color:#f0a0a0;cursor:pointer;font-size:15px;line-height:1">×</button>
+          </div>
+        </sc-for>
+      </div>
+      <button onClick="{{ addShutdown }}" style="align-self:flex-start;margin-top:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#aab;border-radius:8px;padding:7px 13px;font:600 11px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.addRow }}</button>
+
+      <!-- 注意 -->
+      <div style="font:600 12px/1 'Noto Sans SC',sans-serif;color:#f3d9ad;letter-spacing:.5px;margin:24px 0 11px">{{ L.secWarn }}</div>
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <sc-for list="{{ dfWarn }}" as="s" hint-placeholder-count="2">
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <textarea value="{{ s.cn }}" onInput="{{ s.onCn }}" rows="2" placeholder="注意(中)" style="flex:1;min-width:0;resize:vertical;background:rgba(224,160,64,.06);border:1px solid rgba(224,160,64,.25);border-radius:8px;padding:8px 10px;color:#e7d3b0;font:400 12px/1.5 'Noto Sans SC',sans-serif;outline:none"></textarea>
+            <textarea value="{{ s.en }}" onInput="{{ s.onEn }}" rows="2" placeholder="Caution (EN)" style="flex:1;min-width:0;resize:vertical;background:rgba(224,160,64,.06);border:1px solid rgba(224,160,64,.25);border-radius:8px;padding:8px 10px;color:#e7d3b0;font:400 12px/1.5 'Noto Sans SC',sans-serif;outline:none"></textarea>
+            <button onClick="{{ s.remove }}" style="flex:none;width:30px;height:30px;border-radius:8px;border:1px solid rgba(240,109,109,.3);background:rgba(240,109,109,.1);color:#f0a0a0;cursor:pointer;font-size:15px;line-height:1">×</button>
+          </div>
+        </sc-for>
+      </div>
+      <button onClick="{{ addWarn }}" style="align-self:flex-start;margin-top:10px;background:rgba(224,160,64,.1);border:1px solid rgba(224,160,64,.3);color:#e0b870;border-radius:8px;padding:7px 13px;font:600 11px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.addRow }}</button>
+
+      <!-- 排障 -->
+      <div style="font:600 12px/1 'Noto Sans SC',sans-serif;color:#c4b5fd;letter-spacing:.5px;margin:24px 0 11px">{{ L.secFaq }}</div>
+      <div style="display:flex;flex-direction:column;gap:13px">
+        <sc-for list="{{ dfFaq }}" as="f" hint-placeholder-count="1">
+          <div style="border:1px solid rgba(255,255,255,.09);border-radius:11px;padding:11px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;gap:8px;align-items:center">
+              <input value="{{ f.qcn }}" onInput="{{ f.onQcn }}" placeholder="问题(中)" style="flex:1;min-width:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 10px;color:#e7e9f3;font:500 12px/1.4 'Noto Sans SC',sans-serif;outline:none" />
+              <input value="{{ f.qen }}" onInput="{{ f.onQen }}" placeholder="Question (EN)" style="flex:1;min-width:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 10px;color:#e7e9f3;font:500 12px/1.4 'IBM Plex Mono',monospace;outline:none" />
+              <button onClick="{{ f.remove }}" style="flex:none;width:30px;height:30px;border-radius:8px;border:1px solid rgba(240,109,109,.3);background:rgba(240,109,109,.1);color:#f0a0a0;cursor:pointer;font-size:15px;line-height:1">×</button>
+            </div>
+            <div style="display:flex;gap:8px">
+              <input value="{{ f.acn }}" onInput="{{ f.onAcn }}" placeholder="解答(中)" style="flex:1;min-width:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 10px;color:#b4b9d4;font:400 12px/1.4 'Noto Sans SC',sans-serif;outline:none" />
+              <input value="{{ f.aen }}" onInput="{{ f.onAen }}" placeholder="Answer (EN)" style="flex:1;min-width:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 10px;color:#b4b9d4;font:400 12px/1.4 'Noto Sans SC',sans-serif;outline:none" />
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <button onClick="{{ addFaq }}" style="align-self:flex-start;margin-top:10px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);color:#c4b5fd;border-radius:8px;padding:7px 13px;font:600 11px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.addRow }}</button>
+
+      <!-- 负责人 -->
+      <div style="font:600 12px/1 'Noto Sans SC',sans-serif;color:#c4b5fd;letter-spacing:.5px;margin:24px 0 11px">{{ L.secContact }}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label style="font:600 10px/1 'Noto Sans SC',sans-serif;color:#8a90b8;display:block;margin-bottom:6px">{{ L.cName }}</label><input value="{{ df.cName }}" onInput="{{ onCName }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;color:#e7e9f3;font:500 13px/1.4 'Noto Sans SC',sans-serif;outline:none" /></div>
+        <div><label style="font:600 10px/1 'Noto Sans SC',sans-serif;color:#8a90b8;display:block;margin-bottom:6px">{{ L.cRoleCn }}</label><input value="{{ df.cRoleCn }}" onInput="{{ onCRoleCn }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;color:#e7e9f3;font:500 13px/1.4 'Noto Sans SC',sans-serif;outline:none" /></div>
+        <div><label style="font:600 10px/1 'IBM Plex Mono',monospace;color:#8a90b8;display:block;margin-bottom:6px">{{ L.cRoleEn }}</label><input value="{{ df.cRoleEn }}" onInput="{{ onCRoleEn }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;color:#e7e9f3;font:500 13px/1.4 'IBM Plex Mono',monospace;outline:none" /></div>
+        <div></div>
+        <div><label style="font:600 10px/1 'Noto Sans SC',sans-serif;color:#8a90b8;display:block;margin-bottom:6px">{{ L.cPhone }}</label><input value="{{ df.cPhone }}" onInput="{{ onCPhone }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;color:#e7e9f3;font:500 13px/1.4 'IBM Plex Mono',monospace;outline:none" /></div>
+        <div><label style="font:600 10px/1 'Noto Sans SC',sans-serif;color:#8a90b8;display:block;margin-bottom:6px">{{ L.cEmail }}</label><input value="{{ df.cEmail }}" onInput="{{ onCEmail }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;color:#e7e9f3;font:500 13px/1.4 'IBM Plex Mono',monospace;outline:none" /></div>
+      </div>
+
+      <sc-if value="{{ saveErr }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:18px;padding:11px 14px;border-radius:10px;border:1px solid rgba(240,109,109,.3);background:rgba(240,109,109,.08);color:#f3b0a0;font:500 12.5px/1.5 'Noto Sans SC',sans-serif">{{ saveErr }}</div>
+      </sc-if>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-top:24px;padding-top:18px;border-top:1px solid rgba(255,255,255,.08)">
+        <button onClick="{{ saveDraft }}" style="flex:1;padding:13px;border-radius:11px;border:none;background:linear-gradient(90deg,#a78bfa,#5aa6e6);color:#0a0b14;font:700 14px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.save }}</button>
+        <button onClick="{{ cancelEdit }}" style="padding:13px 20px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#cdd1e6;font:600 13px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.cancel }}</button>
+        <sc-if value="{{ editIsNew }}" hint-placeholder-val="{{ false }}"></sc-if>
+        <sc-if value="{{ editIsExisting }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ delDraft }}" style="padding:13px 18px;border-radius:11px;border:1px solid rgba(240,109,109,.35);background:rgba(240,109,109,.12);color:#f3a8a8;font:600 13px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.del }}</button>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 用户管理 ADMIN ===================== -->
+<div style="{{ adminOverlayStyle }}" onClick="{{ closeAdmin }}">
+  <div style="position:relative;width:100%;max-width:560px;background:linear-gradient(180deg,#10121f,#0b0c16);border:1px solid rgba(167,139,250,.22);border-radius:20px;padding:24px;box-shadow:0 40px 120px rgba(0,0,0,.6)" onClick="{{ stop }}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:4px;height:18px;border-radius:2px;background:linear-gradient(180deg,#a78bfa,#56d6d6)"></span><span style="font:700 17px/1 'Noto Sans SC',sans-serif;color:#f2f3fb">{{ L.users }}</span></div>
+      <button onClick="{{ closeAdmin }}" style="width:32px;height:32px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:none;color:#cdd;font-size:19px;line-height:1;cursor:pointer">×</button>
+    </div>
+    <sc-if value="{{ hasPending }}" hint-placeholder-val="{{ false }}">
+      <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:1px;color:#e0a040;margin:4px 0 10px;display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#e0a040;box-shadow:0 0 8px #e0a040"></span>{{ L.pendingSec }}</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:22px">
+        <sc-for list="{{ pendingUsers }}" as="u" hint-placeholder-count="1">
+          <div style="padding:12px 14px;border:1px solid rgba(224,160,64,.28);border-radius:12px;background:rgba(224,160,64,.06)">
+            <div style="font:500 13px/1.3 'Noto Sans SC',sans-serif;color:#f3e0c0;overflow:hidden;text-overflow:ellipsis;margin-bottom:10px">{{ u.email }}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button onClick="{{ u.aViewer }}" style="padding:6px 11px;border-radius:8px;border:1px solid rgba(138,144,184,.4);background:rgba(255,255,255,.04);color:#bcc;font:600 11px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.apViewer }}</button>
+              <button onClick="{{ u.aEditor }}" style="padding:6px 11px;border-radius:8px;border:none;background:linear-gradient(90deg,#56d6d6,#5aa6e6);color:#06222a;font:600 11px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.apEditor }}</button>
+              <button onClick="{{ u.aAdmin }}" style="padding:6px 11px;border-radius:8px;border:none;background:linear-gradient(90deg,#a78bfa,#5aa6e6);color:#0a0b14;font:600 11px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.apAdmin }}</button>
+              <button onClick="{{ u.reject }}" style="padding:6px 11px;border-radius:8px;border:1px solid rgba(240,109,109,.35);background:rgba(240,109,109,.1);color:#f3a8a8;font:600 11px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.reject }}</button>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:1px;color:#8a90b8;margin:4px 0 10px">{{ L.membersSec }}</div>
+    <sc-if value="{{ noApproved }}" hint-placeholder-val="{{ false }}"><div style="text-align:center;padding:20px 0;color:#7a7fa8;font:400 13px/1 'Noto Sans SC',sans-serif">{{ L.noMembers }}</div></sc-if>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <sc-for list="{{ approvedUsers }}" as="u" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.03);flex-wrap:wrap">
+          <div style="flex:1;min-width:130px;font:500 13px/1.3 'Noto Sans SC',sans-serif;color:#e7e9f3;overflow:hidden;text-overflow:ellipsis">{{ u.email }}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button onClick="{{ u.setViewer }}" style="{{ u.vStyle }}">只读</button>
+            <button onClick="{{ u.setEditor }}" style="{{ u.eStyle }}">编辑</button>
+            <button onClick="{{ u.setAdmin }}" style="{{ u.aStyle }}">管理员</button>
+            <button onClick="{{ u.revoke }}" style="padding:5px 10px;border-radius:7px;border:1px solid rgba(240,109,109,.3);background:rgba(240,109,109,.08);color:#f0a0a0;font:600 11px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ L.revoke }}</button>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultLang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;cn&quot;,&quot;en&quot;],&quot;default&quot;:&quot;cn&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;通用&quot;},&quot;showStats&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;通用&quot;}}">
+class Component extends DCLogic {
+  // =================================================================
+  //  分类 / CATEGORIES — 增删分类在此
+  // =================================================================
+  // ============================================================================
+  //  ★★★ Supabase 云端配置 ★★★  （留空 = 本地模式，单人可编辑、存在本浏览器）
+  //  填入下面两项后自动切换为「云端模式」：真账号登录 + 角色权限 + 多人同步。
+  //  在 supabase.com 建项目后，Project Settings → API 里复制：
+  // ============================================================================
+  SUPABASE_URL = 'https://ifevdjxrikgfyipgycrg.supabase.co';      // 例：https://abcdxyz.supabase.co
+  SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZXZkanhyaWtnZnlpcGd5Y3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NDcyNDMsImV4cCI6MjA5ODQyMzI0M30.41e7GtLANZBvpUSYx7AGQVW1mZWeqUOrgNTmryWHss0'; // 例：eyJhbGciOiJI....（anon public key，公开可见，安全由数据库策略保证）
+
+  get cloud(){ return !!(this.SUPABASE_URL && this.SUPABASE_ANON_KEY); }
+  LS_KEY = 'qoptics_devices_v1';
+  // ★ 管理员邮箱：用此邮箱注册并登录后自动成为管理员（无需任何手动操作）
+  ADMIN_EMAIL = 'wujiawei202403@163.com';
+
+  CATS = [
+    { key:'source', cn:'光源',     en:'Sources' },
+    { key:'mod',    cn:'调制',     en:'Modulation' },
+    { key:'detect', cn:'探测',     en:'Detection' },
+    { key:'pol',    cn:'偏振光学', en:'Polarization' },
+    { key:'pos',    cn:'定位与耦合', en:'Positioning' },
+    { key:'meas',   cn:'测量与控制', en:'Measurement' },
+  ];
+
+  // =================================================================
+  //  添加设备 / ADD EQUIPMENT HERE
+  //  复制任意一段 { ... }，改成你的设备即可。
+  //  img: 留空 '' 显示占位图；填 'images/laser.jpg' 或网址即可显示照片。
+  //  status: 'online' 在线 | 'standby' 待机 | 'maintenance' 维护
+  //  所有文字 {cn:'中文', en:'English'} 双语。
+  // =================================================================
+  SEED_DEVICES = [
+    { id:'LSR-01', cat:'source', status:'online', img:'',
+      name:{cn:'外腔半导体激光器', en:'ECDL Diode Laser'},
+      intro:{cn:'窄线宽、可调谐的相干光源，是冷原子与量子光学实验的核心激光源。', en:'A narrow-linewidth, tunable coherent source — the core laser for cold-atom and quantum-optics experiments.'},
+      specs:[ {k:{cn:'中心波长',en:'Wavelength'},v:'780 nm'}, {k:{cn:'输出功率',en:'Output'},v:'0–100 mW'}, {k:{cn:'线宽',en:'Linewidth'},v:'< 100 kHz'}, {k:{cn:'调谐范围',en:'Tuning'},v:'± 5 GHz'}, {k:{cn:'偏振消光比',en:'PER'},v:'> 100 : 1'} ],
+      op:{ boot:[ {cn:'确认激光头电源、温控(TEC)与电流源已正确连接。',en:'Confirm head power, TEC and current driver are properly connected.'}, {cn:'开启温控，等待温度稳定至 ±0.01℃。',en:'Turn on the TEC and wait until temperature settles to ±0.01℃.'}, {cn:'电流置于阈值以下后开启，缓慢增大至工作点，确认出光。',en:'Set current below threshold, enable, then slowly ramp to setpoint and verify output.'} ],
+        calib:[ {cn:'用波长计监测中心波长。',en:'Monitor the centre wavelength with a wavemeter.'}, {cn:'调节光栅角度 / 压电电压做粗调，再用电流微调实现无跳模调谐。',en:'Coarse-tune via grating/PZT, then fine-tune current for mode-hop-free scanning.'}, {cn:'借助饱和吸收光谱锁定到原子跃迁线。',en:'Lock to the atomic transition via saturated-absorption spectroscopy.'} ],
+        shutdown:[ {cn:'将电流缓慢降至阈值以下并关闭。',en:'Ramp current below threshold and switch off.'}, {cn:'数分钟后关闭温控，盖上防尘帽，关主电源。',en:'After a few minutes turn off the TEC, replace the dust cap, cut main power.'} ] },
+      warnings:[ {cn:'近红外不可见激光，必须佩戴对应波段护目镜，严禁直视光束及镜面反射。',en:'Invisible near-IR beam — always wear matched goggles; never look into the beam or specular reflections.'}, {cn:'电流切勿骤增，以免击穿激光二极管。',en:'Never step the current abruptly — it can destroy the diode.'}, {cn:'温控需常开，避免器件结露。',en:'Keep the TEC running to prevent condensation on the device.'} ],
+      faq:[ {q:{cn:'无激光输出',en:'No output'},a:{cn:'检查电流是否高于阈值、温控是否锁定、连接是否松动。',en:'Check current is above threshold, TEC is locked, and connectors are seated.'}}, {q:{cn:'波长频繁跳模',en:'Frequent mode hops'},a:{cn:'微调电流与压电避开跳模点，必要时重新优化外腔反馈。',en:'Tweak current/PZT away from hop points; re-optimise external-cavity feedback if needed.'}} ],
+      contact:{name:'张明', role:{cn:'光源负责人',en:'Sources lead'}, phone:'138-0000-0001', email:'laser@lab.edu'} },
+
+    { id:'AOM-01', cat:'mod', status:'online', img:'',
+      name:{cn:'声光调制器', en:'Acousto-Optic Modulator'},
+      intro:{cn:'通过射频声波在晶体内形成光栅，实现光强、频率与开关的快速调制。', en:'Uses an RF acoustic grating in a crystal for fast intensity, frequency and on/off modulation of a beam.'},
+      specs:[ {k:{cn:'中心频率',en:'Centre freq.'},v:'80 MHz'}, {k:{cn:'材料',en:'Material'},v:'TeO₂'}, {k:{cn:'衍射效率',en:'Efficiency'},v:'> 85 %'}, {k:{cn:'上升时间',en:'Rise time'},v:'~ 50 ns'}, {k:{cn:'通光孔径',en:'Aperture'},v:'1.5 mm'} ],
+      op:{ boot:[ {cn:'开启射频驱动源，确认频率与功率设置正确。',en:'Power the RF driver; confirm frequency and power settings.'}, {cn:'让激光束以布拉格角入射晶体中心。',en:'Align the beam through the crystal centre at the Bragg angle.'}, {cn:'微调入射角，使一级衍射光强度最大。',en:'Fine-tune incidence angle to maximise the first-order beam.'} ],
+        calib:[ {cn:'用功率计测量一级 / 零级光功率比。',en:'Measure first/zeroth-order power ratio with a power meter.'}, {cn:'调节 RF 功率，使衍射效率达到最优而不饱和。',en:'Adjust RF power for optimum efficiency without saturation.'} ],
+        shutdown:[ {cn:'先关闭 RF 驱动，再挡光。',en:'Switch off the RF driver, then block the beam.'}, {cn:'长时间使用后让晶体自然散热。',en:'Allow the crystal to cool after extended use.'} ] },
+      warnings:[ {cn:'RF 功率过高会过热损坏晶体，注意散热。',en:'Excess RF power overheats and damages the crystal — ensure cooling.'}, {cn:'衍射后产生多束光，注意杂散光遮挡与护目。',en:'Multiple diffracted beams appear — block stray light and wear goggles.'} ],
+      faq:[ {q:{cn:'衍射效率低',en:'Low efficiency'},a:{cn:'重新对准布拉格角，检查 RF 功率与光斑是否过大。',en:'Re-align the Bragg angle; check RF power and that the spot is not over-sized.'}}, {q:{cn:'输出抖动',en:'Output jitter'},a:{cn:'检查 RF 源稳定性与机械固定是否牢靠。',en:'Verify RF-source stability and that the mount is rigid.'}} ],
+      contact:{name:'李航', role:{cn:'调制器件负责人',en:'Modulation lead'}, phone:'138-0000-0002', email:'aom@lab.edu'} },
+
+    { id:'EOM-01', cat:'mod', status:'standby', img:'',
+      name:{cn:'电光相位调制器', en:'Electro-Optic Modulator'},
+      intro:{cn:'利用晶体的电光效应对光场施加相位 / 幅度调制，常用于产生边带与频率锁定。', en:'Applies phase/amplitude modulation via the electro-optic effect — used for sideband generation and frequency locking.'},
+      specs:[ {k:{cn:'材料',en:'Material'},v:'LiNbO₃'}, {k:{cn:'带宽',en:'Bandwidth'},v:'DC – 100 MHz'}, {k:{cn:'半波电压',en:'Vπ'},v:'~ 200 V'}, {k:{cn:'通光孔径',en:'Aperture'},v:'2 mm'} ],
+      op:{ boot:[ {cn:'确认高压 / 射频驱动接地良好后再上电。',en:'Verify HV/RF driver grounding before powering on.'}, {cn:'使光束沿晶体光轴居中通过。',en:'Pass the beam centred along the crystal optical axis.'}, {cn:'缓慢加调制电压，观察边带生成。',en:'Slowly raise the drive voltage and observe sideband generation.'} ],
+        calib:[ {cn:'用法布里-珀罗腔或光谱仪监测边带幅度。',en:'Monitor sideband amplitude with a Fabry–Pérot cavity or spectrometer.'}, {cn:'调整偏置以获得纯相位（无残余幅度）调制。',en:'Tune the bias for pure phase modulation with no residual AM.'} ],
+        shutdown:[ {cn:'先将调制电压归零再断电。',en:'Return drive voltage to zero before cutting power.'} ] },
+      warnings:[ {cn:'内部存在高压，断电后仍需放电，严禁带电触碰电极。',en:'High voltage inside — discharge after power-off; never touch electrodes live.'}, {cn:'晶体怕潮怕震，保持环境干燥稳定。',en:'The crystal is moisture- and vibration-sensitive — keep the environment dry and stable.'} ],
+      faq:[ {q:{cn:'无边带',en:'No sidebands'},a:{cn:'检查驱动连接、偏振方向是否与晶轴匹配。',en:'Check drive connection and that polarization matches the crystal axis.'}} ],
+      contact:{name:'李航', role:{cn:'调制器件负责人',en:'Modulation lead'}, phone:'138-0000-0002', email:'eom@lab.edu'} },
+
+    { id:'SPC-01', cat:'detect', status:'online', img:'',
+      name:{cn:'单光子探测器', en:'Single-Photon Counter'},
+      intro:{cn:'基于盖革模式雪崩二极管(APD)，可对单个光子计数，用于符合测量与量子关联实验。', en:'A Geiger-mode APD that counts individual photons — for coincidence and quantum-correlation measurements.'},
+      specs:[ {k:{cn:'探测效率',en:'Efficiency'},v:'> 65 % @ 780nm'}, {k:{cn:'波长范围',en:'Range'},v:'350–900 nm'}, {k:{cn:'暗计数',en:'Dark counts'},v:'< 100 cps'}, {k:{cn:'死时间',en:'Dead time'},v:'~ 22 ns'} ],
+      op:{ boot:[ {cn:'确认入射光极弱后再开启探测器，避免饱和。',en:'Ensure incident light is extremely weak before enabling — avoid saturation.'}, {cn:'开启制冷与偏压，等待暗计数稳定。',en:'Turn on cooling and bias; wait for dark counts to stabilise.'}, {cn:'用光纤 / 针孔将信号耦合到有效探测面。',en:'Couple the signal onto the active area via fibre or pinhole.'} ],
+        calib:[ {cn:'记录暗计数基线。',en:'Record the dark-count baseline.'}, {cn:'用已知弱光标定探测效率与符合窗口。',en:'Calibrate efficiency and the coincidence window with a known weak source.'} ],
+        shutdown:[ {cn:'先挡光，再关偏压与制冷。',en:'Block light first, then turn off bias and cooling.'} ] },
+      warnings:[ {cn:'严禁强光入射，否则瞬间烧毁 APD。',en:'Never expose to strong light — it instantly destroys the APD.'}, {cn:'开机前务必确认光路已衰减到单光子量级。',en:'Confirm the path is attenuated to single-photon level before powering on.'} ],
+      faq:[ {q:{cn:'暗计数偏高',en:'High dark counts'},a:{cn:'检查制冷是否到位、是否有环境漏光。',en:'Check that cooling is reached and there is no ambient light leak.'}}, {q:{cn:'计数为零',en:'Zero counts'},a:{cn:'确认偏压开启、光路对准、衰减不过度。',en:'Confirm bias on, path aligned, and attenuation not excessive.'}} ],
+      contact:{name:'王雪', role:{cn:'探测系统负责人',en:'Detection lead'}, phone:'138-0000-0003', email:'spcm@lab.edu'} },
+
+    { id:'BPD-01', cat:'detect', status:'online', img:'',
+      name:{cn:'平衡光电探测器', en:'Balanced Photodetector'},
+      intro:{cn:'对两路光做差分探测，抑制共模噪声，广泛用于零差 / 外差测量。', en:'Performs differential detection of two beams to reject common-mode noise — used in homodyne/heterodyne measurement.'},
+      specs:[ {k:{cn:'带宽',en:'Bandwidth'},v:'DC – 100 MHz'}, {k:{cn:'共模抑制比',en:'CMRR'},v:'> 30 dB'}, {k:{cn:'波长范围',en:'Range'},v:'400–1000 nm'}, {k:{cn:'最大光功率',en:'Max power'},v:'< 2 mW / 路'} ],
+      op:{ boot:[ {cn:'确认两路光功率均衡且低于最大值。',en:'Confirm both beams are balanced and below the max power.'}, {cn:'上电后观察差分输出基线。',en:'Power on and observe the differential-output baseline.'} ],
+        calib:[ {cn:'调节两路功率使差分输出归零。',en:'Adjust the two powers so the differential output is nulled.'}, {cn:'用调制信号验证共模抑制比。',en:'Verify CMRR with a modulated test signal.'} ],
+        shutdown:[ {cn:'先挡光再断电。',en:'Block light, then power off.'} ] },
+      warnings:[ {cn:'光功率超限会损坏光电二极管。',en:'Excess optical power damages the photodiodes.'}, {cn:'输出接示波器需注意阻抗匹配(50Ω)。',en:'Match impedance (50 Ω) when connecting to a scope.'} ],
+      faq:[ {q:{cn:'无法归零',en:'Cannot null'},a:{cn:'检查两路功率与偏振是否一致、光斑是否对准探测面。',en:'Check the two powers/polarizations match and spots hit the active areas.'}} ],
+      contact:{name:'王雪', role:{cn:'探测系统负责人',en:'Detection lead'}, phone:'138-0000-0003', email:'bpd@lab.edu'} },
+
+    { id:'SPM-01', cat:'detect', status:'standby', img:'',
+      name:{cn:'光纤光谱仪', en:'Fibre Spectrometer'},
+      intro:{cn:'通过光纤采集光谱，快速测量光源波长分布与线型。', en:'Collects light through a fibre to quickly measure spectral distribution and lineshape.'},
+      specs:[ {k:{cn:'波长范围',en:'Range'},v:'200–1100 nm'}, {k:{cn:'分辨率',en:'Resolution'},v:'~ 0.5 nm'}, {k:{cn:'积分时间',en:'Integration'},v:'1 ms – 60 s'}, {k:{cn:'接口',en:'Interface'},v:'USB / SMA905'} ],
+      op:{ boot:[ {cn:'连接 USB 与采集软件，接入光纤。',en:'Connect USB and acquisition software; attach the fibre.'}, {cn:'设置合适的积分时间，避免过曝。',en:'Set a suitable integration time to avoid over-exposure.'}, {cn:'先采暗背景再测信号。',en:'Acquire a dark background before measuring the signal.'} ],
+        calib:[ {cn:'用标准谱线灯(如汞氩灯)做波长定标。',en:'Calibrate wavelength with a reference lamp (e.g. Hg-Ar).'} ],
+        shutdown:[ {cn:'保存数据后关闭软件并拔出光纤防尘。',en:'Save data, close software, and remove/cap the fibre.'} ] },
+      warnings:[ {cn:'切勿将强激光直接耦入光纤，会损坏探测阵列。',en:'Never couple strong laser directly into the fibre — it damages the array.'}, {cn:'光纤端面保持洁净，避免划伤。',en:'Keep fibre end-faces clean and scratch-free.'} ],
+      faq:[ {q:{cn:'光谱过曝',en:'Saturated spectrum'},a:{cn:'减小积分时间或加衰减片。',en:'Reduce integration time or add an attenuator.'}} ],
+      contact:{name:'王雪', role:{cn:'探测系统负责人',en:'Detection lead'}, phone:'138-0000-0003', email:'spec@lab.edu'} },
+
+    { id:'WPL-01', cat:'pol', status:'online', img:'',
+      name:{cn:'波片组 (λ/2 · λ/4)', en:'Wave Plates (λ/2 · λ/4)'},
+      intro:{cn:'半波片旋转偏振方向，四分之一波片实现线偏与圆偏互换，是偏振调控的基础元件。', en:'Half-wave plates rotate polarization; quarter-wave plates convert between linear and circular — the basics of polarization control.'},
+      specs:[ {k:{cn:'类型',en:'Type'},v:'λ/2 · λ/4'}, {k:{cn:'工作波长',en:'Wavelength'},v:'780 nm'}, {k:{cn:'通光孔径',en:'Aperture'},v:'Ø 10 mm'}, {k:{cn:'波前畸变',en:'Wavefront'},v:'< λ/10'} ],
+      op:{ boot:[ {cn:'将波片装入旋转架，光束垂直入射其中心。',en:'Mount in a rotation stage; beam at normal incidence through the centre.'}, {cn:'旋转刻度调整偏振状态至所需。',en:'Rotate the graduated mount to the desired polarization state.'} ],
+        calib:[],
+        shutdown:[ {cn:'用后归位入盒，避免指纹与划伤。',en:'Return to its case after use; avoid fingerprints and scratches.'} ] },
+      warnings:[ {cn:'镀膜面禁止用手触碰，仅用专用镜头纸清洁。',en:'Never touch the coated surface; clean only with proper lens tissue.'}, {cn:'波片有波长依赖，请勿用于非标定波段。',en:'Wave plates are wavelength-specific — do not use off the rated band.'} ],
+      faq:[ {q:{cn:'偏振调不纯',en:'Impure polarization'},a:{cn:'确认入射为正入射且波长匹配，检查是否装反。',en:'Ensure normal incidence and matched wavelength; check it is not reversed.'}} ],
+      contact:{name:'陈柏', role:{cn:'光学元件负责人',en:'Optics lead'}, phone:'138-0000-0004', email:'optics@lab.edu'} },
+
+    { id:'PBS-01', cat:'pol', status:'online', img:'',
+      name:{cn:'偏振分束器', en:'Polarizing Beam Splitter'},
+      intro:{cn:'按偏振态将光束分为透射(p)与反射(s)两路，用于偏振分析与干涉合束。', en:'Splits a beam by polarization into transmitted (p) and reflected (s) paths — for polarization analysis and beam combining.'},
+      specs:[ {k:{cn:'分光比',en:'Split'},v:'Tp>95% / Rs>99.5%'}, {k:{cn:'波长范围',en:'Range'},v:'700–1000 nm'}, {k:{cn:'消光比',en:'Extinction'},v:'> 1000 : 1'}, {k:{cn:'尺寸',en:'Size'},v:'10 mm cube'} ],
+      op:{ boot:[ {cn:'固定立方体于稳定支架，标记输入面。',en:'Fix the cube on a stable mount; mark the input face.'}, {cn:'让光束居中入射，观察两路分光。',en:'Send the beam centred through it and observe both outputs.'} ],
+        calib:[],
+        shutdown:[ {cn:'防尘存放，避免胶合面受潮。',en:'Store dust-free; keep the cemented surface dry.'} ] },
+      warnings:[ {cn:'高功率下胶合立方体可能受损，必要时改用平板偏振器。',en:'High power can damage cemented cubes — use plate polarizers if needed.'}, {cn:'入射偏振未净化时分光比会下降。',en:'Split ratio degrades if input polarization is not clean.'} ],
+      faq:[ {q:{cn:'两路漏光',en:'Leakage'},a:{cn:'前置一片偏振片净化输入偏振，检查入射角。',en:'Add a clean-up polarizer before it and check the incidence angle.'}} ],
+      contact:{name:'陈柏', role:{cn:'光学元件负责人',en:'Optics lead'}, phone:'138-0000-0004', email:'optics@lab.edu'} },
+
+    { id:'PZT-01', cat:'pos', status:'online', img:'',
+      name:{cn:'压电纳米位移台', en:'Piezo Nano-Stage'},
+      intro:{cn:'利用压电陶瓷实现纳米级精密定位，用于腔长锁定与精密对准。', en:'A piezo-ceramic stage for nanometre-precision positioning — used for cavity locking and fine alignment.'},
+      specs:[ {k:{cn:'行程',en:'Travel'},v:'100 µm'}, {k:{cn:'分辨率',en:'Resolution'},v:'< 1 nm'}, {k:{cn:'驱动电压',en:'Drive'},v:'0–150 V'}, {k:{cn:'谐振频率',en:'Resonance'},v:'~ 1 kHz'} ],
+      op:{ boot:[ {cn:'连接压电控制器，确认电压范围正确。',en:'Connect the piezo controller; confirm the voltage range.'}, {cn:'从中点电压开始，缓慢加压观察位移。',en:'Start at mid-range voltage and ramp slowly while watching displacement.'} ],
+        calib:[ {cn:'用位移传感器或干涉仪标定电压-位移曲线。',en:'Calibrate the voltage–displacement curve with a sensor or interferometer.'}, {cn:'闭环模式下整定 PID 参数。',en:'Tune PID parameters in closed-loop mode.'} ],
+        shutdown:[ {cn:'将电压缓慢归零再断电。',en:'Ramp voltage to zero before powering off.'} ] },
+      warnings:[ {cn:'严禁超出额定电压，会击穿压电陶瓷。',en:'Never exceed rated voltage — it breaks down the piezo ceramic.'}, {cn:'避免快速大幅驱动，防止机械谐振损坏。',en:'Avoid fast large-amplitude drive to prevent resonant damage.'} ],
+      faq:[ {q:{cn:'位移迟滞明显',en:'Strong hysteresis'},a:{cn:'切换到闭环模式或做迟滞补偿。',en:'Switch to closed-loop mode or apply hysteresis compensation.'}} ],
+      contact:{name:'赵越', role:{cn:'机械与定位负责人',en:'Positioning lead'}, phone:'138-0000-0005', email:'stage@lab.edu'} },
+
+    { id:'FBC-01', cat:'pos', status:'online', img:'',
+      name:{cn:'光纤耦合器', en:'Fibre Coupler'},
+      intro:{cn:'将自由空间光束高效耦合进单模光纤，是光路传输与净化空间模式的关键。', en:'Couples a free-space beam efficiently into single-mode fibre — key for transport and spatial-mode cleanup.'},
+      specs:[ {k:{cn:'耦合效率',en:'Efficiency'},v:'> 75 %'}, {k:{cn:'光纤类型',en:'Fibre'},v:'SM · 780-HP'}, {k:{cn:'调整自由度',en:'DoF'},v:'5-axis'}, {k:{cn:'接口',en:'Connector'},v:'FC/APC'} ],
+      op:{ boot:[ {cn:'清洁光纤端面并接入耦合头。',en:'Clean the fibre end-face and insert into the coupler head.'}, {cn:'用功率计监测输出，先粗调 X/Y 角度。',en:'Monitor output power; coarse-adjust X/Y tip-tilt first.'}, {cn:'交替微调平移与角度，使耦合效率最大。',en:'Iterate translation and angle to maximise coupling.'} ],
+        calib:[ {cn:'对照入射功率计算耦合效率并记录。',en:'Compute and log coupling efficiency against input power.'} ],
+        shutdown:[ {cn:'盖好光纤防尘帽，避免端面污染。',en:'Cap the fibre to prevent end-face contamination.'} ] },
+      warnings:[ {cn:'光纤端面极易污染划伤，务必规范清洁。',en:'Fibre end-faces contaminate/scratch easily — always clean properly.'}, {cn:'高功率耦合注意端面烧蚀。',en:'Beware end-face burn at high coupled power.'} ],
+      faq:[ {q:{cn:'耦合效率低',en:'Low coupling'},a:{cn:'检查端面清洁度、模场匹配与光束准直。',en:'Check end-face cleanliness, mode matching, and beam collimation.'}} ],
+      contact:{name:'赵越', role:{cn:'机械与定位负责人',en:'Positioning lead'}, phone:'138-0000-0005', email:'fiber@lab.edu'} },
+
+    { id:'PWM-01', cat:'meas', status:'online', img:'',
+      name:{cn:'光功率计', en:'Optical Power Meter'},
+      intro:{cn:'测量激光绝对功率，是光路对准与效率评估的基础工具。', en:'Measures absolute laser power — a basic tool for alignment and efficiency assessment.'},
+      specs:[ {k:{cn:'量程',en:'Range'},v:'1 nW – 1 W'}, {k:{cn:'波长范围',en:'Range'},v:'400–1100 nm'}, {k:{cn:'探头',en:'Sensor'},v:'Si 光电 / 热电'}, {k:{cn:'精度',en:'Accuracy'},v:'± 3 %'} ],
+      op:{ boot:[ {cn:'开机后选择正确的波长设置。',en:'Power on and select the correct wavelength setting.'}, {cn:'确认量程档位，必要时加衰减。',en:'Confirm the range; add attenuation if needed.'}, {cn:'将探头垂直对准光束并读数。',en:'Aim the sensor normal to the beam and read.'} ],
+        calib:[ {cn:'定期送检 / 用标准源校准探头响应。',en:'Periodically calibrate sensor response with a reference source.'} ],
+        shutdown:[ {cn:'盖上探头保护帽，关机。',en:'Replace the sensor cap and power off.'} ] },
+      warnings:[ {cn:'勿超探头最大功率，以免烧毁。',en:'Do not exceed the sensor max power or it will be damaged.'}, {cn:'波长设置错误会导致读数偏差。',en:'A wrong wavelength setting gives biased readings.'} ],
+      faq:[ {q:{cn:'读数偏低',en:'Reading too low'},a:{cn:'检查波长设置、光斑是否完全落入探头。',en:'Check the wavelength setting and that the spot fully hits the sensor.'}} ],
+      contact:{name:'周岚', role:{cn:'测量与控制负责人',en:'Measurement lead'}, phone:'138-0000-0006', email:'meter@lab.edu'} },
+
+    { id:'LIA-01', cat:'meas', status:'maintenance', img:'',
+      name:{cn:'锁相放大器', en:'Lock-in Amplifier'},
+      intro:{cn:'在强噪声背景下提取微弱调制信号，用于反馈锁定与高灵敏测量。', en:'Extracts weak modulated signals from heavy noise — for feedback locking and high-sensitivity measurement.'},
+      specs:[ {k:{cn:'频率范围',en:'Freq. range'},v:'1 mHz – 500 kHz'}, {k:{cn:'灵敏度',en:'Sensitivity'},v:'1 nV – 1 V'}, {k:{cn:'时间常数',en:'Time const.'},v:'10 µs – 30 s'}, {k:{cn:'动态储备',en:'Dyn. reserve'},v:'> 100 dB'} ],
+      op:{ boot:[ {cn:'接入参考信号与待测信号。',en:'Connect the reference and the measured signals.'}, {cn:'设定参考频率、相位与合适时间常数。',en:'Set reference frequency, phase and a suitable time constant.'}, {cn:'调整灵敏度档使输出不过载。',en:'Adjust sensitivity so the output does not overload.'} ],
+        calib:[ {cn:'用已知信号校准相位与幅度刻度。',en:'Calibrate phase and amplitude scales with a known signal.'} ],
+        shutdown:[ {cn:'保存设置后关机。',en:'Save settings and power off.'} ] },
+      warnings:[ {cn:'⚠ 当前处于维护检修，暂停外借使用。',en:'⚠ Currently under maintenance — temporarily not for loan.'}, {cn:'输入过载会损坏前端，注意量程。',en:'Input overload can damage the front-end — mind the range.'} ],
+      faq:[ {q:{cn:'输出漂移',en:'Output drift'},a:{cn:'增大时间常数、检查参考锁定与接地。',en:'Increase the time constant; check reference lock and grounding.'}} ],
+      contact:{name:'周岚', role:{cn:'测量与控制负责人',en:'Measurement lead'}, phone:'138-0000-0006', email:'lockin@lab.edu'} },
+  ];
+
+  constructor(props){
+    super(props);
+    this.state = {
+      lang:(props&&props.defaultLang)||'cn', q:'', cat:'all', entered:false, selId:null,
+      devices: JSON.parse(JSON.stringify(this.SEED_DEVICES)),
+      ready:false, authMode:'local', auth:null, role:'admin',
+      editing:false, editIsNew:false, editOrigId:null, draft:null, saveErr:'', busy:false,
+      showAdmin:false, users:[], authEmail:'', authPw:'', authErr:'', authTab:'in', approved:true, pendingCount:0,
+    };
+  }
+
+  componentDidMount(){
+    requestAnimationFrame(()=>requestAnimationFrame(()=>this.setState({entered:true})));
+    if(this.cloud){ this.initCloud(); }
+    else {
+      const local=this.loadLocal();
+      this.setState({ devices: local || JSON.parse(JSON.stringify(this.SEED_DEVICES)), authMode:'local', role:'admin', ready:true });
+    }
+  }
+
+  list(){ return this.state.devices || []; }
+  imgUrl(src){ if(!src) return 'none'; return 'url("'+String(src).replace(/"/g,'%22')+'")'; }
+
+  // ---------------- 本地存储 ----------------
+  loadLocal(){ try{ const s=localStorage.getItem(this.LS_KEY); if(s) return JSON.parse(s); }catch(e){} return null; }
+  persistLocal(arr){ try{ localStorage.setItem(this.LS_KEY, JSON.stringify(arr)); }catch(e){} }
+
+  // ---------------- Supabase 云端 ----------------
+  loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=rej; document.head.appendChild(s); }); }
+  async initCloud(){
+    this.setState({ authMode:'cloud' });
+    try{
+      if(!window.supabase){ await this.loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js'); }
+      this.sb = window.supabase.createClient(this.SUPABASE_URL, this.SUPABASE_ANON_KEY);
+      this.sb.auth.onAuthStateChange((_e,session)=>{ this.onSession(session); });
+      const { data } = await this.sb.auth.getSession();
+      await this.onSession(data.session);
+    }catch(e){ console.error(e); }
+    this.setState({ ready:true });
+  }
+  async onSession(session){
+    if(!session){ this.setState({ auth:null, role:'viewer', approved:false }); return; }
+    const user=session.user;
+    const isOwner = !!(user.email && user.email.toLowerCase()===this.ADMIN_EMAIL.toLowerCase());
+    let prof=null;
+    try{ const r=await this.sb.from('profiles').select('*').eq('id',user.id).maybeSingle(); prof=r.data; }catch(e){}
+    if(!prof){
+      const init = isOwner ? { id:user.id, email:user.email, role:'admin', status:'approved' } : { id:user.id, email:user.email, role:'viewer', status:'pending' };
+      try{ await this.sb.from('profiles').insert(init); }catch(e){}
+      prof=init;
+    } else if(isOwner && (prof.role!=='admin' || prof.status!=='approved')){
+      try{ await this.sb.from('profiles').update({ role:'admin', status:'approved' }).eq('id',user.id); }catch(e){}
+      prof={ ...prof, role:'admin', status:'approved' };
+    }
+    const approved = (prof.status||'pending')==='approved';
+    this.setState({ auth:{ id:user.id, email:user.email }, role:prof.role||'viewer', approved });
+    if(approved){ await this.cloudLoadDevices(); if((prof.role)==='admin') this.refreshPendingCount(); }
+  }
+  async refreshPendingCount(){ try{ const { count }=await this.sb.from('profiles').select('*',{count:'exact',head:true}).eq('status','pending'); this.setState({ pendingCount:count||0 }); }catch(e){} }
+  async cloudLoadDevices(){
+    try{
+      const { data } = await this.sb.from('devices').select('id,data,sort').order('sort',{ascending:true});
+      let arr=(data||[]).map(r=>r.data);
+      if(arr.length===0) arr=JSON.parse(JSON.stringify(this.SEED_DEVICES));
+      this.setState({ devices:arr });
+    }catch(e){ console.error(e); }
+  }
+  async cloudSave(d, isNew, origId){
+    const sort=Date.now();
+    const { error } = await this.sb.from('devices').upsert({ id:d.id, data:d, sort });
+    if(error) throw error;
+    if(!isNew && origId && origId!==d.id){ await this.sb.from('devices').delete().eq('id',origId); }
+  }
+  async cloudDelete(id){ const { error }=await this.sb.from('devices').delete().eq('id',id); if(error) throw error; }
+
+  async signIn(){ this.setState({busy:true,authErr:''}); const {error}=await this.sb.auth.signInWithPassword({email:this.state.authEmail.trim(), password:this.state.authPw}); this.setState({busy:false}); if(error) this.setState({authErr:error.message}); }
+  async signUp(){
+    this.setState({busy:true,authErr:''});
+    const {error}=await this.sb.auth.signUp({email:this.state.authEmail.trim(), password:this.state.authPw});
+    this.setState({busy:false});
+    if(error) this.setState({authErr:error.message});
+    else this.setState({authErr: this.state.lang==='cn'?'✓ 注册成功。若开启了邮箱验证请先查收邮件，然后登录。':'✓ Signed up. Check your email if confirmation is on, then sign in.', authTab:'in'});
+  }
+  async signOut(){ try{ await this.sb.auth.signOut(); }catch(e){} this.setState({ auth:null, role:'viewer', approved:false, selId:null, editing:false, showAdmin:false }); }
+
+  async openAdmin(){ this.setState({ showAdmin:true }); try{ const {data}=await this.sb.from('profiles').select('*').order('email'); this.setState({ users:data||[] }); }catch(e){} }
+  closeAdmin(){ this.setState({ showAdmin:false }); }
+  async setUserRole(id, role){ try{ await this.sb.from('profiles').update({ role }).eq('id',id); }catch(e){ alert(e.message||e); } this.openAdmin(); }
+  async approveUser(id, role){ try{ await this.sb.from('profiles').update({ status:'approved', role }).eq('id',id); }catch(e){ alert(e.message||e); } this.openAdmin(); this.refreshPendingCount(); }
+  async rejectUser(id){ const cn=this.state.lang==='cn'; if(!window.confirm(cn?'拒绝该申请？':'Reject this request?')) return; try{ await this.sb.from('profiles').update({ status:'rejected' }).eq('id',id); }catch(e){ alert(e.message||e); } this.openAdmin(); this.refreshPendingCount(); }
+  async revokeUser(id){ const cn=this.state.lang==='cn'; if(!window.confirm(cn?'移除该成员的访问权限？':'Revoke this member\u2019s access?')) return; try{ await this.sb.from('profiles').update({ status:'pending' }).eq('id',id); }catch(e){ alert(e.message||e); } this.openAdmin(); this.refreshPendingCount(); }
+
+  // ---------------- 编辑草稿 ----------------
+  blankDevice(){ return { id:'', cat:this.CATS[0].key, status:'online', img:'', name:{cn:'',en:''}, intro:{cn:'',en:''}, specs:[], op:{boot:[],calib:[],shutdown:[]}, warnings:[], faq:[], contact:{name:'',role:{cn:'',en:''},phone:'',email:''} }; }
+  startEdit(id){ const d=this.list().find(x=>x.id===id); if(!d) return; this.setState({ editing:true, editIsNew:false, editOrigId:id, draft:JSON.parse(JSON.stringify(d)), saveErr:'' }); }
+  startAdd(){ this.setState({ editing:true, editIsNew:true, editOrigId:null, draft:this.blankDevice(), saveErr:'', selId:null }); }
+  cancelEdit(){ this.setState({ editing:false, draft:null }); }
+  getPath(o,path){ return path.split('.').reduce((a,k)=>a[k],o); }
+  setDraft(mut){ const d=JSON.parse(JSON.stringify(this.state.draft)); mut(d); this.setState({ draft:d }); }
+  dset(path,val){ this.setDraft(d=>{ const ks=path.split('.'); let o=d; for(let i=0;i<ks.length-1;i++)o=o[ks[i]]; o[ks[ks.length-1]]=val; }); }
+  arrAdd(path,item){ this.setDraft(d=>{ this.getPath(d,path).push(item); }); }
+  arrDel(path,i){ this.setDraft(d=>{ this.getPath(d,path).splice(i,1); }); }
+  arrSet(path,i,field,val){ this.setDraft(d=>{ const it=this.getPath(d,path)[i]; const ks=field.split('.'); let o=it; for(let j=0;j<ks.length-1;j++)o=o[ks[j]]; o[ks[ks.length-1]]=val; }); }
+
+  onPhotoFile(e){
+    const file=e.target.files&&e.target.files[0]; if(!file) return;
+    const rd=new FileReader();
+    rd.onload=()=>{ const img=new Image(); img.onload=()=>{ const max=1000; let w=img.width,h=img.height; if(w>max||h>max){ const r=Math.min(max/w,max/h); w=Math.round(w*r); h=Math.round(h*r);} const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h); this.dset('img', c.toDataURL('image/jpeg',0.82)); }; img.src=rd.result; };
+    rd.readAsDataURL(file);
+  }
+
+  async saveDraft(){
+    const d=this.state.draft; const cn=this.state.lang==='cn';
+    if(!d.id || !d.id.trim()){ this.setState({ saveErr: cn?'请填写设备编号':'Device ID is required' }); return; }
+    if(!d.name.cn.trim() && !d.name.en.trim()){ this.setState({ saveErr: cn?'请填写设备名称':'Device name is required' }); return; }
+    if(this.state.editIsNew && this.list().some(x=>x.id===d.id.trim())){ this.setState({ saveErr: cn?'该编号已存在，请换一个':'This ID already exists' }); return; }
+    d.id=d.id.trim();
+    this.setState({ busy:true, saveErr:'' });
+    try{
+      if(this.cloud) await this.cloudSave(d, this.state.editIsNew, this.state.editOrigId);
+      let arr=this.list().slice();
+      if(this.state.editIsNew) arr.push(d);
+      else { const i=arr.findIndex(x=>x.id===this.state.editOrigId); if(i>=0) arr[i]=d; else arr.push(d); }
+      if(!this.cloud) this.persistLocal(arr);
+      this.setState({ devices:arr, editing:false, draft:null, busy:false, selId:d.id });
+    }catch(e){ this.setState({ busy:false, saveErr:String(e.message||e) }); }
+  }
+  async deleteDevice(id){
+    const cn=this.state.lang==='cn';
+    if(!window.confirm(cn?('确定删除「'+id+'」？此操作不可撤销。'):('Delete "'+id+'"? This cannot be undone.'))) return;
+    this.setState({ busy:true });
+    try{
+      if(this.cloud) await this.cloudDelete(id);
+      const arr=this.list().filter(x=>x.id!==id);
+      if(!this.cloud) this.persistLocal(arr);
+      this.setState({ devices:arr, editing:false, draft:null, selId:null, busy:false });
+    }catch(e){ this.setState({ busy:false, saveErr:String(e.message||e) }); }
+  }
+
+  t(o){ if(o==null) return ''; if(typeof o==='string') return o; return o[this.state.lang] || o.cn || ''; }
+  catLabel(key){ const c=this.CATS.find(x=>x.key===key); return c ? this.t(c) : key; }
+
+  statusMeta(s){
+    const cn = this.state.lang==='cn';
+    const m = {
+      online:{ c:'#4fd4d4', b:'rgba(79,212,212,.35)', l: cn?'在线':'ONLINE' },
+      standby:{ c:'#e0a040', b:'rgba(224,160,64,.35)', l: cn?'待机':'STANDBY' },
+      maintenance:{ c:'#f06d6d', b:'rgba(240,109,109,.35)', l: cn?'维护':'MAINT' },
+    };
+    return m[s] || { c:'#9aa0c8', b:'rgba(255,255,255,.2)', l:'' };
+  }
+
+  labels(){
+    const cn = this.state.lang==='cn';
+    return {
+      brandSub:'QUANTUM OPTICS · EQUIPMENT LIBRARY',
+      search: cn?'搜索设备名称 / 编号…':'Search name / ID…',
+      devices: cn?'设备总数':'DEVICES', categories: cn?'分类':'CATEGORIES', online: cn?'在线':'ONLINE', standby: cn?'待机 / 维护':'STANDBY',
+      specs: cn?'规格参数':'Specifications', intro: cn?'简介':'Overview',
+      operation: cn?'操作步骤':'Operating Procedure', boot: cn?'开机':'Start-up', calib: cn?'校准':'Calibration', shutdown: cn?'关机':'Shut-down',
+      warnings: cn?'注意事项 · 安全警告':'Cautions · Safety', faq: cn?'常见故障排查':'Troubleshooting',
+      contact: cn?'负责人 · 联系方式':'Owner · Contact',
+      empty: cn?'没有匹配的设备':'No matching equipment',
+      tip: cn?'点击任意卡片查看完整说明书 · 操作 · 注意事项':'Click any card for the full manual · procedure · cautions',
+      edit: cn?'编辑':'Edit', del: cn?'删除':'Delete', save: cn?'保存':'Save', cancel: cn?'取消':'Cancel',
+      addDevice: cn?'新增设备':'Add device', editTitle: cn?'编辑设备':'Edit device', addTitle: cn?'新增设备':'New device',
+      signin: cn?'登录':'Sign in', signup: cn?'注册':'Sign up', signout: cn?'登出':'Sign out', users: cn?'用户管理':'Users',
+      email: cn?'邮箱':'Email', password: cn?'密码':'Password',
+      loginTitle: cn?'团队登录':'Team sign-in', loginSub: cn?'登录后即可查看；编辑权限由管理员分配':'Sign in to view · editing granted by admin',
+      fId: cn?'设备编号':'ID', fStatus: cn?'状态':'Status', fCat: cn?'分类':'Category', fImg: cn?'照片':'Photo',
+      fNameCn:'设备名称（中文）', fNameEn:'Name (EN)', fIntroCn:'简介（中文）', fIntroEn:'Overview (EN)',
+      fUpload: cn?'上传照片':'Upload photo', fImgUrl: cn?'或粘贴图片网址':'or paste image URL',
+      secBasic: cn?'基本信息':'Basic', secSpecs: cn?'规格参数':'Specifications', secOp: cn?'操作步骤':'Procedure',
+      secWarn: cn?'注意事项 · 安全':'Cautions', secFaq: cn?'故障排查':'Troubleshooting', secContact: cn?'负责人':'Owner',
+      addRow: cn?'+ 添加一项':'+ Add row', cName: cn?'姓名':'Name', cRoleCn:'职责（中文）', cRoleEn:'Role (EN)', cPhone: cn?'电话':'Phone', cEmail: cn?'邮箱':'Email',
+      manageRole: cn?'设置角色':'Set role', noUsers: cn?'暂无其他用户':'No users yet',
+      pendingSec: cn?'待批准申请':'Pending requests', membersSec: cn?'成员':'Members',
+      apViewer: cn?'批准·只读':'Approve · Viewer', apEditor: cn?'批准·编辑':'Approve · Editor', apAdmin: cn?'批准·管理员':'Approve · Admin',
+      reject: cn?'拒绝':'Reject', revoke: cn?'移除':'Revoke', noMembers: cn?'暂无成员':'No members yet',
+      waitTitle: cn?'账号待批准':'Awaiting approval', waitSub: cn?'你的注册申请已提交，请等待管理员批准后即可访问。':'Your request has been submitted. You can access once an admin approves it.',
+      modeLocal: cn?'本地模式':'Local', modeCloud: cn?'云端':'Cloud',
+    };
+  }
+
+  renderVals(){
+    const { lang, q, cat, entered, selId } = this.state;
+    const L = this.labels();
+
+    const cats = [{ key:'all', label: lang==='cn'?'全部':'All', n:this.list().length },
+      ...this.CATS.map(c=>({ key:c.key, label:this.t(c), n:this.list().filter(d=>d.cat===c.key).length }))
+    ].map(c=>{
+      const on = c.key===cat;
+      return { ...c, select: ()=>this.setState({ cat:c.key }),
+        style:`padding:7px 15px;border-radius:22px;font:500 12.5px/1 'IBM Plex Sans','Noto Sans SC',sans-serif;cursor:pointer;white-space:nowrap;transition:all .25s;border:1px solid ${on?'transparent':'rgba(255,255,255,.12)'};background:${on?'linear-gradient(90deg,#a78bfa,#5aa6e6)':'rgba(255,255,255,.04)'};color:${on?'#0a0b14':'#b8bce0'}` };
+    });
+
+    const qq = q.trim().toLowerCase();
+    const list = this.list().filter(d=>{
+      if(cat!=='all' && d.cat!==cat) return false;
+      if(!qq) return true;
+      const hay = (d.name.cn+d.name.en+d.id+d.cat).toLowerCase();
+      return hay.includes(qq);
+    });
+
+    const cards = list.map((d,i)=>{
+      const sm = this.statusMeta(d.status);
+      const delay = Math.min(i,11)*55;
+      return {
+        id:d.id, nameCn:d.name.cn, nameEn:d.name.en, catLabel:this.catLabel(d.cat),
+        statusColor:sm.c, statusLabel:sm.l, hasImg:!!d.img, noImg:!d.img, img:d.img||'', imgUrl: this.imgUrl(d.img),
+        chips: d.specs.slice(0,2).map(s=>({ v:s.v })),
+        wrapStyle:`opacity:1;transform:${entered?'translateY(0)':'translateY(16px)'};transition:transform .55s cubic-bezier(.2,.7,.2,1) ${delay}ms`,
+        open: ()=>this.setState({ selId:d.id }),
+      };
+    });
+
+    const stats = {
+      total:this.list().length, cats:this.CATS.length,
+      online:this.list().filter(d=>d.status==='online').length,
+      standby:this.list().filter(d=>d.status!=='online').length,
+    };
+
+    const d = this.list().find(x=>x.id===selId);
+    const open = !!d;
+    let sel = { hasImg:false, noImg:false, img:'', imgUrl:'none', id:'', catLabel:'', statusColor:'#9aa0c8', statusBorder:'rgba(255,255,255,.2)', statusLabel:'', nameCn:'', nameEn:'', intro:'', contactName:'', contactRole:'', contactPhone:'', contactEmail:'' };
+    let selSpecs=[], bootSteps=[], calibSteps=[], shutdownSteps=[], warnings=[], faqs=[];
+    if(d){
+      const sm = this.statusMeta(d.status);
+      sel = {
+        nameCn:d.name.cn, nameEn:d.name.en, id:d.id, catLabel:this.catLabel(d.cat),
+        statusColor:sm.c, statusBorder:sm.b, statusLabel:sm.l, hasImg:!!d.img, noImg:!d.img, img:d.img||'', imgUrl: this.imgUrl(d.img),
+        intro:this.t(d.intro),
+        contactName:d.contact.name, contactRole:this.t(d.contact.role), contactPhone:d.contact.phone, contactEmail:d.contact.email,
+      };
+      selSpecs = d.specs.map(s=>({ k:this.t(s.k), v:s.v }));
+      bootSteps = (d.op.boot||[]).map((s,i)=>({ n:i+1, text:this.t(s) }));
+      calibSteps = (d.op.calib||[]).map((s,i)=>({ n:i+1, text:this.t(s) }));
+      shutdownSteps = (d.op.shutdown||[]).map((s,i)=>({ n:i+1, text:this.t(s) }));
+      warnings = (d.warnings||[]).map(w=>({ text:this.t(w) }));
+      faqs = (d.faq||[]).map(f=>({ q:this.t(f.q), a:this.t(f.a) }));
+    }
+
+    const overlayStyle = `position:fixed;inset:0;z-index:60;display:${open?'flex':'none'};align-items:flex-start;justify-content:center;padding:5vh 18px;overflow-y:auto;background:rgba(5,6,16,.74);backdrop-filter:blur(8px);opacity:${open?1:0}`;
+    const panelStyle = `position:relative;width:100%;max-width:860px;background:linear-gradient(180deg,#10121f,#0b0c16);border:1px solid rgba(255,255,255,.1);border-radius:22px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.6),0 0 0 1px rgba(167,139,250,.12);transform:${open?'translateY(0) scale(1)':'translateY(24px) scale(.97)'};transition:transform .4s cubic-bezier(.2,.7,.2,1)`;
+
+    const btn = (a)=>`padding:7px 14px;border-radius:9px;font:600 12px/1 'IBM Plex Sans','Noto Sans SC',sans-serif;cursor:pointer;transition:all .25s;border:1px solid ${a?'transparent':'rgba(255,255,255,.14)'};background:${a?'linear-gradient(90deg,#a78bfa,#5aa6e6)':'rgba(255,255,255,.04)'};color:${a?'#0a0b14':'#aab'}`;
+    const cn = lang==='cn';
+
+    // ---- 权限 / 登录 ----
+    const cloud=this.cloud, authed=!!this.state.auth, role=this.state.role;
+    const canEdit = cloud ? (role==='admin'||role==='editor') : true;
+    const isAdmin = cloud ? role==='admin' : true;
+    const needLogin = cloud && !authed && this.state.ready;
+    const roleLabel = ({admin:cn?'管理员':'Admin', editor:cn?'编辑':'Editor', viewer:cn?'只读':'Viewer'})[role]||role;
+    const roleColor = ({admin:'#a78bfa', editor:'#56d6d6', viewer:'#8a90b8'})[role]||'#8a90b8';
+    const canEditSel = canEdit && open;
+    const loginOverlayStyle = `position:fixed;inset:0;z-index:80;display:${needLogin?'flex':'none'};align-items:center;justify-content:center;padding:24px;background:rgba(5,6,16,.92);backdrop-filter:blur(10px)`;
+
+    // ---- 编辑草稿 ----
+    const dft=this.state.draft; const editing=this.state.editing && !!dft;
+    let df={ id:'', status:'online', cat:'', img:'', hasImg:false, imgUrl:'none', nameCn:'', nameEn:'', introCn:'', introEn:'', cName:'', cRoleCn:'', cRoleEn:'', cPhone:'', cEmail:'' }, dfSpecs=[], dfBoot=[], dfCalib=[], dfShutdown=[], dfWarn=[], dfFaq=[];
+    if(dft){
+      df={ id:dft.id, status:dft.status, cat:dft.cat, img:dft.img||'', hasImg:!!dft.img, imgUrl:this.imgUrl(dft.img),
+        nameCn:dft.name.cn, nameEn:dft.name.en, introCn:dft.intro.cn, introEn:dft.intro.en,
+        cName:dft.contact.name, cRoleCn:dft.contact.role.cn, cRoleEn:dft.contact.role.en, cPhone:dft.contact.phone, cEmail:dft.contact.email };
+      dfSpecs=dft.specs.map((s,i)=>({ kcn:s.k.cn, ken:s.k.en, v:s.v, onKcn:e=>this.arrSet('specs',i,'k.cn',e.target.value), onKen:e=>this.arrSet('specs',i,'k.en',e.target.value), onV:e=>this.arrSet('specs',i,'v',e.target.value), remove:()=>this.arrDel('specs',i) }));
+      const stepMap=(p)=>dft.op[p].map((s,i)=>({ cn:s.cn, en:s.en, onCn:e=>this.arrSet('op.'+p,i,'cn',e.target.value), onEn:e=>this.arrSet('op.'+p,i,'en',e.target.value), remove:()=>this.arrDel('op.'+p,i) }));
+      dfBoot=stepMap('boot'); dfCalib=stepMap('calib'); dfShutdown=stepMap('shutdown');
+      dfWarn=dft.warnings.map((s,i)=>({ cn:s.cn, en:s.en, onCn:e=>this.arrSet('warnings',i,'cn',e.target.value), onEn:e=>this.arrSet('warnings',i,'en',e.target.value), remove:()=>this.arrDel('warnings',i) }));
+      dfFaq=dft.faq.map((f,i)=>({ qcn:f.q.cn, qen:f.q.en, acn:f.a.cn, aen:f.a.en, onQcn:e=>this.arrSet('faq',i,'q.cn',e.target.value), onQen:e=>this.arrSet('faq',i,'q.en',e.target.value), onAcn:e=>this.arrSet('faq',i,'a.cn',e.target.value), onAen:e=>this.arrSet('faq',i,'a.en',e.target.value), remove:()=>this.arrDel('faq',i) }));
+    }
+    const statusOpts=[{v:'online',l:cn?'在线':'Online'},{v:'standby',l:cn?'待机':'Standby'},{v:'maintenance',l:cn?'维护':'Maintenance'}];
+    const catOpts=this.CATS.map(c=>({ v:c.key, l:this.t(c) }));
+    const editOverlayStyle=`position:fixed;inset:0;z-index:75;display:${editing?'flex':'none'};align-items:flex-start;justify-content:center;padding:4vh 18px;overflow-y:auto;background:rgba(5,6,16,.8);backdrop-filter:blur(9px)`;
+    const editPanelStyle=`position:relative;width:100%;max-width:760px;background:linear-gradient(180deg,#10121f,#0b0c16);border:1px solid rgba(167,139,250,.22);border-radius:20px;box-shadow:0 40px 120px rgba(0,0,0,.6)`;
+
+    // ---- 管理面板 ----
+    const adminOpen=this.state.showAdmin;
+    const adminOverlayStyle=`position:fixed;inset:0;z-index:78;display:${adminOpen?'flex':'none'};align-items:flex-start;justify-content:center;padding:6vh 18px;overflow-y:auto;background:rgba(5,6,16,.82);backdrop-filter:blur(9px)`;
+    const allU=this.state.users||[];
+    const pendingUsers=allU.filter(u=>u.status==='pending').map(u=>({ email:u.email,
+      aViewer:()=>this.approveUser(u.id,'viewer'), aEditor:()=>this.approveUser(u.id,'editor'), aAdmin:()=>this.approveUser(u.id,'admin'), reject:()=>this.rejectUser(u.id) }));
+    const approvedUsers=allU.filter(u=>u.status==='approved').map(u=>({ email:u.email, role:u.role, isMe:this.state.auth&&u.id===this.state.auth.id,
+      setViewer:()=>this.setUserRole(u.id,'viewer'), setEditor:()=>this.setUserRole(u.id,'editor'), setAdmin:()=>this.setUserRole(u.id,'admin'), revoke:()=>this.revokeUser(u.id),
+      vStyle:this.roleBtn(u.role==='viewer'), eStyle:this.roleBtn(u.role==='editor'), aStyle:this.roleBtn(u.role==='admin') }));
+    const pendingCount=this.state.pendingCount||0;
+    const needApproval = cloud && authed && !this.state.approved && this.state.ready;
+    const pendingOverlayStyle=`position:fixed;inset:0;z-index:82;display:${needApproval?'flex':'none'};align-items:center;justify-content:center;padding:24px;background:rgba(5,6,16,.94);backdrop-filter:blur(10px)`;
+
+    return {
+      L, lang, cn,
+      cnBtnStyle:btn(lang==='cn'), enBtnStyle:btn(lang==='en'),
+      setCn:()=>this.setState({lang:'cn'}), setEn:()=>this.setState({lang:'en'}),
+      showStats: this.props.showStats ?? true,
+      cats, cards, noCards: cards.length===0,
+      q, onSearch:(e)=>this.setState({ q:e.target.value }),
+      stats,
+      sel, selSpecs, bootSteps, calibSteps, shutdownSteps, warnings, faqs,
+      hasCalib: calibSteps.length>0, hasWarnings: warnings.length>0, hasFaq: faqs.length>0,
+      overlayStyle, panelStyle,
+      close:()=>this.setState({ selId:null }),
+      stop:(e)=>{ e.stopPropagation(); },
+
+      // 权限 / 登录
+      cloud, authed, role, roleLabel, roleColor, canEdit, isAdmin, needLogin,
+      userEmail: this.state.auth?this.state.auth.email:'',
+      modeLabel: cloud?L.modeCloud:L.modeLocal,
+      loginOverlayStyle, busy:this.state.busy,
+      authEmail:this.state.authEmail, authPw:this.state.authPw, authErr:this.state.authErr, authTab:this.state.authTab,
+      onAuthEmail:e=>this.setState({authEmail:e.target.value}), onAuthPw:e=>this.setState({authPw:e.target.value}),
+      tabIn:()=>this.setState({authTab:'in',authErr:''}), tabUp:()=>this.setState({authTab:'up',authErr:''}),
+      isTabIn:this.state.authTab==='in', isTabUp:this.state.authTab==='up',
+      signinTabStyle:this.roleBtn(this.state.authTab==='in')+';flex:1;padding:9px;text-align:center',
+      signupTabStyle:this.roleBtn(this.state.authTab==='up')+';flex:1;padding:9px;text-align:center',
+      doSignIn:()=>this.signIn(), doSignUp:()=>this.signUp(), doSignOut:()=>this.signOut(),
+
+      // 编辑
+      canEditSel, editing, editIsNew:this.state.editIsNew, editIsExisting: !this.state.editIsNew,
+      editHeading: this.state.editIsNew?L.addTitle:L.editTitle,
+      editSel:()=>this.startEdit(this.state.selId), delSel:()=>this.deleteDevice(this.state.selId),
+      startAdd:()=>this.startAdd(), saveDraft:()=>this.saveDraft(), cancelEdit:()=>this.cancelEdit(),
+      delDraft:()=>this.deleteDevice(this.state.editOrigId),
+      df, dfSpecs, dfBoot, dfCalib, dfShutdown, dfWarn, dfFaq, statusOpts, catOpts,
+      editOverlayStyle, editPanelStyle, saveErr:this.state.saveErr,
+      onId:e=>this.dset('id',e.target.value), onStatus:e=>this.dset('status',e.target.value), onCat:e=>this.dset('cat',e.target.value),
+      onImgUrl:e=>this.dset('img',e.target.value), onPhotoFile:e=>this.onPhotoFile(e),
+      onNameCn:e=>this.dset('name.cn',e.target.value), onNameEn:e=>this.dset('name.en',e.target.value),
+      onIntroCn:e=>this.dset('intro.cn',e.target.value), onIntroEn:e=>this.dset('intro.en',e.target.value),
+      onCName:e=>this.dset('contact.name',e.target.value), onCRoleCn:e=>this.dset('contact.role.cn',e.target.value), onCRoleEn:e=>this.dset('contact.role.en',e.target.value),
+      onCPhone:e=>this.dset('contact.phone',e.target.value), onCEmail:e=>this.dset('contact.email',e.target.value),
+      addSpec:()=>this.arrAdd('specs',{k:{cn:'',en:''},v:''}),
+      addBoot:()=>this.arrAdd('op.boot',{cn:'',en:''}), addCalib:()=>this.arrAdd('op.calib',{cn:'',en:''}), addShutdown:()=>this.arrAdd('op.shutdown',{cn:'',en:''}),
+      addWarn:()=>this.arrAdd('warnings',{cn:'',en:''}), addFaq:()=>this.arrAdd('faq',{q:{cn:'',en:''},a:{cn:'',en:''}}),
+
+      // 管理
+      adminOpen, adminOverlayStyle, pendingUsers, approvedUsers,
+      hasPending: pendingUsers.length>0, noApproved: approvedUsers.length===0,
+      pendingCount, hasPendingBadge: pendingCount>0,
+      needApproval, pendingOverlayStyle,
+      openAdmin:()=>this.openAdmin(), closeAdmin:()=>this.closeAdmin(),
+    };
+  }
+
+  roleBtn(a){ return `padding:5px 10px;border-radius:7px;font:600 11px/1 'Noto Sans SC',sans-serif;cursor:pointer;border:1px solid ${a?'transparent':'rgba(255,255,255,.14)'};background:${a?'linear-gradient(90deg,#a78bfa,#5aa6e6)':'rgba(255,255,255,.04)'};color:${a?'#0a0b14':'#9aa0c8'}`; }
+}
+</script>
+</body>
+</html>
