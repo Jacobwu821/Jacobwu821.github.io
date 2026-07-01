@@ -623,7 +623,7 @@ class Component extends DCLogic {
     super(props);
     this.state = {
       lang:(props&&props.defaultLang)||'cn', q:'', cat:'all', entered:false, selId:null,
-      devices: JSON.parse(JSON.stringify(this.SEED_DEVICES)), cats:JSON.parse(JSON.stringify(this.DEFAULT_CATS)),
+      devices: this.cloud ? [] : JSON.parse(JSON.stringify(this.SEED_DEVICES)), cats:JSON.parse(JSON.stringify(this.DEFAULT_CATS)),
       ready:false, authMode:'local', auth:null, role:'admin',
       editing:false, editIsNew:false, editOrigId:null, draft:null, saveErr:'', busy:false,
       showAdmin:false, showCategories:false, showBlockTypes:false, newCatCn:'', newCatEn:'', users:[], authEmail:'', authPw:'', authErr:'', authTab:'in', approved:true, pendingCount:0,
@@ -640,6 +640,7 @@ class Component extends DCLogic {
   }
 
   list(){ return this.state.devices || []; }
+  visibleList(){ return this.cloud && this.state.role==='viewer' ? this.list().filter(d=>d.status!=='standby') : this.list(); }
   imgUrl(src){ if(!src) return 'none'; return 'url("'+String(src).replace(/"/g,'%22')+'")'; }
 
   // ---------------- 本地存储 ----------------
@@ -686,7 +687,6 @@ class Component extends DCLogic {
       const { data } = await this.sb.from('devices').select('id,data,sort').order('sort',{ascending:true});
       const rows=data||[]; const settings=rows.find(r=>r.id==='__categories__');
       let arr=rows.filter(r=>r.id!=='__categories__').map(r=>r.data);
-      if(arr.length===0) arr=JSON.parse(JSON.stringify(this.SEED_DEVICES));
       this.setState({ devices:arr, cats:this.ensureCats(settings&&settings.data&&settings.data.categories||this.DEFAULT_CATS) });
     }catch(e){ console.error(e); }
   }
@@ -864,8 +864,9 @@ class Component extends DCLogic {
     const { lang, q, cat, entered, selId } = this.state;
     const L = this.labels();
 
-    const cats = [{ key:'all', label: lang==='cn'?'全部':'All', n:this.list().length },
-      ...this.state.cats.map(c=>({ key:c.key, label:this.t(c), n:this.list().filter(d=>(d.cat||'uncategorized')===c.key).length }))
+    const visibleDevices=this.visibleList();
+    const cats = [{ key:'all', label: lang==='cn'?'全部':'All', n:visibleDevices.length },
+      ...this.state.cats.map(c=>({ key:c.key, label:this.t(c), n:visibleDevices.filter(d=>(d.cat||'uncategorized')===c.key).length }))
     ].map(c=>{
       const on = c.key===cat;
       return { ...c, select: ()=>this.setState({ cat:c.key }),
@@ -873,7 +874,7 @@ class Component extends DCLogic {
     });
 
     const qq = q.trim().toLowerCase();
-    const list = this.list().filter(d=>{
+    const list = visibleDevices.filter(d=>{
       if(cat!=='all' && d.cat!==cat) return false;
       if(!qq) return true;
       const hay = (d.name.cn+d.name.en+d.id+d.cat).toLowerCase();
@@ -893,12 +894,12 @@ class Component extends DCLogic {
     });
 
     const stats = {
-      total:this.list().length, cats:this.state.cats.length,
-      online:this.list().filter(d=>d.status==='online').length,
-      standby:this.list().filter(d=>d.status!=='online').length,
+      total:visibleDevices.length, cats:this.state.cats.length,
+      online:visibleDevices.filter(d=>d.status==='online').length,
+      standby:visibleDevices.filter(d=>d.status!=='online').length,
     };
 
-    const d = this.list().find(x=>x.id===selId);
+    const d = visibleDevices.find(x=>x.id===selId);
     const open = !!d;
     let sel = { hasImg:false, noImg:false, img:'', imgUrl:'none', id:'', catLabel:'', statusColor:'#9aa0c8', statusBorder:'rgba(255,255,255,.2)', statusLabel:'', nameCn:'', nameEn:'', intro:'', contactName:'', contactRole:'', contactPhone:'', contactEmail:'' };
     let detailBlocks=[];
