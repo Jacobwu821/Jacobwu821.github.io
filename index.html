@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#07080f">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon-192.png">
 <script src="./support.js"></script>
 </head>
 <body>
@@ -27,6 +30,12 @@
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:#07080f}
+:root{--bg:#07080f;--surface:#10121f;--surface2:#0d0f1c;--text:#eef0fa;--muted:#aeb4d2;--border:rgba(255,255,255,.12);--accent:#56d6d6;--accent2:#a78bfa}
+[data-theme="light"]{--bg:#f4f6fb;--surface:#fff;--surface2:#eef1f7;--text:#171927;--muted:#555d78;--border:rgba(26,31,52,.16);--accent:#167f86;--accent2:#7357c7}
+.app-root{background:var(--bg)!important;color:var(--text)!important}.app-root header{border-color:var(--border)!important}.device-card{background:color-mix(in srgb,var(--surface) 92%,transparent)!important;border-color:var(--border)!important}.modal-panel{background:var(--surface)!important;color:var(--text)!important}.app-root :focus-visible{outline:2px solid var(--accent)!important;outline-offset:3px}.app-root [aria-disabled="true"]{opacity:.5}
+[data-theme="light"] .app-root header{background:rgba(244,246,251,.9)!important}[data-theme="light"] .app-root input,[data-theme="light"] .app-root textarea,[data-theme="light"] .app-root select{color:#171927!important;background:#fff!important;border-color:var(--border)!important}[data-theme="light"] .app-root .device-card,[data-theme="light"] .app-root .modal-panel{box-shadow:0 14px 40px rgba(25,31,55,.12)!important}[data-theme="light"] .app-root .q-md{color:#292d40!important}
+[data-theme="light"] .app-root [style*="color:#eef0fa"],[data-theme="light"] .app-root [style*="color:#f2f3fb"],[data-theme="light"] .app-root [style*="color:#e7e9f3"],[data-theme="light"] .app-root [style*="color:#cdd1e6"]{color:#171927!important}[data-theme="light"] .app-root [style*="color:#b4b9d4"],[data-theme="light"] .app-root [style*="color:#9aa0c8"],[data-theme="light"] .app-root [style*="color:#8a90b8"]{color:#555d78!important}[data-theme="light"] .app-root [style*="background:#0d0f1c"],[data-theme="light"] .app-root [style*="background:#10121f"],[data-theme="light"] .app-root [style*="background:#0e1020"]{background:#eef1f7!important}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 .q-md{font:400 17px/1.7 'Noto Sans SC',sans-serif;color:#cdd1e6}.q-md p{margin:0 0 12px}.q-md p:last-child{margin-bottom:0}.q-md a{color:#7fe0e0}.q-md code{font-family:'IBM Plex Mono',monospace;color:#d6c8ff}.q-md ul,.q-md ol{padding-left:22px}.q-block-img{width:100%;max-height:460px;object-fit:contain;border-radius:12px;background:#080913}
 @media print{body *{visibility:hidden!important}.q-print,.q-print *{visibility:visible!important}.q-print{position:absolute!important;inset:0!important;width:100%!important;max-width:none!important;background:#fff!important;color:#111!important;border:0!important;box-shadow:none!important;overflow:visible!important}.q-print button,.q-print .no-print{display:none!important}.q-print section{break-inside:avoid}.q-print *{text-shadow:none!important}.q-print img{max-width:100%!important;object-fit:contain!important}.q-print .q-md,.q-print span,.q-print div{color:#111!important;background-color:transparent!important}}
 ::-webkit-scrollbar{width:10px;height:10px}
@@ -35,7 +44,7 @@ html,body{margin:0;padding:0;background:#07080f}
 </style>
 </helmet>
 
-<div style="min-height:100vh;background:#07080f;font-family:'IBM Plex Sans','Noto Sans SC',sans-serif;position:relative;overflow-x:hidden">
+<div class="app-root" data-theme="{{ theme }}" style="min-height:100vh;background:#07080f;font-family:'IBM Plex Sans','Noto Sans SC',sans-serif;position:relative;overflow-x:hidden">
 
   <div style="position:fixed;top:-160px;right:-120px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(167,139,250,.18),transparent 65%);filter:blur(40px);pointer-events:none;z-index:0"></div>
   <div style="position:fixed;bottom:-200px;left:-150px;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(86,170,230,.13),rgba(86,214,214,.07) 50%,transparent 72%);filter:blur(46px);pointer-events:none;z-index:0"></div>
@@ -65,9 +74,11 @@ html,body{margin:0;padding:0;background:#07080f}
               <span style="width:7px;height:7px;border-radius:50%;background:{{ roleColor }};box-shadow:0 0 8px {{ roleColor }};flex:none"></span>
               <span style="font:500 11px/1.2 'Noto Sans SC',sans-serif;color:#cdd1e6;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ userEmail }}</span>
               <span style="font:600 9px/1 'IBM Plex Mono',monospace;padding:3px 6px;border-radius:5px;background:rgba(255,255,255,.07);color:{{ roleColor }}">{{ roleLabel }}</span>
-              <button onClick="{{ doSignOut }}" title="{{ L.signout }}" style="width:24px;height:24px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:none;color:#9aa0c8;cursor:pointer;font-size:13px;line-height:1">⎋</button>
+              <button onClick="{{ doSignOut }}" title="{{ L.signout }}" aria-label="{{ L.signout }}" style="width:24px;height:24px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:none;color:#9aa0c8;cursor:pointer;font-size:13px;line-height:1">⎋</button>
             </div>
           </sc-if>
+          <button onClick="{{ toggleFavOnly }}" aria-pressed="{{ favOnly }}" style="padding:7px 10px;border-radius:9px;border:1px solid rgba(224,160,64,.3);background:{{ favFilterBg }};color:#e0b870;font:600 12px/1 'Noto Sans SC',sans-serif;cursor:pointer">★ {{ L.favorites }}</button>
+          <button onClick="{{ cycleTheme }}" aria-label="{{ L.theme }}" style="padding:7px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#bfc5df;font:600 12px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ themeIcon }}</button>
           <div style="display:flex;gap:6px">
             <button onClick="{{ setCn }}" style="{{ cnBtnStyle }}">中文</button>
             <button onClick="{{ setEn }}" style="{{ enBtnStyle }}">EN</button>
@@ -76,6 +87,7 @@ html,body{margin:0;padding:0;background:#07080f}
       </div>
     </header>
 
+    <sc-if value="{{ offline }}" hint-placeholder-val="{{ false }}"><div role="status" style="max-width:1080px;margin:12px auto 0;padding:10px 16px;border-radius:10px;border:1px solid rgba(224,160,64,.35);background:rgba(224,160,64,.1);color:#e7c989;font:600 13px/1.4 'Noto Sans SC',sans-serif">{{ L.offline }}</div></sc-if>
     <sc-if value="{{ showStats }}" hint-placeholder-val="{{ true }}">
     <div style="max-width:1080px;margin:0 auto;padding:20px 24px 0">
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden">
@@ -116,7 +128,8 @@ html,body{margin:0;padding:0;background:#07080f}
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:18px">
         <sc-for list="{{ cards }}" as="c" hint-placeholder-count="8">
           <div style="{{ c.wrapStyle }}">
-            <div onClick="{{ c.open }}" style="position:relative;cursor:pointer;background:rgba(255,255,255,.045);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.09);border-radius:18px;overflow:hidden;transition:all .4s cubic-bezier(.2,.7,.2,1)" style-hover="transform:translateY(-6px);border-color:rgba(167,139,250,.5);box-shadow:0 22px 50px rgba(120,120,250,.25)">
+            <div class="device-card" role="button" tabIndex="0" aria-label="{{ c.openLabel }}" onClick="{{ c.open }}" onKeyDown="{{ c.onKey }}" style="position:relative;cursor:pointer;background:rgba(255,255,255,.045);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.09);border-radius:18px;overflow:hidden;transition:all .4s cubic-bezier(.2,.7,.2,1)" style-hover="transform:translateY(-6px);border-color:rgba(167,139,250,.5);box-shadow:0 22px 50px rgba(120,120,250,.25)">
+              <button onClick="{{ c.toggleFav }}" aria-label="{{ c.favLabel }}" aria-pressed="{{ c.isFav }}" style="position:absolute;top:10px;left:10px;z-index:3;width:30px;height:30px;border-radius:9px;border:1px solid rgba(224,160,64,.35);background:rgba(7,8,16,.62);color:{{ c.favColor }};font-size:18px;line-height:1;cursor:pointer">{{ c.favIcon }}</button>
               <div style="position:absolute;top:11px;right:11px;z-index:2;display:flex;align-items:center;gap:6px;padding:4px 9px;border-radius:20px;background:rgba(7,8,16,.6);backdrop-filter:blur(6px)">
                 <span style="width:7px;height:7px;border-radius:50%;background:{{ c.statusColor }};box-shadow:0 0 8px {{ c.statusColor }};flex:none"></span>
                 <span style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.3px;color:{{ c.statusColor }};white-space:nowrap">{{ c.statusLabel }}</span>
@@ -124,7 +137,7 @@ html,body{margin:0;padding:0;background:#07080f}
               <sc-if value="{{ c.inUse }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:43px;right:11px;z-index:2;padding:4px 8px;border-radius:8px;background:rgba(224,160,64,.9);color:#191004;font:700 11px/1 'Noto Sans SC',sans-serif">{{ L.inUse }}</div></sc-if>
               <sc-if value="{{ c.calibAlert }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:43px;left:11px;z-index:2;padding:4px 8px;border-radius:8px;background:rgba(240,109,109,.9);color:#210707;font:700 11px/1 'Noto Sans SC',sans-serif">{{ c.calibLabel }}</div></sc-if>
               <sc-if value="{{ c.hasImg }}" hint-placeholder-val="{{ false }}">
-                <img src="{{ c.img }}" alt="" style="display:block;width:100%;height:140px;object-fit:cover;background:#0d0f1c" />
+                <img src="{{ c.img }}" alt="{{ c.alt }}" style="display:block;width:100%;height:140px;object-fit:cover;background:#0d0f1c" />
               </sc-if>
               <sc-if value="{{ c.noImg }}" hint-placeholder-val="{{ true }}">
                 <div style="height:140px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(86,214,214,.08))"><span style="font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:1.5px;color:rgba(255,255,255,.45)">◳ 设备照片 / PHOTO</span></div>
@@ -154,18 +167,18 @@ html,body{margin:0;padding:0;background:#07080f}
   </div>
 
   <div style="{{ overlayStyle }}">
-    <div class="q-print" style="{{ panelStyle }}" onClick="{{ stop }}">
-      <button onClick="{{ close }}" style="position:absolute;top:14px;right:14px;z-index:5;width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(7,8,16,.55);backdrop-filter:blur(6px);color:#cdd;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.12)">×</button>
+    <div id="detailDialog" class="q-print modal-panel" role="dialog" aria-modal="true" aria-label="{{ L.deviceDetail }}" tabIndex="-1" style="{{ panelStyle }}" onClick="{{ stop }}">
+      <button onClick="{{ close }}" aria-label="{{ L.close }}" style="position:absolute;top:14px;right:14px;z-index:5;width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(7,8,16,.55);backdrop-filter:blur(6px);color:#cdd;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.12)">×</button>
 
       <sc-if value="{{ canEditSel }}" hint-placeholder-val="{{ false }}">
         <div style="position:absolute;top:14px;left:14px;z-index:5;display:flex;gap:8px">
-          <button onClick="{{ editSel }}" style="display:flex;align-items:center;gap:5px;height:34px;padding:0 13px;border-radius:10px;border:1px solid rgba(167,139,250,.4);background:rgba(167,139,250,.16);backdrop-filter:blur(6px);color:#d6c8ff;font:600 12px/1 'Noto Sans SC',sans-serif;cursor:pointer" style-hover="background:rgba(167,139,250,.3)">✎ {{ L.edit }}</button>
-          <button onClick="{{ delSel }}" style="height:34px;padding:0 13px;border-radius:10px;border:1px solid rgba(240,109,109,.4);background:rgba(240,109,109,.14);backdrop-filter:blur(6px);color:#f3a8a8;font:600 12px/1 'Noto Sans SC',sans-serif;cursor:pointer" style-hover="background:rgba(240,109,109,.26)">{{ L.del }}</button>
+          <button onClick="{{ editSel }}" aria-label="{{ L.edit }}" style="display:flex;align-items:center;gap:5px;height:34px;padding:0 13px;border-radius:10px;border:1px solid rgba(167,139,250,.4);background:rgba(167,139,250,.16);backdrop-filter:blur(6px);color:#d6c8ff;font:600 12px/1 'Noto Sans SC',sans-serif;cursor:pointer" style-hover="background:rgba(167,139,250,.3)">✎ {{ L.edit }}</button>
+          <button onClick="{{ delSel }}" aria-label="{{ L.del }}" style="height:34px;padding:0 13px;border-radius:10px;border:1px solid rgba(240,109,109,.4);background:rgba(240,109,109,.14);backdrop-filter:blur(6px);color:#f3a8a8;font:600 12px/1 'Noto Sans SC',sans-serif;cursor:pointer" style-hover="background:rgba(240,109,109,.26)">{{ L.del }}</button>
         </div>
       </sc-if>
 
       <sc-if value="{{ sel.hasImg }}" hint-placeholder-val="{{ false }}">
-        <div style="height:200px;position:relative;background:#0d0f1c;overflow:hidden"><img src="{{ sel.img }}" alt="" onClick="{{ sel.openCover }}" style="display:block;width:100%;height:100%;object-fit:cover;cursor:zoom-in"/><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,#10121f);pointer-events:none"></div></div>
+        <div style="height:200px;position:relative;background:#0d0f1c;overflow:hidden"><img src="{{ sel.img }}" alt="{{ sel.alt }}" onClick="{{ sel.openCover }}" style="display:block;width:100%;height:100%;object-fit:cover;cursor:zoom-in"/><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,#10121f);pointer-events:none"></div></div>
       </sc-if>
       <sc-if value="{{ sel.noImg }}" hint-placeholder-val="{{ true }}">
         <div style="height:170px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(167,139,250,.18),rgba(86,214,214,.1));position:relative"><span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:2px;color:rgba(255,255,255,.5)">◳ 设备照片 / PHOTO</span><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,#10121f)"></div></div>
@@ -180,7 +193,7 @@ html,body{margin:0;padding:0;background:#07080f}
           <sc-if value="{{ sel.calibAlert }}" hint-placeholder-val="{{ false }}"><span style="font:600 11px/1 'Noto Sans SC',sans-serif;padding:5px 10px;border-radius:7px;background:rgba(240,109,109,.12);color:#f3a0a0;border:1px solid rgba(240,109,109,.3)">{{ sel.calibLabel }}</span></sc-if>
           <span style="flex:1"></span><button class="no-print" onClick="{{ printDevice }}" style="padding:6px 10px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#cdd1e6;cursor:pointer">{{ L.print }}</button>
         </div>
-        <div style="font:700 27px/1.15 'Noto Sans SC',sans-serif;margin-top:14px;color:#f2f3fb">{{ sel.nameCn }}</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:14px"><div style="font:700 27px/1.15 'Noto Sans SC',sans-serif;color:#f2f3fb">{{ sel.nameCn }}</div><button class="no-print" onClick="{{ toggleSelFav }}" aria-label="{{ selFavLabel }}" aria-pressed="{{ selIsFav }}" style="border:0;background:none;color:{{ selFavColor }};font-size:25px;cursor:pointer">{{ selFavIcon }}</button></div>
         <div style="font:400 13px/1 'IBM Plex Mono',monospace;color:#9aa0c8;margin-top:6px">{{ sel.nameEn }}</div>
         <div style="display:flex;flex-direction:column;gap:25px;margin-top:22px">
           <sc-for list="{{ detailBlocks }}" as="b" hint-placeholder-count="5">
@@ -191,7 +204,7 @@ html,body{margin:0;padding:0;background:#07080f}
               <sc-if value="{{ b.isParams }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden"><sc-for list="{{ b.rows }}" as="r" hint-placeholder-count="4"><div style="background:#0d0f1c;padding:11px 14px"><div style="font:500 13.5px/1.3 'Noto Sans SC',sans-serif;color:#8a90b8">{{ r.k }}</div><div style="font:600 17px/1.35 'IBM Plex Mono',monospace;color:#e8eaf6;margin-top:4px">{{ r.v }}</div></div></sc-for></div></sc-if>
               <sc-if value="{{ b.isList }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:9px"><sc-for list="{{ b.items }}" as="it" hint-placeholder-count="3"><div style="display:flex;gap:11px;align-items:flex-start"><span style="flex:none;width:24px;height:24px;border-radius:50%;background:rgba(167,139,250,.16);border:1px solid rgba(167,139,250,.35);color:#c4b5fd;font:600 11px/24px 'IBM Plex Mono',monospace;text-align:center">{{ it.n }}</span><span style="font:400 17px/1.6 'Noto Sans SC',sans-serif;color:#cdd1e6">{{ it.text }}</span></div></sc-for></div></sc-if>
               <sc-if value="{{ b.isCallout }}" hint-placeholder-val="{{ false }}"><div style="border:1px solid {{ b.border }};background:{{ b.bg }};border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px"><sc-for list="{{ b.items }}" as="it" hint-placeholder-count="2"><div style="display:flex;gap:10px;align-items:flex-start"><span style="color:{{ b.iconColor }};font-size:14px;line-height:1.7;flex:none">{{ b.icon }}</span><span style="font:400 16px/1.65 'Noto Sans SC',sans-serif;color:{{ b.textColor }}">{{ it.text }}</span></div></sc-for></div></sc-if>
-              <sc-if value="{{ b.isImages }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px"><sc-for list="{{ b.images }}" as="im" hint-placeholder-count="2"><figure style="margin:0"><img src="{{ im.src }}" onClick="{{ im.open }}" class="q-block-img" style="cursor:zoom-in"/><sc-if value="{{ im.hasCaption }}" hint-placeholder-val="{{ true }}"><figcaption style="font:400 13px/1.5 'Noto Sans SC',sans-serif;color:#9aa0c8;margin-top:7px">{{ im.caption }}</figcaption></sc-if></figure></sc-for></div></sc-if>
+              <sc-if value="{{ b.isImages }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px"><sc-for list="{{ b.images }}" as="im" hint-placeholder-count="2"><figure style="margin:0"><img src="{{ im.src }}" alt="{{ im.alt }}" onClick="{{ im.open }}" class="q-block-img" style="cursor:zoom-in"/><sc-if value="{{ im.hasCaption }}" hint-placeholder-val="{{ true }}"><figcaption style="font:400 13px/1.5 'Noto Sans SC',sans-serif;color:#9aa0c8;margin-top:7px">{{ im.caption }}</figcaption></sc-if></figure></sc-for></div></sc-if>
               <sc-if value="{{ b.isVideo }}" hint-placeholder-val="{{ false }}"><a href="{{ b.url }}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;padding:10px 15px;border-radius:9px;background:rgba(86,214,214,.1);border:1px solid rgba(86,214,214,.3);color:#7fe0e0;font:600 14px/1.2 'Noto Sans SC',sans-serif;text-decoration:none">{{ b.label }}</a></sc-if>
             </section>
           </sc-for>
@@ -272,10 +285,10 @@ html,body{margin:0;padding:0;background:#07080f}
 
 <!-- ===================== 编辑 EDIT ===================== -->
 <div style="{{ editOverlayStyle }}">
-  <div style="{{ editPanelStyle }}" onClick="{{ stop }}">
+  <div id="editDialog" class="modal-panel" role="dialog" aria-modal="true" aria-label="{{ editHeading }}" tabIndex="-1" style="{{ editPanelStyle }}" onClick="{{ stop }}">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;background:#0e1020;z-index:3;border-radius:20px 20px 0 0">
       <div style="display:flex;align-items:center;gap:10px"><span style="width:4px;height:18px;border-radius:2px;background:linear-gradient(180deg,#a78bfa,#56d6d6)"></span><span style="font:700 17px/1 'Noto Sans SC',sans-serif;color:#f2f3fb">{{ editHeading }}</span></div>
-      <button onClick="{{ cancelEdit }}" style="width:32px;height:32px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:none;color:#cdd;font-size:19px;line-height:1;cursor:pointer">×</button>
+      <button onClick="{{ cancelEdit }}" aria-label="{{ L.close }}" style="width:32px;height:32px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:none;color:#cdd;font-size:19px;line-height:1;cursor:pointer">×</button>
     </div>
 
     <div style="padding:22px 24px 24px">
@@ -293,7 +306,7 @@ html,body{margin:0;padding:0;background:#07080f}
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px"><div><label style="font:600 12px/1 'Noto Sans SC',sans-serif;color:#8a90b8;display:block;margin-bottom:6px">{{ L.locationCn }}</label><input value="{{ df.locationCn }}" onInput="{{ onLocationCn }}" style="width:100%;padding:9px 11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:#e7e9f3;font-size:14px"/></div><div><label style="font:600 12px/1 'IBM Plex Mono',monospace;color:#8a90b8;display:block;margin-bottom:6px">{{ L.locationEn }}</label><input value="{{ df.locationEn }}" onInput="{{ onLocationEn }}" style="width:100%;padding:9px 11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:#e7e9f3;font-size:14px"/></div><div><label style="font:600 12px/1 'Noto Sans SC',sans-serif;color:#8a90b8;display:block;margin-bottom:6px">{{ L.nextCalib }}</label><input type="date" value="{{ df.nextCalibDue }}" onInput="{{ onNextCalib }}" style="width:100%;padding:9px 11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:#e7e9f3;font-size:14px"/></div></div>
       <!-- 照片 -->
       <div style="margin-top:14px;display:flex;align-items:center;gap:14px">
-        <sc-if value="{{ df.hasImg }}" hint-placeholder-val="{{ false }}"><img src="{{ df.img }}" alt="" style="display:block;width:84px;height:60px;object-fit:cover;border-radius:9px;flex:none;border:1px solid rgba(255,255,255,.12);background:#0d0f1c"/></sc-if>
+        <sc-if value="{{ df.hasImg }}" hint-placeholder-val="{{ false }}"><img src="{{ df.img }}" alt="{{ L.devicePhoto }}" style="display:block;width:84px;height:60px;object-fit:cover;border-radius:9px;flex:none;border:1px solid rgba(255,255,255,.12);background:#0d0f1c"/></sc-if>
         <div style="flex:1;min-width:0">
           <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:8px 13px;border-radius:9px;border:1px solid rgba(86,214,214,.3);background:rgba(86,214,214,.1);color:#7fe0e0;font:600 12px/1 'Noto Sans SC',sans-serif">📷 {{ L.fUpload }}<input type="file" accept="image/*" onChange="{{ onPhotoFile }}" style="display:none" /></label>
           <input value="{{ df.img }}" onInput="{{ onImgUrl }}" placeholder="{{ L.fImgUrl }}" style="width:100%;margin-top:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:8px 11px;color:#9fa4c4;font:400 11px/1.4 'IBM Plex Mono',monospace;outline:none" />
@@ -649,16 +662,18 @@ class Component extends DCLogic {
   constructor(props){
     super(props);
     this.state = {
-      lang:(props&&props.defaultLang)||'cn', q:'', cat:'all', sortBy:'id', entered:false, selId:null,
+      lang:(props&&props.defaultLang)||'cn', q:'', cat:'all', sortBy:'id', favOnly:false, favorites:[], themeChoice:localStorage.getItem('qoptics_theme')||'dark', offline:!navigator.onLine, entered:false, selId:null,
       devices: this.cloud ? [] : JSON.parse(JSON.stringify(this.SEED_DEVICES)), cats:JSON.parse(JSON.stringify(this.DEFAULT_CATS)),
       ready:false, authMode:'local', auth:null, role:'admin',
-      editing:false, editIsNew:false, editOrigId:null, draft:null, saveErr:'', busy:false,
+      editing:false, editIsNew:false, editOrigId:null, editBaseRev:0, draft:null, saveErr:'', busy:false,
       showAdmin:false, showCategories:false, showBlockTypes:false, lightbox:null, loanModal:false, loanUntil:'', loanNoteCn:'', loanNoteEn:'', deepLinkId:new URLSearchParams(location.search).get('id')||'', newCatCn:'', newCatEn:'', users:[], authEmail:'', authPw:'', authErr:'', authTab:'in', approved:true, pendingCount:0,
     };
   }
 
   componentDidMount(){
     this.onKeyDownBound=e=>this.onGlobalKey(e); window.addEventListener('keydown',this.onKeyDownBound);
+    this.onOnlineBound=()=>this.setState({offline:false});this.onOfflineBound=()=>this.setState({offline:true});window.addEventListener('online',this.onOnlineBound);window.addEventListener('offline',this.onOfflineBound);
+    this.loadFavorites();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
     requestAnimationFrame(()=>requestAnimationFrame(()=>this.setState({entered:true})));
     if(this.cloud){ this.initCloud(); }
     else {
@@ -667,16 +682,26 @@ class Component extends DCLogic {
       if(this.state.deepLinkId)setTimeout(()=>this.openDevice(this.state.deepLinkId),0);
     }
   }
-  componentWillUnmount(){ if(this.onKeyDownBound)window.removeEventListener('keydown',this.onKeyDownBound); }
-  componentDidUpdate(){ if(this.state.selId&&window.QRious){ const c=document.getElementById('deviceQr'); if(c)new window.QRious({element:c,value:this.deviceUrl(this.state.selId),size:104,padding:5,level:'M'}); } }
+  componentWillUnmount(){ if(this.onKeyDownBound)window.removeEventListener('keydown',this.onKeyDownBound);if(this.onOnlineBound)window.removeEventListener('online',this.onOnlineBound);if(this.onOfflineBound)window.removeEventListener('offline',this.onOfflineBound); }
+  componentDidUpdate(){ if(this.state.selId&&window.QRious){ const c=document.getElementById('deviceQr'); if(c)new window.QRious({element:c,value:this.deviceUrl(this.state.selId),size:104,padding:5,level:'M'}); } this.syncDialogA11y(); }
 
   list(){ return this.state.devices || []; }
   visibleList(){ return this.cloud && this.state.role==='viewer' ? this.list().filter(d=>d.status!=='standby') : this.list(); }
   imgUrl(src){ if(!src) return 'none'; return 'url("'+String(src).replace(/"/g,'%22')+'")'; }
+  favUid(){ return this.cloud?(this.state.auth&&this.state.auth.id||'guest'):'local'; }
+  favKey(){ return 'qoptics_favs_'+this.favUid(); }
+  loadFavorites(){ try{this.setState({favorites:JSON.parse(localStorage.getItem(this.favKey())||'[]')});}catch(_e){this.setState({favorites:[]});} }
+  toggleFavorite(id){ const s=new Set(this.state.favorites||[]);s.has(id)?s.delete(id):s.add(id);const favorites=[...s];localStorage.setItem(this.favKey(),JSON.stringify(favorites));this.setState({favorites}); }
+  topDialogElement(){ const byId=id=>document.getElementById(id);if(this.state.lightbox)return this.overlayPanel(120);if(this.state.loanModal)return this.overlayPanel(100);if(this.state.showCategories)return this.overlayPanel(79);if(this.state.editing)return byId('editDialog');if(this.state.showAdmin)return this.overlayPanel(78);if(this.state.selId)return byId('detailDialog');return null; }
+  overlayPanel(z){ return [...document.querySelectorAll('div')].find(x=>{const s=getComputedStyle(x);return s.position==='fixed'&&s.zIndex===String(z);})?.firstElementChild||null; }
+  dialogLevel(){if(this.state.lightbox)return 6;if(this.state.loanModal)return 5;if(this.state.showCategories)return 4;if(this.state.editing)return 3;if(this.state.showAdmin)return 2;if(this.state.selId)return 1;return 0;}
+  syncDialogA11y(){ const el=this.topDialogElement(),sig=el?(el.id||'z'+getComputedStyle(el.parentElement||el).zIndex):'',level=this.dialogLevel(),oldLevel=this.dialogLevelValue||0;if(el){el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('tabindex','-1');const cn=this.state.lang==='cn';el.querySelectorAll('button').forEach(b=>{if(!b.getAttribute('aria-label')){const t=b.textContent.trim();if(t==='×')b.setAttribute('aria-label',cn?'关闭':'Close');else if(t==='‹')b.setAttribute('aria-label',cn?'上一张':'Previous image');else if(t==='›')b.setAttribute('aria-label',cn?'下一张':'Next image');}});el.querySelectorAll('img').forEach(img=>{if(!img.getAttribute('alt'))img.setAttribute('alt',cn?'设备图片':'Device image');});}if(sig!==this.dialogSig){this.focusReturns=this.focusReturns||{};if(level>oldLevel&&sig)this.focusReturns[sig]=document.activeElement;else if(level<oldLevel){const back=this.focusReturns[this.dialogSig];if(back&&back.focus)setTimeout(()=>back.focus(),0);delete this.focusReturns[this.dialogSig];}if(level>oldLevel)setTimeout(()=>{const x=this.topDialogElement();if(x)(x.querySelector('button,input,textarea,select,[tabindex="0"]')||x).focus();},0);this.dialogSig=sig;this.dialogLevelValue=level;} }
+  trapFocus(e){ if(e.key!=='Tab')return false;const d=this.topDialogElement();if(!d)return false;const a=[...d.querySelectorAll('button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href],[tabindex="0"]')].filter(x=>x.offsetParent!==null);if(!a.length)return false;const first=a[0],last=a[a.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();return true;}if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();return true;}return false; }
+  canWrite(){ if(this.cloud&&!navigator.onLine){alert(this.state.lang==='cn'?'当前离线，需联网后才能写入。':'You are offline. Reconnect before making changes.');return false;}return true; }
   deviceUrl(id){ const u=new URL(location.href);u.search='';u.searchParams.set('id',id);return u.toString(); }
   openDevice(id){ const d=this.visibleList().find(x=>x.id===id);if(!d)return;history.replaceState(null,'',this.deviceUrl(id));this.setState({selId:id}); }
   closeDevice(){ const u=new URL(location.href);u.searchParams.delete('id');history.replaceState(null,'',u.pathname+u.search+u.hash);this.setState({selId:null}); }
-  onGlobalKey(e){ const tag=(e.target&&e.target.tagName||'').toLowerCase();const typing=['input','textarea','select'].includes(tag);if(e.key==='Escape'){if(this.state.lightbox)this.setState({lightbox:null});else if(this.state.loanModal)this.setState({loanModal:false});else if(this.state.showCategories)this.setState({showCategories:false});else if(this.state.editing)this.cancelEdit();else if(this.state.showAdmin)this.closeAdmin();else if(this.state.selId)this.closeDevice();return;}if(typing)return;if(e.key==='/'){e.preventDefault();const el=document.getElementById('deviceSearch');if(el)el.focus();}else if(this.state.lightbox&&e.key==='ArrowLeft')this.shiftLightbox(-1);else if(this.state.lightbox&&e.key==='ArrowRight')this.shiftLightbox(1); }
+  onGlobalKey(e){ if(this.trapFocus(e))return;const tag=(e.target&&e.target.tagName||'').toLowerCase();const typing=['input','textarea','select'].includes(tag);if(e.key==='Escape'){if(this.state.lightbox)this.setState({lightbox:null});else if(this.state.loanModal)this.setState({loanModal:false});else if(this.state.showCategories)this.setState({showCategories:false});else if(this.state.editing)this.cancelEdit();else if(this.state.showAdmin)this.closeAdmin();else if(this.state.selId)this.closeDevice();return;}if(typing)return;if(e.key==='/'){e.preventDefault();const el=document.getElementById('deviceSearch');if(el)el.focus();}else if(this.state.lightbox&&e.key==='ArrowLeft')this.shiftLightbox(-1);else if(this.state.lightbox&&e.key==='ArrowRight')this.shiftLightbox(1); }
 
   // ---------------- 本地存储 ----------------
   loadLocal(){ try{ const s=localStorage.getItem(this.LS_KEY); if(s) return JSON.parse(s); }catch(e){} return null; }
@@ -695,7 +720,7 @@ class Component extends DCLogic {
       this.sb.auth.onAuthStateChange((_e,session)=>{ this.onSession(session); });
       const { data } = await this.sb.auth.getSession();
       await this.onSession(data.session);
-    }catch(e){ console.error(e); }
+    }catch(e){ console.error(e);try{const snap=JSON.parse(localStorage.getItem(this.LS_KEY+'_cloud_snapshot')||'[]');if(snap.length)this.setState({devices:snap,offline:true,approved:true,role:'viewer'});}catch(_e){} }
     this.setState({ ready:true });
   }
   async onSession(session){
@@ -714,6 +739,7 @@ class Component extends DCLogic {
     }
     const approved = (prof.status||'pending')==='approved';
     this.setState({ auth:{ id:user.id, email:user.email }, role:prof.role||'viewer', approved });
+    setTimeout(()=>this.loadFavorites(),0);
     if(approved){ await this.cloudLoadDevices(); if((prof.role)==='admin') this.refreshPendingCount(); }
   }
   async refreshPendingCount(){ try{ const { count }=await this.sb.from('profiles').select('*',{count:'exact',head:true}).eq('status','pending'); this.setState({ pendingCount:count||0 }); }catch(e){} }
@@ -723,8 +749,9 @@ class Component extends DCLogic {
       const rows=data||[]; const settings=rows.find(r=>r.id==='__categories__');
       let arr=rows.filter(r=>r.id!=='__categories__').map(r=>r.data);
       this.setState({ devices:arr, cats:this.ensureCats(settings&&settings.data&&settings.data.categories||this.DEFAULT_CATS) });
+      try{localStorage.setItem(this.LS_KEY+'_cloud_snapshot',JSON.stringify(arr));}catch(_e){}
       if(this.state.deepLinkId)setTimeout(()=>this.openDevice(this.state.deepLinkId),0);
-    }catch(e){ console.error(e); }
+    }catch(e){ console.error(e);try{const snap=JSON.parse(localStorage.getItem(this.LS_KEY+'_cloud_snapshot')||'[]');if(snap.length)this.setState({devices:snap,offline:true});}catch(_e){} }
   }
   async cloudSave(d, isNew, origId){
     const sort=Date.now();
@@ -733,7 +760,7 @@ class Component extends DCLogic {
     if(!isNew && origId && origId!==d.id){ await this.sb.from('devices').delete().eq('id',origId); }
   }
   async cloudDelete(id){ const { error }=await this.sb.from('devices').delete().eq('id',id); if(error) throw error; }
-  async persistCategories(cats){ const safe=this.ensureCats(cats); if(this.cloud){ const {error}=await this.sb.from('devices').upsert({id:'__categories__',data:{kind:'categories',categories:safe},sort:-1}); if(error) throw error; } else this.persistLocalCats(safe); this.setState({cats:safe}); }
+  async persistCategories(cats){ if(!this.canWrite())return;const safe=this.ensureCats(cats); if(this.cloud){ const {error}=await this.sb.from('devices').upsert({id:'__categories__',data:{kind:'categories',categories:safe},sort:-1}); if(error) throw error; } else this.persistLocalCats(safe); this.setState({cats:safe}); }
 
   async signIn(){ this.setState({busy:true,authErr:''}); const {error}=await this.sb.auth.signInWithPassword({email:this.state.authEmail.trim(), password:this.state.authPw}); this.setState({busy:false}); if(error) this.setState({authErr:error.message}); }
   async signUp(){
@@ -743,7 +770,7 @@ class Component extends DCLogic {
     if(error) this.setState({authErr:error.message});
     else this.setState({authErr: this.state.lang==='cn'?'✓ 注册成功。若开启了邮箱验证请先查收邮件，然后登录。':'✓ Signed up. Check your email if confirmation is on, then sign in.', authTab:'in'});
   }
-  async signOut(){ try{ await this.sb.auth.signOut(); }catch(e){} this.setState({ auth:null, role:'viewer', approved:false, selId:null, editing:false, showAdmin:false }); }
+  async signOut(){ try{ await this.sb.auth.signOut(); }catch(e){} this.setState({ auth:null, role:'viewer', approved:false, selId:null, editing:false, showAdmin:false });setTimeout(()=>this.loadFavorites(),0); }
 
   async openAdmin(){ this.setState({ showAdmin:true }); try{ const {data}=await this.sb.from('profiles').select('*').order('email'); this.setState({ users:data||[] }); }catch(e){} }
   closeAdmin(){ this.setState({ showAdmin:false }); }
@@ -769,7 +796,7 @@ class Component extends DCLogic {
   }
   blockTemplate(type){ const b={id:this.uid('b'),type,title:{cn:'',en:''}}; if(type==='richtext'||type==='custom')b.body={cn:'',en:''}; else if(type==='latex'){b.tex='';b.note={cn:'',en:''};} else if(type==='images')b.items=[]; else if(type==='paramtable')b.rows=[]; else if(type==='video'){b.url='';b.label={cn:'',en:''};} else b.items=[]; return b; }
   blankDevice(){ return { id:'', cat:(this.state.cats[0]||{key:'uncategorized'}).key, status:'online', img:'', name:{cn:'',en:''}, location:{cn:'',en:''}, blocks:[this.blockTemplate('richtext')], loan:{status:'available',borrower:'',since:'',until:'',note:{cn:'',en:''}}, loanHistory:[], maintenance:[], nextCalibDue:'', attachments:[], updatedAt:0, contact:{name:'',role:{cn:'',en:''},phone:'',email:''} }; }
-  startEdit(id){ const d=this.list().find(x=>x.id===id); if(!d) return; const draft=JSON.parse(JSON.stringify(d)); draft.blocks=this.legacyBlocks(draft);draft.location=draft.location||{cn:'',en:''};draft.loan=draft.loan||{status:'available',borrower:'',since:'',until:'',note:{cn:'',en:''}};draft.loanHistory=draft.loanHistory||[];draft.maintenance=draft.maintenance||[];draft.nextCalibDue=draft.nextCalibDue||'';draft.attachments=draft.attachments||[];draft.updatedAt=draft.updatedAt||0;this.setState({ editing:true, editIsNew:false, editOrigId:id, draft, saveErr:'' }); }
+  startEdit(id){ const d=this.list().find(x=>x.id===id); if(!d) return; const draft=JSON.parse(JSON.stringify(d)); draft.blocks=this.legacyBlocks(draft);draft.location=draft.location||{cn:'',en:''};draft.loan=draft.loan||{status:'available',borrower:'',since:'',until:'',note:{cn:'',en:''}};draft.loanHistory=draft.loanHistory||[];draft.maintenance=draft.maintenance||[];draft.nextCalibDue=draft.nextCalibDue||'';draft.attachments=draft.attachments||[];draft.updatedAt=draft.updatedAt||0;this.setState({ editing:true, editIsNew:false, editOrigId:id, editBaseRev:draft.updatedAt||0, draft, saveErr:'' }); }
   startAdd(){ this.setState({ editing:true, editIsNew:true, editOrigId:null, draft:this.blankDevice(), saveErr:'', selId:null }); }
   cancelEdit(){ this.setState({ editing:false, draft:null }); }
   getPath(o,path){ return path.split('.').reduce((a,k)=>a[k],o); }
@@ -788,7 +815,7 @@ class Component extends DCLogic {
   imageList(d){ const list=[];if(d&&d.img)list.push({src:d.img,caption:d.name||{cn:'',en:''}});this.legacyBlocks(d||{}).filter(b=>b.type==='images').forEach(b=>(b.items||[]).forEach(x=>{if(x.src)list.push({src:x.src,caption:x.caption||{cn:'',en:''}})}));return list; }
   openLightbox(d,index){ const list=this.imageList(d);if(list.length)this.setState({lightbox:{list,i:Math.max(0,Math.min(index,list.length-1))}}); }
   shiftLightbox(n){ const lb=this.state.lightbox;if(!lb||!lb.list.length)return;this.setState({lightbox:{...lb,i:(lb.i+n+lb.list.length)%lb.list.length}}); }
-  async persistDeviceUpdate(next){ if(this.cloud)await this.cloudSave(next,false,next.id);const devices=this.list().map(d=>d.id===next.id?next:d);if(!this.cloud)this.persistLocal(devices);this.setState({devices}); }
+  async persistDeviceUpdate(next){ if(!this.canWrite())return;if(this.cloud)await this.cloudSave(next,false,next.id);const devices=this.list().map(d=>d.id===next.id?next:d);if(!this.cloud)this.persistLocal(devices);this.setState({devices}); }
   async confirmBorrow(){ const d=this.list().find(x=>x.id===this.state.selId);if(!d)return;const borrower=this.state.auth&&this.state.auth.email||'Local user';const next={...d,loan:{status:'in_use',borrower,since:new Date().toISOString(),until:this.state.loanUntil,note:{cn:this.state.loanNoteCn,en:this.state.loanNoteEn}},updatedAt:Date.now()};await this.persistDeviceUpdate(next);this.setState({loanModal:false,loanUntil:'',loanNoteCn:'',loanNoteEn:''}); }
   async returnDevice(){ const d=this.list().find(x=>x.id===this.state.selId);if(!d)return;const loan=d.loan||{};const hist=[...(d.loanHistory||[]),{borrower:loan.borrower||'',from:loan.since||'',to:new Date().toISOString(),note:loan.note||{cn:'',en:''},at:Date.now()}];const next={...d,loan:{status:'available',borrower:'',since:'',until:'',note:{cn:'',en:''}},loanHistory:hist,updatedAt:Date.now()};await this.persistDeviceUpdate(next); }
   downloadQr(){ const c=document.getElementById('deviceQr');if(!c)return;const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download=(this.state.selId||'device')+'-qr.png';a.click(); }
@@ -815,10 +842,12 @@ class Component extends DCLogic {
   }
 
   async saveDraft(){
+    if(!this.canWrite())return;
     const d=this.state.draft; const cn=this.state.lang==='cn';
     if(!d.id || !d.id.trim()){ this.setState({ saveErr: cn?'请填写设备编号':'Device ID is required' }); return; }
     if(!d.name.cn.trim() && !d.name.en.trim()){ this.setState({ saveErr: cn?'请填写设备名称':'Device name is required' }); return; }
     if(this.state.editIsNew && this.list().some(x=>x.id===d.id.trim())){ this.setState({ saveErr: cn?'该编号已存在，请换一个':'This ID already exists' }); return; }
+    if(this.cloud&&!this.state.editIsNew){const r=await this.sb.from('devices').select('data').eq('id',this.state.editOrigId).maybeSingle();const latest=r.data&&r.data.data;if(!latest){alert(cn?'此设备已被删除。':'This device has been deleted.');await this.cloudLoadDevices();this.cancelEdit();return;}if((latest.updatedAt||0)!==(this.state.editBaseRev||0)){const overwrite=window.confirm(cn?'此设备已被他人修改。\n确定：仍然覆盖；取消：重新载入最新版本。':'This device was modified by someone else.\nOK: overwrite; Cancel: reload latest.');if(!overwrite){const draft=JSON.parse(JSON.stringify(latest));draft.blocks=this.legacyBlocks(draft);draft.location=draft.location||{cn:'',en:''};draft.maintenance=draft.maintenance||[];draft.attachments=draft.attachments||[];this.setState({draft,editBaseRev:latest.updatedAt||0,saveErr:cn?'已重新载入最新版本。':'Latest version reloaded.'});return;}}}
     d.id=d.id.trim(); d.blocks=this.legacyBlocks(d); d.updatedAt=Date.now();
     this.setState({ busy:true, saveErr:'' });
     try{
@@ -831,12 +860,15 @@ class Component extends DCLogic {
     }catch(e){ this.setState({ busy:false, saveErr:String(e.message||e) }); }
   }
   async deleteDevice(id){
+    if(!this.canWrite())return;
     const cn=this.state.lang==='cn';
     if(!window.confirm(cn?('确定删除「'+id+'」？此操作不可撤销。'):('Delete "'+id+'"? This cannot be undone.'))) return;
+    if(this.cloud){const r=await this.sb.from('devices').select('id').eq('id',id).maybeSingle();if(!r.data){alert(cn?'此设备已被其他人删除。':'This device was already deleted.');await this.cloudLoadDevices();return;}}
     this.setState({ busy:true });
     try{
       if(this.cloud) await this.cloudDelete(id);
       const arr=this.list().filter(x=>x.id!==id);
+      if((this.state.favorites||[]).includes(id))this.toggleFavorite(id);
       if(!this.cloud) this.persistLocal(arr);
       this.setState({ devices:arr, editing:false, draft:null, selId:null, busy:false });
     }catch(e){ this.setState({ busy:false, saveErr:String(e.message||e) }); }
@@ -886,6 +918,7 @@ class Component extends DCLogic {
       modeLocal: cn?'本地模式':'Local', modeCloud: cn?'云端':'Cloud',
       manageCategories:cn?'管理分类':'Manage categories', contentBlocks:cn?'内容区块':'Content blocks', addBlock:cn?'添加区块':'Add block', add:cn?'新增':'Add',
       inUse:cn?'使用中':'In use',loanStatus:cn?'使用状态':'Usage status',loanHistory:cn?'借用历史':'Loan history',borrow:cn?'借用设备':'Borrow device',return:cn?'归还':'Return',available:cn?'可借用':'Available',until:cn?'预计归还日期':'Expected return',confirmBorrow:cn?'确认借用':'Confirm borrow',maintenanceHistory:cn?'校准 · 维护记录':'Calibration · maintenance',repair:cn?'维修':'Repair',check:cn?'点检':'Check',attachments:cn?'附件 / 文档':'Attachments / documents',open:cn?'打开':'Open',print:cn?'导出 / 打印':'Export / print',qr:cn?'设备二维码':'Device QR code',qrTip:cn?'扫码直达本设备说明书':'Scan to open this device manual',download:cn?'下载 PNG':'Download PNG',locationCn:cn?'位置（中文）':'Location (CN)',locationEn:'Location (EN)',nextCalib:cn?'下次校准':'Next calibration',
+      favorites:cn?'仅看收藏':'Favorites only',theme:cn?'切换主题':'Change theme',offline:cn?'离线 · 显示上次同步数据；写操作已禁用':'Offline · showing last synced data; editing is disabled',close:cn?'关闭':'Close',deviceDetail:cn?'设备详情':'Device details',devicePhoto:cn?'设备照片':'Device photo',
     };
   }
 
@@ -903,7 +936,7 @@ class Component extends DCLogic {
       isHtml:type==='richtext'||type==='custom',html:type==='latex'?this.renderLatex(b.tex):this.renderMarkdown(this.t(b.body)),isLatex:type==='latex',note:this.t(b.note),hasNote:!!this.t(b.note),
       isParams:type==='paramtable',rows:(b.rows||[]).map(r=>({k:this.t(r.k),v:r.v})),isList:type==='steps',isCallout:isWarning||isTips,items,
       border:isWarning?'rgba(224,160,64,.3)':'rgba(86,214,214,.28)',bg:isWarning?'rgba(224,160,64,.07)':'rgba(86,214,214,.06)',icon:isWarning?'⚠':'i',iconColor:isWarning?'#e0a040':'#56d6d6',textColor:isWarning?'#e7d3b0':'#cddfea',
-      isImages:type==='images',images:(b.items||[]).filter(x=>x.src).map(x=>({src:x.src,caption:this.t(x.caption),hasCaption:!!this.t(x.caption),open:()=>{const d=this.list().find(y=>y.id===this.state.selId);const all=this.imageList(d);this.openLightbox(d,all.findIndex(z=>z.src===x.src));}})),isVideo:type==='video',url:b.url||'#',label:this.t(b.label)||(this.state.lang==='cn'?'打开链接':'Open link')};
+      isImages:type==='images',images:(b.items||[]).filter(x=>x.src).map(x=>({src:x.src,caption:this.t(x.caption),alt:this.t(x.caption)||(this.state.lang==='cn'?'设备图片':'Device image'),hasCaption:!!this.t(x.caption),open:()=>{const d=this.list().find(y=>y.id===this.state.selId);const all=this.imageList(d);this.openLightbox(d,all.findIndex(z=>z.src===x.src));}})),isVideo:type==='video',url:b.url||'#',label:this.t(b.label)||(this.state.lang==='cn'?'打开链接':'Open link')};
   }
 
   renderVals(){
@@ -911,6 +944,7 @@ class Component extends DCLogic {
     const L = this.labels();
 
     const visibleDevices=this.visibleList();
+    const favSet=new Set(this.state.favorites||[]);
     const cats = [{ key:'all', label: lang==='cn'?'全部':'All', n:visibleDevices.length },
       ...this.state.cats.map(c=>({ key:c.key, label:this.t(c), n:visibleDevices.filter(d=>(d.cat||'uncategorized')===c.key).length }))
     ].map(c=>{
@@ -921,17 +955,19 @@ class Component extends DCLogic {
 
     const qq = q.trim().toLowerCase();
     const list = visibleDevices.filter(d=>{
+      if(this.state.favOnly&&!favSet.has(d.id))return false;
       if(cat!=='all' && d.cat!==cat) return false;
       if(!qq) return true;
       return this.deviceSearchText(d).includes(qq);
-    }).slice().sort((a,b)=>{const by=this.state.sortBy;if(by==='name')return this.t(a.name).localeCompare(this.t(b.name));if(by==='cat')return this.catLabel(a.cat).localeCompare(this.catLabel(b.cat));if(by==='status')return String(a.status).localeCompare(String(b.status));if(by==='updated')return (b.updatedAt||0)-(a.updatedAt||0);return String(a.id).localeCompare(String(b.id));});
+    }).slice().sort((a,b)=>{const fa=favSet.has(a.id),fb=favSet.has(b.id);if(fa!==fb)return fa?-1:1;const by=this.state.sortBy;if(by==='name')return this.t(a.name).localeCompare(this.t(b.name));if(by==='cat')return this.catLabel(a.cat).localeCompare(this.catLabel(b.cat));if(by==='status')return String(a.status).localeCompare(String(b.status));if(by==='updated')return (b.updatedAt||0)-(a.updatedAt||0);return String(a.id).localeCompare(String(b.id));});
 
     const cards = list.map((d,i)=>{
       const sm = this.statusMeta(d.status);
       const cm=this.calibMeta(d),location=this.t(d.location);
+      const isFav=favSet.has(d.id);
       const delay = Math.min(i,11)*55;
       return {
-        id:d.id, nameCn:d.name.cn, nameEn:d.name.en, catLabel:this.catLabel(d.cat),
+        id:d.id, nameCn:d.name.cn, nameEn:d.name.en, catLabel:this.catLabel(d.cat),alt:this.t(d.name),openLabel:(lang==='cn'?'打开设备 ':'Open device ')+this.t(d.name),isFav,favIcon:isFav?'★':'☆',favColor:isFav?'#ffd166':'#c3a95f',favLabel:isFav?(lang==='cn'?'取消收藏':'Remove favorite'):(lang==='cn'?'收藏':'Favorite'),toggleFav:e=>{e.stopPropagation();this.toggleFavorite(d.id);},onKey:e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();this.openDevice(d.id);}},
         statusColor:sm.c, statusLabel:sm.l, hasImg:!!d.img, noImg:!d.img, img:d.img||'', imgUrl: this.imgUrl(d.img),
         chips: ((this.legacyBlocks(d).find(b=>b.type==='paramtable')||{}).rows||[]).slice(0,2).map(s=>({ v:s.v })),location,hasLocation:!!location,inUse:d.loan&&d.loan.status==='in_use',calibAlert:cm.alert,calibLabel:cm.label,
         wrapStyle:`opacity:1;transform:${entered?'translateY(0)':'translateY(16px)'};transition:transform .55s cubic-bezier(.2,.7,.2,1) ${delay}ms`,
@@ -947,13 +983,13 @@ class Component extends DCLogic {
 
     const d = visibleDevices.find(x=>x.id===selId);
     const open = !!d;
-    let sel = { hasImg:false, noImg:false, img:'', imgUrl:'none', id:'', catLabel:'', statusColor:'#9aa0c8', statusBorder:'rgba(255,255,255,.2)', statusLabel:'', nameCn:'', nameEn:'', intro:'', location:'',hasLocation:false,calibAlert:false,calibLabel:'',contactName:'', contactRole:'', contactPhone:'', contactEmail:'' };
+    let sel = { hasImg:false, noImg:false, img:'',alt:'', imgUrl:'none', id:'', catLabel:'', statusColor:'#9aa0c8', statusBorder:'rgba(255,255,255,.2)', statusLabel:'', nameCn:'', nameEn:'', intro:'', location:'',hasLocation:false,calibAlert:false,calibLabel:'',contactName:'', contactRole:'', contactPhone:'', contactEmail:'' };
     let detailBlocks=[],loan={label:'',summary:'',action:'',color:'#56d6d6',border:'rgba(86,214,214,.3)',bg:'rgba(86,214,214,.06)'},loanHistory=[],maintenanceRows=[],attachments=[];
     if(d){
       const sm = this.statusMeta(d.status);
       const cm=this.calibMeta(d),location=this.t(d.location),ld=d.loan||{status:'available'},inUse=ld.status==='in_use';
       sel = {
-        nameCn:d.name.cn, nameEn:d.name.en, id:d.id, catLabel:this.catLabel(d.cat),
+        nameCn:d.name.cn, nameEn:d.name.en,alt:this.t(d.name), id:d.id, catLabel:this.catLabel(d.cat),
         statusColor:sm.c, statusBorder:sm.b, statusLabel:sm.l, hasImg:!!d.img, noImg:!d.img, img:d.img||'', imgUrl: this.imgUrl(d.img),
         intro:'',location,hasLocation:!!location,calibAlert:cm.alert,calibLabel:cm.label,openCover:()=>this.openLightbox(d,0),
         contactName:d.contact.name, contactRole:this.t(d.contact.role), contactPhone:d.contact.phone, contactEmail:d.contact.email,
@@ -971,12 +1007,13 @@ class Component extends DCLogic {
 
     const btn = (a)=>`padding:7px 14px;border-radius:9px;font:600 12px/1 'IBM Plex Sans','Noto Sans SC',sans-serif;cursor:pointer;transition:all .25s;border:1px solid ${a?'transparent':'rgba(255,255,255,.14)'};background:${a?'linear-gradient(90deg,#a78bfa,#5aa6e6)':'rgba(255,255,255,.04)'};color:${a?'#0a0b14':'#aab'}`;
     const cn = lang==='cn';
+    const themeChoice=this.state.themeChoice;const theme=themeChoice==='system'?(matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'):themeChoice;const themeIcon=themeChoice==='dark'?'☾':themeChoice==='light'?'☀':'◐';
 
     // ---- 权限 / 登录 ----
     const cloud=this.cloud, authed=!!this.state.auth, role=this.state.role;
     const canEdit = cloud ? (role==='admin'||role==='editor') : true;
     const isAdmin = cloud ? role==='admin' : true;
-    const needLogin = cloud && !authed && this.state.ready;
+    const needLogin = cloud && !authed && this.state.ready && !this.state.offline;
     const roleLabel = ({admin:cn?'管理员':'Admin', editor:cn?'编辑':'Editor', viewer:cn?'只读':'Viewer'})[role]||role;
     const roleColor = ({admin:'#a78bfa', editor:'#56d6d6', viewer:'#8a90b8'})[role]||'#8a90b8';
     const canEditSel = canEdit && open;
@@ -1013,7 +1050,7 @@ class Component extends DCLogic {
       setViewer:()=>this.setUserRole(u.id,'viewer'), setEditor:()=>this.setUserRole(u.id,'editor'), setAdmin:()=>this.setUserRole(u.id,'admin'), revoke:()=>this.revokeUser(u.id),
       vStyle:this.roleBtn(u.role==='viewer'), eStyle:this.roleBtn(u.role==='editor'), aStyle:this.roleBtn(u.role==='admin') }));
     const pendingCount=this.state.pendingCount||0;
-    const needApproval = cloud && authed && !this.state.approved && this.state.ready;
+    const needApproval = cloud && authed && !this.state.approved && this.state.ready && !this.state.offline;
     const pendingOverlayStyle=`position:fixed;inset:0;z-index:82;display:${needApproval?'flex':'none'};align-items:center;justify-content:center;padding:24px;background:rgba(5,6,16,.94);backdrop-filter:blur(10px)`;
 
     const blockTypeLabels={richtext:cn?'富文本':'Rich text',latex:'LaTeX',images:cn?'多图':'Images',paramtable:cn?'参数表':'Parameter table',steps:cn?'步骤':'Steps',tips:cn?'提示':'Tips',warning:cn?'警告':'Warning',video:cn?'视频 / 外链':'Video / link',custom:cn?'其他':'Custom'};
@@ -1027,16 +1064,17 @@ class Component extends DCLogic {
     const lightboxStyle=`position:fixed;inset:0;z-index:120;display:${lb?'flex':'none'};align-items:center;justify-content:center;background:rgba(0,0,0,.92);padding:24px`;
     const loanModalStyle=`position:fixed;inset:0;z-index:100;display:${this.state.loanModal?'flex':'none'};align-items:center;justify-content:center;padding:24px;background:rgba(5,6,16,.88);backdrop-filter:blur(8px)`;
     const canLoan=!cloud||(authed&&this.state.approved);
+    const selIsFav=!!(d&&favSet.has(d.id));
 
     return {
-      L, lang, cn,
+      L, lang, cn,theme,themeIcon,cycleTheme:()=>{const n=themeChoice==='dark'?'light':themeChoice==='light'?'system':'dark';localStorage.setItem('qoptics_theme',n);this.setState({themeChoice:n});},favOnly:this.state.favOnly,toggleFavOnly:()=>this.setState({favOnly:!this.state.favOnly}),favFilterBg:this.state.favOnly?'rgba(224,160,64,.18)':'rgba(255,255,255,.04)',offline:this.state.offline,
       cnBtnStyle:btn(lang==='cn'), enBtnStyle:btn(lang==='en'),
       setCn:()=>this.setState({lang:'cn'}), setEn:()=>this.setState({lang:'en'}),
       showStats: this.props.showStats ?? true,
       cats, cards, noCards: cards.length===0,
       q, onSearch:(e)=>this.setState({ q:e.target.value }),sortBy:this.state.sortBy,sortOpts,onSort:e=>this.setState({sortBy:e.target.value}),
       stats,
-      sel, detailBlocks,loan,loanHistory,hasLoanHistory:loanHistory.length>0,maintenanceRows,hasMaintenance:maintenanceRows.length>0,attachments,hasAttachments:attachments.length>0,canLoan,
+      sel, detailBlocks,loan,loanHistory,hasLoanHistory:loanHistory.length>0,maintenanceRows,hasMaintenance:maintenanceRows.length>0,attachments,hasAttachments:attachments.length>0,canLoan,selIsFav,selFavIcon:selIsFav?'★':'☆',selFavColor:selIsFav?'#ffd166':'#c3a95f',selFavLabel:selIsFav?(cn?'取消收藏':'Remove favorite'):(cn?'收藏':'Favorite'),toggleSelFav:()=>{if(d)this.toggleFavorite(d.id);},
       overlayStyle, panelStyle,
       close:()=>this.closeDevice(),printDevice:()=>window.print(),downloadQr:()=>this.downloadQr(),
       stop:(e)=>{ e.stopPropagation(); },
