@@ -23,10 +23,12 @@
 <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:#07080f}
 .q-md{font:400 17px/1.7 'Noto Sans SC',sans-serif;color:#cdd1e6}.q-md p{margin:0 0 12px}.q-md p:last-child{margin-bottom:0}.q-md a{color:#7fe0e0}.q-md code{font-family:'IBM Plex Mono',monospace;color:#d6c8ff}.q-md ul,.q-md ol{padding-left:22px}.q-block-img{width:100%;max-height:460px;object-fit:contain;border-radius:12px;background:#080913}
+@media print{body *{visibility:hidden!important}.q-print,.q-print *{visibility:visible!important}.q-print{position:absolute!important;inset:0!important;width:100%!important;max-width:none!important;background:#fff!important;color:#111!important;border:0!important;box-shadow:none!important;overflow:visible!important}.q-print button,.q-print .no-print{display:none!important}.q-print section{break-inside:avoid}.q-print *{text-shadow:none!important}.q-print img{max-width:100%!important;object-fit:contain!important}.q-print .q-md,.q-print span,.q-print div{color:#111!important;background-color:transparent!important}}
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-thumb{background:rgba(167,139,250,.25);border-radius:8px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -100,7 +102,8 @@ html,body{margin:0;padding:0;background:#07080f}
     <div style="max-width:1080px;margin:0 auto;padding:22px 24px 6px">
       <div style="display:flex;align-items:center;gap:11px;padding:12px 16px;border:1px solid rgba(255,255,255,.1);border-radius:13px;background:rgba(255,255,255,.04)">
         <span style="width:13px;height:13px;border:1.6px solid #7a7fa8;border-radius:50%;flex:none"></span>
-        <input value="{{ q }}" onInput="{{ onSearch }}" placeholder="{{ L.search }}" style="flex:1;background:none;border:none;outline:none;color:#e7e9f3;font:400 14px/1 'Noto Sans SC',sans-serif;min-width:0" />
+        <input id="deviceSearch" value="{{ q }}" onInput="{{ onSearch }}" placeholder="{{ L.search }}" style="flex:1;background:none;border:none;outline:none;color:#e7e9f3;font:400 14px/1 'Noto Sans SC',sans-serif;min-width:0" />
+        <select value="{{ sortBy }}" onChange="{{ onSort }}" style="flex:none;max-width:150px;background:#111422;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 9px;color:#cdd1e6;font:500 12px/1 'Noto Sans SC',sans-serif"><sc-for list="{{ sortOpts }}" as="o" hint-placeholder-count="5"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:9px;margin-top:16px">
         <sc-for list="{{ cats }}" as="cat" hint-placeholder-count="6">
@@ -118,6 +121,8 @@ html,body{margin:0;padding:0;background:#07080f}
                 <span style="width:7px;height:7px;border-radius:50%;background:{{ c.statusColor }};box-shadow:0 0 8px {{ c.statusColor }};flex:none"></span>
                 <span style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.3px;color:{{ c.statusColor }};white-space:nowrap">{{ c.statusLabel }}</span>
               </div>
+              <sc-if value="{{ c.inUse }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:43px;right:11px;z-index:2;padding:4px 8px;border-radius:8px;background:rgba(224,160,64,.9);color:#191004;font:700 11px/1 'Noto Sans SC',sans-serif">{{ L.inUse }}</div></sc-if>
+              <sc-if value="{{ c.calibAlert }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:43px;left:11px;z-index:2;padding:4px 8px;border-radius:8px;background:rgba(240,109,109,.9);color:#210707;font:700 11px/1 'Noto Sans SC',sans-serif">{{ c.calibLabel }}</div></sc-if>
               <sc-if value="{{ c.hasImg }}" hint-placeholder-val="{{ false }}">
                 <img src="{{ c.img }}" alt="" style="display:block;width:100%;height:140px;object-fit:cover;background:#0d0f1c" />
               </sc-if>
@@ -126,6 +131,7 @@ html,body{margin:0;padding:0;background:#07080f}
               </sc-if>
               <div style="padding:14px 15px 16px">
                 <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:1px;color:#9aa0c8;text-transform:uppercase">{{ c.id }} · {{ c.catLabel }}</div>
+                <sc-if value="{{ c.hasLocation }}" hint-placeholder-val="{{ false }}"><div style="font:500 11px/1.3 'Noto Sans SC',sans-serif;color:#7a7fa8;margin-top:5px">📍 {{ c.location }}</div></sc-if>
                 <div style="font:600 16px/1.2 'Noto Sans SC',sans-serif;margin-top:7px;color:#eef0fa">{{ c.nameCn }}</div>
                 <div style="font:400 13px/1.25 'IBM Plex Mono',monospace;color:#9aa0c8;margin-top:4px">{{ c.nameEn }}</div>
                 <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:11px">
@@ -148,7 +154,7 @@ html,body{margin:0;padding:0;background:#07080f}
   </div>
 
   <div style="{{ overlayStyle }}">
-    <div style="{{ panelStyle }}" onClick="{{ stop }}">
+    <div class="q-print" style="{{ panelStyle }}" onClick="{{ stop }}">
       <button onClick="{{ close }}" style="position:absolute;top:14px;right:14px;z-index:5;width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(7,8,16,.55);backdrop-filter:blur(6px);color:#cdd;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.12)">×</button>
 
       <sc-if value="{{ canEditSel }}" hint-placeholder-val="{{ false }}">
@@ -159,7 +165,7 @@ html,body{margin:0;padding:0;background:#07080f}
       </sc-if>
 
       <sc-if value="{{ sel.hasImg }}" hint-placeholder-val="{{ false }}">
-        <div style="height:200px;position:relative;background:#0d0f1c;overflow:hidden"><img src="{{ sel.img }}" alt="" style="display:block;width:100%;height:100%;object-fit:cover"/><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,#10121f)"></div></div>
+        <div style="height:200px;position:relative;background:#0d0f1c;overflow:hidden"><img src="{{ sel.img }}" alt="" onClick="{{ sel.openCover }}" style="display:block;width:100%;height:100%;object-fit:cover;cursor:zoom-in"/><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,#10121f);pointer-events:none"></div></div>
       </sc-if>
       <sc-if value="{{ sel.noImg }}" hint-placeholder-val="{{ true }}">
         <div style="height:170px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(167,139,250,.18),rgba(86,214,214,.1));position:relative"><span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:2px;color:rgba(255,255,255,.5)">◳ 设备照片 / PHOTO</span><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,#10121f)"></div></div>
@@ -170,6 +176,9 @@ html,body{margin:0;padding:0;background:#07080f}
           <span style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:1px;padding:5px 10px;border-radius:7px;background:rgba(7,8,16,.7);color:#c4b5fd;border:1px solid rgba(167,139,250,.3)">{{ sel.id }}</span>
           <span style="font:500 11px/1 'IBM Plex Sans','Noto Sans SC',sans-serif;padding:5px 10px;border-radius:7px;background:rgba(255,255,255,.06);color:#aab;border:1px solid rgba(255,255,255,.1)">{{ sel.catLabel }}</span>
           <span style="display:flex;align-items:center;gap:6px;font:600 11px/1 'IBM Plex Mono',monospace;padding:5px 10px;border-radius:7px;background:rgba(7,8,16,.7);color:{{ sel.statusColor }};border:1px solid {{ sel.statusBorder }}"><span style="width:7px;height:7px;border-radius:50%;background:{{ sel.statusColor }};box-shadow:0 0 8px {{ sel.statusColor }}"></span>{{ sel.statusLabel }}</span>
+          <sc-if value="{{ sel.hasLocation }}" hint-placeholder-val="{{ false }}"><span style="font:500 12px/1 'Noto Sans SC',sans-serif;padding:5px 10px;border-radius:7px;background:rgba(86,214,214,.08);color:#9fdede;border:1px solid rgba(86,214,214,.18)">📍 {{ sel.location }}</span></sc-if>
+          <sc-if value="{{ sel.calibAlert }}" hint-placeholder-val="{{ false }}"><span style="font:600 11px/1 'Noto Sans SC',sans-serif;padding:5px 10px;border-radius:7px;background:rgba(240,109,109,.12);color:#f3a0a0;border:1px solid rgba(240,109,109,.3)">{{ sel.calibLabel }}</span></sc-if>
+          <span style="flex:1"></span><button class="no-print" onClick="{{ printDevice }}" style="padding:6px 10px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#cdd1e6;cursor:pointer">{{ L.print }}</button>
         </div>
         <div style="font:700 27px/1.15 'Noto Sans SC',sans-serif;margin-top:14px;color:#f2f3fb">{{ sel.nameCn }}</div>
         <div style="font:400 13px/1 'IBM Plex Mono',monospace;color:#9aa0c8;margin-top:6px">{{ sel.nameEn }}</div>
@@ -182,11 +191,20 @@ html,body{margin:0;padding:0;background:#07080f}
               <sc-if value="{{ b.isParams }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden"><sc-for list="{{ b.rows }}" as="r" hint-placeholder-count="4"><div style="background:#0d0f1c;padding:11px 14px"><div style="font:500 13.5px/1.3 'Noto Sans SC',sans-serif;color:#8a90b8">{{ r.k }}</div><div style="font:600 17px/1.35 'IBM Plex Mono',monospace;color:#e8eaf6;margin-top:4px">{{ r.v }}</div></div></sc-for></div></sc-if>
               <sc-if value="{{ b.isList }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:9px"><sc-for list="{{ b.items }}" as="it" hint-placeholder-count="3"><div style="display:flex;gap:11px;align-items:flex-start"><span style="flex:none;width:24px;height:24px;border-radius:50%;background:rgba(167,139,250,.16);border:1px solid rgba(167,139,250,.35);color:#c4b5fd;font:600 11px/24px 'IBM Plex Mono',monospace;text-align:center">{{ it.n }}</span><span style="font:400 17px/1.6 'Noto Sans SC',sans-serif;color:#cdd1e6">{{ it.text }}</span></div></sc-for></div></sc-if>
               <sc-if value="{{ b.isCallout }}" hint-placeholder-val="{{ false }}"><div style="border:1px solid {{ b.border }};background:{{ b.bg }};border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px"><sc-for list="{{ b.items }}" as="it" hint-placeholder-count="2"><div style="display:flex;gap:10px;align-items:flex-start"><span style="color:{{ b.iconColor }};font-size:14px;line-height:1.7;flex:none">{{ b.icon }}</span><span style="font:400 16px/1.65 'Noto Sans SC',sans-serif;color:{{ b.textColor }}">{{ it.text }}</span></div></sc-for></div></sc-if>
-              <sc-if value="{{ b.isImages }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px"><sc-for list="{{ b.images }}" as="im" hint-placeholder-count="2"><figure style="margin:0"><img src="{{ im.src }}" class="q-block-img"/><sc-if value="{{ im.hasCaption }}" hint-placeholder-val="{{ true }}"><figcaption style="font:400 13px/1.5 'Noto Sans SC',sans-serif;color:#9aa0c8;margin-top:7px">{{ im.caption }}</figcaption></sc-if></figure></sc-for></div></sc-if>
+              <sc-if value="{{ b.isImages }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px"><sc-for list="{{ b.images }}" as="im" hint-placeholder-count="2"><figure style="margin:0"><img src="{{ im.src }}" onClick="{{ im.open }}" class="q-block-img" style="cursor:zoom-in"/><sc-if value="{{ im.hasCaption }}" hint-placeholder-val="{{ true }}"><figcaption style="font:400 13px/1.5 'Noto Sans SC',sans-serif;color:#9aa0c8;margin-top:7px">{{ im.caption }}</figcaption></sc-if></figure></sc-for></div></sc-if>
               <sc-if value="{{ b.isVideo }}" hint-placeholder-val="{{ false }}"><a href="{{ b.url }}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;padding:10px 15px;border-radius:9px;background:rgba(86,214,214,.1);border:1px solid rgba(86,214,214,.3);color:#7fe0e0;font:600 14px/1.2 'Noto Sans SC',sans-serif;text-decoration:none">{{ b.label }}</a></sc-if>
             </section>
           </sc-for>
         </div>
+
+        <div style="display:flex;align-items:center;gap:9px;margin:26px 0 13px"><span style="width:4px;height:15px;border-radius:2px;background:linear-gradient(180deg,#56d6d6,#e0a040)"></span><span style="font:600 14px/1 'Noto Sans SC',sans-serif;color:#eef0fa">{{ L.loanStatus }}</span></div>
+        <div style="padding:14px 16px;border-radius:14px;border:1px solid {{ loan.border }};background:{{ loan.bg }}"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="font:700 14px/1 'Noto Sans SC',sans-serif;color:{{ loan.color }}">{{ loan.label }}</span><span style="font:400 13px/1.4 'Noto Sans SC',sans-serif;color:#b4b9d4">{{ loan.summary }}</span><span style="flex:1"></span><sc-if value="{{ canLoan }}" hint-placeholder-val="{{ false }}"><button class="no-print" onClick="{{ loanAction }}" style="padding:8px 13px;border-radius:8px;border:1px solid {{ loan.border }};background:rgba(255,255,255,.04);color:{{ loan.color }};font:600 12px/1 'Noto Sans SC',sans-serif;cursor:pointer">{{ loan.action }}</button></sc-if></div><sc-if value="{{ hasLoanHistory }}" hint-placeholder-val="{{ false }}"><details style="margin-top:12px"><summary style="color:#9aa0c8;cursor:pointer;font-size:12px">{{ L.loanHistory }}</summary><div style="display:flex;flex-direction:column;gap:7px;margin-top:9px"><sc-for list="{{ loanHistory }}" as="h" hint-placeholder-count="2"><div style="font:400 12px/1.5 'Noto Sans SC',sans-serif;color:#b4b9d4">{{ h.text }}</div></sc-for></div></details></sc-if></div>
+
+        <sc-if value="{{ hasMaintenance }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:9px;margin:26px 0 13px"><span style="width:4px;height:15px;border-radius:2px;background:linear-gradient(180deg,#5aa6e6,#f06d6d)"></span><span style="font:600 14px/1 'Noto Sans SC',sans-serif;color:#eef0fa">{{ L.maintenanceHistory }}</span></div><div style="display:flex;flex-direction:column;gap:10px"><sc-for list="{{ maintenanceRows }}" as="m" hint-placeholder-count="2"><div style="display:flex;gap:10px;align-items:flex-start"><span style="width:9px;height:9px;margin-top:5px;border-radius:50%;background:{{ m.color }};box-shadow:0 0 8px {{ m.color }}"></span><div><div style="font:600 12px/1.3 'IBM Plex Mono',monospace;color:#cdd1e6">{{ m.date }} · {{ m.type }}</div><div style="font:400 14px/1.55 'Noto Sans SC',sans-serif;color:#b4b9d4;margin-top:3px">{{ m.note }} · {{ m.by }}</div></div></div></sc-for></div></sc-if>
+
+        <sc-if value="{{ hasAttachments }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:9px;margin:26px 0 13px"><span style="width:4px;height:15px;border-radius:2px;background:linear-gradient(180deg,#a78bfa,#56d6d6)"></span><span style="font:600 14px/1 'Noto Sans SC',sans-serif;color:#eef0fa">{{ L.attachments }}</span></div><div style="display:flex;flex-direction:column;gap:8px"><sc-for list="{{ attachments }}" as="a" hint-placeholder-count="2"><a href="{{ a.url }}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.03);color:#cdd1e6;text-decoration:none;font:500 13px/1.3 'Noto Sans SC',sans-serif"><span>{{ a.icon }}</span><span>{{ a.name }}</span><span style="margin-left:auto;color:#7fe0e0">{{ L.open }}</span></a></sc-for></div></sc-if>
+
+        <div class="no-print" style="display:flex;align-items:center;gap:14px;margin-top:26px;padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:13px;background:rgba(255,255,255,.025)"><canvas id="deviceQr" width="104" height="104" style="width:104px;height:104px;background:#fff;border-radius:7px"></canvas><div><div style="font:600 14px/1.3 'Noto Sans SC',sans-serif;color:#eef0fa">{{ L.qr }}</div><div style="font:400 12px/1.5 'Noto Sans SC',sans-serif;color:#9aa0c8;margin-top:4px">{{ L.qrTip }}</div><button onClick="{{ downloadQr }}" style="margin-top:8px;padding:7px 10px;border-radius:7px;border:1px solid rgba(86,214,214,.3);background:rgba(86,214,214,.08);color:#7fe0e0;cursor:pointer">{{ L.download }}</button></div></div>
 
         <div style="display:flex;align-items:center;gap:9px;margin:26px 0 13px"><span style="width:4px;height:15px;border-radius:2px;background:linear-gradient(180deg,#a78bfa,#56d6d6)"></span><span style="font:600 14px/1 'Noto Sans SC',sans-serif;letter-spacing:.5px;color:#eef0fa">{{ L.contact }}</span></div>
         <div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px">
@@ -202,6 +220,12 @@ html,body{margin:0;padding:0;background:#07080f}
   </div>
 
 </div>
+
+<!-- ===================== 图片灯箱 LIGHTBOX ===================== -->
+<div style="{{ lightboxStyle }}" onClick="{{ closeLightbox }}"><button onClick="{{ closeLightbox }}" style="position:absolute;right:22px;top:18px;width:38px;height:38px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.35);color:#fff;font-size:24px;z-index:2">×</button><button onClick="{{ prevLightbox }}" style="position:absolute;left:22px;top:50%;width:44px;height:58px;border:0;border-radius:10px;background:rgba(0,0,0,.35);color:#fff;font-size:34px;z-index:2">‹</button><div onClick="{{ stop }}" style="max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center"><img src="{{ lightbox.src }}" alt="" style="max-width:90vw;max-height:82vh;object-fit:contain"/><sc-if value="{{ lightbox.hasCaption }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px;color:#eee;font:500 14px/1.5 'Noto Sans SC',sans-serif">{{ lightbox.caption }}</div></sc-if></div><button onClick="{{ nextLightbox }}" style="position:absolute;right:22px;top:50%;width:44px;height:58px;border:0;border-radius:10px;background:rgba(0,0,0,.35);color:#fff;font-size:34px;z-index:2">›</button></div>
+
+<!-- ===================== 借用 BORROW ===================== -->
+<div style="{{ loanModalStyle }}"><div style="width:100%;max-width:460px;background:#10121f;border:1px solid rgba(86,214,214,.25);border-radius:18px;padding:22px"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font:700 17px/1 'Noto Sans SC',sans-serif;color:#f2f3fb">{{ L.borrow }}</div><button onClick="{{ closeLoan }}" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:none;color:#cdd;font-size:19px">×</button></div><label style="display:block;color:#8a90b8;font-size:12px;margin:17px 0 6px">{{ L.until }}</label><input type="date" value="{{ loanUntil }}" onInput="{{ onLoanUntil }}" style="width:100%;padding:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e7e9f3"/><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><textarea value="{{ loanNoteCn }}" onInput="{{ onLoanNoteCn }}" rows="3" placeholder="备注（中文）" style="padding:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e7e9f3"></textarea><textarea value="{{ loanNoteEn }}" onInput="{{ onLoanNoteEn }}" rows="3" placeholder="Note (EN)" style="padding:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e7e9f3"></textarea></div><button onClick="{{ confirmLoan }}" style="width:100%;margin-top:14px;padding:11px;border:0;border-radius:9px;background:linear-gradient(90deg,#56d6d6,#5aa6e6);color:#07151b;font-weight:700">{{ L.confirmBorrow }}</button></div></div>
 
 <!-- ===================== 登录 LOGIN ===================== -->
 <div style="{{ loginOverlayStyle }}">
@@ -266,6 +290,7 @@ html,body{margin:0;padding:0;background:#07080f}
         <div><label style="font:600 10px/1 'Noto Sans SC',sans-serif;color:#8a90b8;display:block;margin-bottom:6px">{{ L.fNameCn }}</label><input value="{{ df.nameCn }}" onInput="{{ onNameCn }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;color:#e7e9f3;font:500 13px/1.4 'Noto Sans SC',sans-serif;outline:none" /></div>
         <div><label style="font:600 10px/1 'IBM Plex Mono',monospace;color:#8a90b8;display:block;margin-bottom:6px">{{ L.fNameEn }}</label><input value="{{ df.nameEn }}" onInput="{{ onNameEn }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;color:#e7e9f3;font:500 13px/1.4 'IBM Plex Mono',monospace;outline:none" /></div>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px"><div><label style="font:600 12px/1 'Noto Sans SC',sans-serif;color:#8a90b8;display:block;margin-bottom:6px">{{ L.locationCn }}</label><input value="{{ df.locationCn }}" onInput="{{ onLocationCn }}" style="width:100%;padding:9px 11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:#e7e9f3;font-size:14px"/></div><div><label style="font:600 12px/1 'IBM Plex Mono',monospace;color:#8a90b8;display:block;margin-bottom:6px">{{ L.locationEn }}</label><input value="{{ df.locationEn }}" onInput="{{ onLocationEn }}" style="width:100%;padding:9px 11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:#e7e9f3;font-size:14px"/></div><div><label style="font:600 12px/1 'Noto Sans SC',sans-serif;color:#8a90b8;display:block;margin-bottom:6px">{{ L.nextCalib }}</label><input type="date" value="{{ df.nextCalibDue }}" onInput="{{ onNextCalib }}" style="width:100%;padding:9px 11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:#e7e9f3;font-size:14px"/></div></div>
       <!-- 照片 -->
       <div style="margin-top:14px;display:flex;align-items:center;gap:14px">
         <sc-if value="{{ df.hasImg }}" hint-placeholder-val="{{ false }}"><img src="{{ df.img }}" alt="" style="display:block;width:84px;height:60px;object-fit:cover;border-radius:9px;flex:none;border:1px solid rgba(255,255,255,.12);background:#0d0f1c"/></sc-if>
@@ -381,6 +406,8 @@ html,body{margin:0;padding:0;background:#07080f}
 
       </div>
       <!-- 负责人 -->
+      <div style="font:600 14px/1 'Noto Sans SC',sans-serif;color:#c4b5fd;margin:24px 0 11px">{{ L.maintenanceHistory }}</div><div style="display:flex;flex-direction:column;gap:8px"><sc-for list="{{ dfMaintenance }}" as="m" hint-placeholder-count="1"><div style="display:grid;grid-template-columns:130px 110px 1fr 1fr 110px 32px;gap:7px"><input type="date" value="{{ m.date }}" onInput="{{ m.onDate }}" style="padding:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e7e9f3"/><select value="{{ m.type }}" onChange="{{ m.onType }}" style="background:#111422;border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e7e9f3"><option value="calib">{{ L.calib }}</option><option value="repair">{{ L.repair }}</option><option value="check">{{ L.check }}</option></select><input value="{{ m.cn }}" onInput="{{ m.onCn }}" placeholder="说明（中）" style="padding:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e7e9f3"/><input value="{{ m.en }}" onInput="{{ m.onEn }}" placeholder="Note (EN)" style="padding:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e7e9f3"/><input value="{{ m.by }}" onInput="{{ m.onBy }}" placeholder="记录人" style="padding:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e7e9f3"/><button onClick="{{ m.remove }}" style="border:1px solid rgba(240,109,109,.3);border-radius:7px;background:rgba(240,109,109,.08);color:#f0a0a0">×</button></div></sc-for></div><button onClick="{{ addMaintenance }}" style="margin-top:8px;padding:7px 11px;border-radius:7px;border:1px solid rgba(167,139,250,.25);background:rgba(167,139,250,.08);color:#c4b5fd">＋ {{ L.addRow }}</button>
+      <div style="font:600 14px/1 'Noto Sans SC',sans-serif;color:#c4b5fd;margin:24px 0 11px">{{ L.attachments }}</div><div style="display:flex;flex-direction:column;gap:8px"><sc-for list="{{ dfAttachments }}" as="a" hint-placeholder-count="1"><div style="display:grid;grid-template-columns:1fr 2fr 100px 32px;gap:7px"><input value="{{ a.name }}" onInput="{{ a.onName }}" placeholder="文件名 / Name" style="padding:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e7e9f3"/><input value="{{ a.url }}" onInput="{{ a.onUrl }}" placeholder="https://…" style="padding:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e7e9f3"/><select value="{{ a.kind }}" onChange="{{ a.onKind }}" style="background:#111422;border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e7e9f3"><option value="pdf">PDF</option><option value="link">Link</option></select><button onClick="{{ a.remove }}" style="border:1px solid rgba(240,109,109,.3);border-radius:7px;background:rgba(240,109,109,.08);color:#f0a0a0">×</button></div></sc-for></div><button onClick="{{ addAttachment }}" style="margin-top:8px;padding:7px 11px;border-radius:7px;border:1px solid rgba(167,139,250,.25);background:rgba(167,139,250,.08);color:#c4b5fd">＋ {{ L.addRow }}</button>
       <div style="font:600 12px/1 'Noto Sans SC',sans-serif;color:#c4b5fd;letter-spacing:.5px;margin:24px 0 11px">{{ L.secContact }}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div><label style="font:600 10px/1 'Noto Sans SC',sans-serif;color:#8a90b8;display:block;margin-bottom:6px">{{ L.cName }}</label><input value="{{ df.cName }}" onInput="{{ onCName }}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:9px 11px;color:#e7e9f3;font:500 13px/1.4 'Noto Sans SC',sans-serif;outline:none" /></div>
@@ -622,26 +649,34 @@ class Component extends DCLogic {
   constructor(props){
     super(props);
     this.state = {
-      lang:(props&&props.defaultLang)||'cn', q:'', cat:'all', entered:false, selId:null,
+      lang:(props&&props.defaultLang)||'cn', q:'', cat:'all', sortBy:'id', entered:false, selId:null,
       devices: this.cloud ? [] : JSON.parse(JSON.stringify(this.SEED_DEVICES)), cats:JSON.parse(JSON.stringify(this.DEFAULT_CATS)),
       ready:false, authMode:'local', auth:null, role:'admin',
       editing:false, editIsNew:false, editOrigId:null, draft:null, saveErr:'', busy:false,
-      showAdmin:false, showCategories:false, showBlockTypes:false, newCatCn:'', newCatEn:'', users:[], authEmail:'', authPw:'', authErr:'', authTab:'in', approved:true, pendingCount:0,
+      showAdmin:false, showCategories:false, showBlockTypes:false, lightbox:null, loanModal:false, loanUntil:'', loanNoteCn:'', loanNoteEn:'', deepLinkId:new URLSearchParams(location.search).get('id')||'', newCatCn:'', newCatEn:'', users:[], authEmail:'', authPw:'', authErr:'', authTab:'in', approved:true, pendingCount:0,
     };
   }
 
   componentDidMount(){
+    this.onKeyDownBound=e=>this.onGlobalKey(e); window.addEventListener('keydown',this.onKeyDownBound);
     requestAnimationFrame(()=>requestAnimationFrame(()=>this.setState({entered:true})));
     if(this.cloud){ this.initCloud(); }
     else {
       const local=this.loadLocal(), cats=this.loadLocalCats();
       this.setState({ devices: local || JSON.parse(JSON.stringify(this.SEED_DEVICES)), cats:this.ensureCats(cats||this.DEFAULT_CATS), authMode:'local', role:'admin', ready:true });
+      if(this.state.deepLinkId)setTimeout(()=>this.openDevice(this.state.deepLinkId),0);
     }
   }
+  componentWillUnmount(){ if(this.onKeyDownBound)window.removeEventListener('keydown',this.onKeyDownBound); }
+  componentDidUpdate(){ if(this.state.selId&&window.QRious){ const c=document.getElementById('deviceQr'); if(c)new window.QRious({element:c,value:this.deviceUrl(this.state.selId),size:104,padding:5,level:'M'}); } }
 
   list(){ return this.state.devices || []; }
   visibleList(){ return this.cloud && this.state.role==='viewer' ? this.list().filter(d=>d.status!=='standby') : this.list(); }
   imgUrl(src){ if(!src) return 'none'; return 'url("'+String(src).replace(/"/g,'%22')+'")'; }
+  deviceUrl(id){ const u=new URL(location.href);u.search='';u.searchParams.set('id',id);return u.toString(); }
+  openDevice(id){ const d=this.visibleList().find(x=>x.id===id);if(!d)return;history.replaceState(null,'',this.deviceUrl(id));this.setState({selId:id}); }
+  closeDevice(){ const u=new URL(location.href);u.searchParams.delete('id');history.replaceState(null,'',u.pathname+u.search+u.hash);this.setState({selId:null}); }
+  onGlobalKey(e){ const tag=(e.target&&e.target.tagName||'').toLowerCase();const typing=['input','textarea','select'].includes(tag);if(e.key==='Escape'){if(this.state.lightbox)this.setState({lightbox:null});else if(this.state.loanModal)this.setState({loanModal:false});else if(this.state.showCategories)this.setState({showCategories:false});else if(this.state.editing)this.cancelEdit();else if(this.state.showAdmin)this.closeAdmin();else if(this.state.selId)this.closeDevice();return;}if(typing)return;if(e.key==='/'){e.preventDefault();const el=document.getElementById('deviceSearch');if(el)el.focus();}else if(this.state.lightbox&&e.key==='ArrowLeft')this.shiftLightbox(-1);else if(this.state.lightbox&&e.key==='ArrowRight')this.shiftLightbox(1); }
 
   // ---------------- 本地存储 ----------------
   loadLocal(){ try{ const s=localStorage.getItem(this.LS_KEY); if(s) return JSON.parse(s); }catch(e){} return null; }
@@ -688,6 +723,7 @@ class Component extends DCLogic {
       const rows=data||[]; const settings=rows.find(r=>r.id==='__categories__');
       let arr=rows.filter(r=>r.id!=='__categories__').map(r=>r.data);
       this.setState({ devices:arr, cats:this.ensureCats(settings&&settings.data&&settings.data.categories||this.DEFAULT_CATS) });
+      if(this.state.deepLinkId)setTimeout(()=>this.openDevice(this.state.deepLinkId),0);
     }catch(e){ console.error(e); }
   }
   async cloudSave(d, isNew, origId){
@@ -732,8 +768,8 @@ class Component extends DCLogic {
     return out;
   }
   blockTemplate(type){ const b={id:this.uid('b'),type,title:{cn:'',en:''}}; if(type==='richtext'||type==='custom')b.body={cn:'',en:''}; else if(type==='latex'){b.tex='';b.note={cn:'',en:''};} else if(type==='images')b.items=[]; else if(type==='paramtable')b.rows=[]; else if(type==='video'){b.url='';b.label={cn:'',en:''};} else b.items=[]; return b; }
-  blankDevice(){ return { id:'', cat:(this.state.cats[0]||{key:'uncategorized'}).key, status:'online', img:'', name:{cn:'',en:''}, blocks:[this.blockTemplate('richtext')], contact:{name:'',role:{cn:'',en:''},phone:'',email:''} }; }
-  startEdit(id){ const d=this.list().find(x=>x.id===id); if(!d) return; const draft=JSON.parse(JSON.stringify(d)); draft.blocks=this.legacyBlocks(draft); this.setState({ editing:true, editIsNew:false, editOrigId:id, draft, saveErr:'' }); }
+  blankDevice(){ return { id:'', cat:(this.state.cats[0]||{key:'uncategorized'}).key, status:'online', img:'', name:{cn:'',en:''}, location:{cn:'',en:''}, blocks:[this.blockTemplate('richtext')], loan:{status:'available',borrower:'',since:'',until:'',note:{cn:'',en:''}}, loanHistory:[], maintenance:[], nextCalibDue:'', attachments:[], updatedAt:0, contact:{name:'',role:{cn:'',en:''},phone:'',email:''} }; }
+  startEdit(id){ const d=this.list().find(x=>x.id===id); if(!d) return; const draft=JSON.parse(JSON.stringify(d)); draft.blocks=this.legacyBlocks(draft);draft.location=draft.location||{cn:'',en:''};draft.loan=draft.loan||{status:'available',borrower:'',since:'',until:'',note:{cn:'',en:''}};draft.loanHistory=draft.loanHistory||[];draft.maintenance=draft.maintenance||[];draft.nextCalibDue=draft.nextCalibDue||'';draft.attachments=draft.attachments||[];draft.updatedAt=draft.updatedAt||0;this.setState({ editing:true, editIsNew:false, editOrigId:id, draft, saveErr:'' }); }
   startAdd(){ this.setState({ editing:true, editIsNew:true, editOrigId:null, draft:this.blankDevice(), saveErr:'', selId:null }); }
   cancelEdit(){ this.setState({ editing:false, draft:null }); }
   getPath(o,path){ return path.split('.').reduce((a,k)=>a[k],o); }
@@ -747,6 +783,15 @@ class Component extends DCLogic {
   async createCategory(){ const cn=this.state.newCatCn.trim(),en=this.state.newCatEn.trim(); if(!cn&&!en)return; const cats=this.state.cats.slice(0,-1); cats.push({key:this.uid('cat'),cn:cn||en,en:en||cn}); await this.persistCategories(cats); this.setState({newCatCn:'',newCatEn:''}); }
   async renameCategory(key,field,value){ const cats=this.state.cats.map(c=>c.key===key?{...c,[field]:value}:c); await this.persistCategories(cats); }
   async deleteCategory(key){ if(key==='uncategorized')return; const cn=this.state.lang==='cn'; if(!window.confirm(cn?'删除分类后，其设备将移入“未分类”。继续？':'Devices will move to Uncategorized. Continue?'))return; const changed=this.list().filter(d=>d.cat===key).map(d=>({...d,cat:'uncategorized'})); try{for(const d of changed){if(this.cloud)await this.cloudSave(d,false,d.id);} const devices=this.list().map(d=>d.cat===key?{...d,cat:'uncategorized'}:d); if(!this.cloud)this.persistLocal(devices); await this.persistCategories(this.state.cats.filter(c=>c.key!==key)); this.setState({devices,cat:this.state.cat===key?'all':this.state.cat});}catch(e){alert(e.message||e);} }
+  deviceSearchText(d){ const out=[d.id,d.name&&d.name.cn,d.name&&d.name.en,this.catLabel(d.cat),d.location&&d.location.cn,d.location&&d.location.en]; this.legacyBlocks(d).forEach(b=>{out.push(b.title&&b.title.cn,b.title&&b.title.en,b.body&&b.body.cn,b.body&&b.body.en,b.note&&b.note.cn,b.note&&b.note.en,b.label&&b.label.cn,b.label&&b.label.en);(b.rows||[]).forEach(r=>out.push(r.k&&r.k.cn,r.k&&r.k.en,r.v));(b.items||[]).forEach(x=>out.push(x.cn,x.en,x.caption&&x.caption.cn,x.caption&&x.caption.en));});return out.filter(Boolean).join(' ').toLowerCase(); }
+  calibMeta(d){ if(!d.nextCalibDue)return {alert:false,label:''};const due=new Date(d.nextCalibDue+'T23:59:59').getTime(),days=Math.ceil((due-Date.now())/86400000);if(days<0)return {alert:true,label:this.state.lang==='cn'?'校准已过期':'Calibration overdue'};if(days<=14)return {alert:true,label:this.state.lang==='cn'?'校准将到期':'Calibration due soon'};return {alert:false,label:''}; }
+  imageList(d){ const list=[];if(d&&d.img)list.push({src:d.img,caption:d.name||{cn:'',en:''}});this.legacyBlocks(d||{}).filter(b=>b.type==='images').forEach(b=>(b.items||[]).forEach(x=>{if(x.src)list.push({src:x.src,caption:x.caption||{cn:'',en:''}})}));return list; }
+  openLightbox(d,index){ const list=this.imageList(d);if(list.length)this.setState({lightbox:{list,i:Math.max(0,Math.min(index,list.length-1))}}); }
+  shiftLightbox(n){ const lb=this.state.lightbox;if(!lb||!lb.list.length)return;this.setState({lightbox:{...lb,i:(lb.i+n+lb.list.length)%lb.list.length}}); }
+  async persistDeviceUpdate(next){ if(this.cloud)await this.cloudSave(next,false,next.id);const devices=this.list().map(d=>d.id===next.id?next:d);if(!this.cloud)this.persistLocal(devices);this.setState({devices}); }
+  async confirmBorrow(){ const d=this.list().find(x=>x.id===this.state.selId);if(!d)return;const borrower=this.state.auth&&this.state.auth.email||'Local user';const next={...d,loan:{status:'in_use',borrower,since:new Date().toISOString(),until:this.state.loanUntil,note:{cn:this.state.loanNoteCn,en:this.state.loanNoteEn}},updatedAt:Date.now()};await this.persistDeviceUpdate(next);this.setState({loanModal:false,loanUntil:'',loanNoteCn:'',loanNoteEn:''}); }
+  async returnDevice(){ const d=this.list().find(x=>x.id===this.state.selId);if(!d)return;const loan=d.loan||{};const hist=[...(d.loanHistory||[]),{borrower:loan.borrower||'',from:loan.since||'',to:new Date().toISOString(),note:loan.note||{cn:'',en:''},at:Date.now()}];const next={...d,loan:{status:'available',borrower:'',since:'',until:'',note:{cn:'',en:''}},loanHistory:hist,updatedAt:Date.now()};await this.persistDeviceUpdate(next); }
+  downloadQr(){ const c=document.getElementById('deviceQr');if(!c)return;const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download=(this.state.selId||'device')+'-qr.png';a.click(); }
 
   onPhotoFile(e){
     const file=e.target.files&&e.target.files[0]; if(!file) return;
@@ -774,7 +819,7 @@ class Component extends DCLogic {
     if(!d.id || !d.id.trim()){ this.setState({ saveErr: cn?'请填写设备编号':'Device ID is required' }); return; }
     if(!d.name.cn.trim() && !d.name.en.trim()){ this.setState({ saveErr: cn?'请填写设备名称':'Device name is required' }); return; }
     if(this.state.editIsNew && this.list().some(x=>x.id===d.id.trim())){ this.setState({ saveErr: cn?'该编号已存在，请换一个':'This ID already exists' }); return; }
-    d.id=d.id.trim(); d.blocks=this.legacyBlocks(d);
+    d.id=d.id.trim(); d.blocks=this.legacyBlocks(d); d.updatedAt=Date.now();
     this.setState({ busy:true, saveErr:'' });
     try{
       if(this.cloud) await this.cloudSave(d, this.state.editIsNew, this.state.editOrigId);
@@ -814,7 +859,7 @@ class Component extends DCLogic {
     const cn = this.state.lang==='cn';
     return {
       brandSub:'QUANTUM OPTICS · EQUIPMENT LIBRARY',
-      search: cn?'搜索设备名称 / 编号…':'Search name / ID…',
+      search: cn?'搜索名称 / 编号 / 参数 / 内容…':'Search name / ID / parameters / content…',
       devices: cn?'设备总数':'DEVICES', categories: cn?'分类':'CATEGORIES', online: cn?'已发布':'PUBLISHED', standby: cn?'未发布':'UNPUBLISHED',
       specs: cn?'规格参数':'Specifications', intro: cn?'简介':'Overview',
       operation: cn?'操作步骤':'Operating Procedure', boot: cn?'开机':'Start-up', calib: cn?'校准':'Calibration', shutdown: cn?'关机':'Shut-down',
@@ -840,6 +885,7 @@ class Component extends DCLogic {
       waitTitle: cn?'账号待批准':'Awaiting approval', waitSub: cn?'你的注册申请已提交，请等待管理员批准后即可访问。':'Your request has been submitted. You can access once an admin approves it.',
       modeLocal: cn?'本地模式':'Local', modeCloud: cn?'云端':'Cloud',
       manageCategories:cn?'管理分类':'Manage categories', contentBlocks:cn?'内容区块':'Content blocks', addBlock:cn?'添加区块':'Add block', add:cn?'新增':'Add',
+      inUse:cn?'使用中':'In use',loanStatus:cn?'使用状态':'Usage status',loanHistory:cn?'借用历史':'Loan history',borrow:cn?'借用设备':'Borrow device',return:cn?'归还':'Return',available:cn?'可借用':'Available',until:cn?'预计归还日期':'Expected return',confirmBorrow:cn?'确认借用':'Confirm borrow',maintenanceHistory:cn?'校准 · 维护记录':'Calibration · maintenance',repair:cn?'维修':'Repair',check:cn?'点检':'Check',attachments:cn?'附件 / 文档':'Attachments / documents',open:cn?'打开':'Open',print:cn?'导出 / 打印':'Export / print',qr:cn?'设备二维码':'Device QR code',qrTip:cn?'扫码直达本设备说明书':'Scan to open this device manual',download:cn?'下载 PNG':'Download PNG',locationCn:cn?'位置（中文）':'Location (CN)',locationEn:'Location (EN)',nextCalib:cn?'下次校准':'Next calibration',
     };
   }
 
@@ -857,7 +903,7 @@ class Component extends DCLogic {
       isHtml:type==='richtext'||type==='custom',html:type==='latex'?this.renderLatex(b.tex):this.renderMarkdown(this.t(b.body)),isLatex:type==='latex',note:this.t(b.note),hasNote:!!this.t(b.note),
       isParams:type==='paramtable',rows:(b.rows||[]).map(r=>({k:this.t(r.k),v:r.v})),isList:type==='steps',isCallout:isWarning||isTips,items,
       border:isWarning?'rgba(224,160,64,.3)':'rgba(86,214,214,.28)',bg:isWarning?'rgba(224,160,64,.07)':'rgba(86,214,214,.06)',icon:isWarning?'⚠':'i',iconColor:isWarning?'#e0a040':'#56d6d6',textColor:isWarning?'#e7d3b0':'#cddfea',
-      isImages:type==='images',images:(b.items||[]).filter(x=>x.src).map(x=>({src:x.src,caption:this.t(x.caption),hasCaption:!!this.t(x.caption)})),isVideo:type==='video',url:b.url||'#',label:this.t(b.label)||(this.state.lang==='cn'?'打开链接':'Open link')};
+      isImages:type==='images',images:(b.items||[]).filter(x=>x.src).map(x=>({src:x.src,caption:this.t(x.caption),hasCaption:!!this.t(x.caption),open:()=>{const d=this.list().find(y=>y.id===this.state.selId);const all=this.imageList(d);this.openLightbox(d,all.findIndex(z=>z.src===x.src));}})),isVideo:type==='video',url:b.url||'#',label:this.t(b.label)||(this.state.lang==='cn'?'打开链接':'Open link')};
   }
 
   renderVals(){
@@ -877,19 +923,19 @@ class Component extends DCLogic {
     const list = visibleDevices.filter(d=>{
       if(cat!=='all' && d.cat!==cat) return false;
       if(!qq) return true;
-      const hay = (d.name.cn+d.name.en+d.id+d.cat).toLowerCase();
-      return hay.includes(qq);
-    });
+      return this.deviceSearchText(d).includes(qq);
+    }).slice().sort((a,b)=>{const by=this.state.sortBy;if(by==='name')return this.t(a.name).localeCompare(this.t(b.name));if(by==='cat')return this.catLabel(a.cat).localeCompare(this.catLabel(b.cat));if(by==='status')return String(a.status).localeCompare(String(b.status));if(by==='updated')return (b.updatedAt||0)-(a.updatedAt||0);return String(a.id).localeCompare(String(b.id));});
 
     const cards = list.map((d,i)=>{
       const sm = this.statusMeta(d.status);
+      const cm=this.calibMeta(d),location=this.t(d.location);
       const delay = Math.min(i,11)*55;
       return {
         id:d.id, nameCn:d.name.cn, nameEn:d.name.en, catLabel:this.catLabel(d.cat),
         statusColor:sm.c, statusLabel:sm.l, hasImg:!!d.img, noImg:!d.img, img:d.img||'', imgUrl: this.imgUrl(d.img),
-        chips: ((this.legacyBlocks(d).find(b=>b.type==='paramtable')||{}).rows||[]).slice(0,2).map(s=>({ v:s.v })),
+        chips: ((this.legacyBlocks(d).find(b=>b.type==='paramtable')||{}).rows||[]).slice(0,2).map(s=>({ v:s.v })),location,hasLocation:!!location,inUse:d.loan&&d.loan.status==='in_use',calibAlert:cm.alert,calibLabel:cm.label,
         wrapStyle:`opacity:1;transform:${entered?'translateY(0)':'translateY(16px)'};transition:transform .55s cubic-bezier(.2,.7,.2,1) ${delay}ms`,
-        open: ()=>this.setState({ selId:d.id }),
+        open: ()=>this.openDevice(d.id),
       };
     });
 
@@ -901,17 +947,23 @@ class Component extends DCLogic {
 
     const d = visibleDevices.find(x=>x.id===selId);
     const open = !!d;
-    let sel = { hasImg:false, noImg:false, img:'', imgUrl:'none', id:'', catLabel:'', statusColor:'#9aa0c8', statusBorder:'rgba(255,255,255,.2)', statusLabel:'', nameCn:'', nameEn:'', intro:'', contactName:'', contactRole:'', contactPhone:'', contactEmail:'' };
-    let detailBlocks=[];
+    let sel = { hasImg:false, noImg:false, img:'', imgUrl:'none', id:'', catLabel:'', statusColor:'#9aa0c8', statusBorder:'rgba(255,255,255,.2)', statusLabel:'', nameCn:'', nameEn:'', intro:'', location:'',hasLocation:false,calibAlert:false,calibLabel:'',contactName:'', contactRole:'', contactPhone:'', contactEmail:'' };
+    let detailBlocks=[],loan={label:'',summary:'',action:'',color:'#56d6d6',border:'rgba(86,214,214,.3)',bg:'rgba(86,214,214,.06)'},loanHistory=[],maintenanceRows=[],attachments=[];
     if(d){
       const sm = this.statusMeta(d.status);
+      const cm=this.calibMeta(d),location=this.t(d.location),ld=d.loan||{status:'available'},inUse=ld.status==='in_use';
       sel = {
         nameCn:d.name.cn, nameEn:d.name.en, id:d.id, catLabel:this.catLabel(d.cat),
         statusColor:sm.c, statusBorder:sm.b, statusLabel:sm.l, hasImg:!!d.img, noImg:!d.img, img:d.img||'', imgUrl: this.imgUrl(d.img),
-        intro:'',
+        intro:'',location,hasLocation:!!location,calibAlert:cm.alert,calibLabel:cm.label,openCover:()=>this.openLightbox(d,0),
         contactName:d.contact.name, contactRole:this.t(d.contact.role), contactPhone:d.contact.phone, contactEmail:d.contact.email,
       };
       detailBlocks=this.legacyBlocks(d).map(b=>this.blockView(b));
+      loan={label:inUse?L.inUse:L.available,summary:inUse?[ld.borrower,ld.since?new Date(ld.since).toLocaleDateString():'',ld.until?('→ '+ld.until):'',this.t(ld.note)].filter(Boolean).join(' · '):'',action:inUse?L.return:L.borrow,color:inUse?'#e0a040':'#56d6d6',border:inUse?'rgba(224,160,64,.32)':'rgba(86,214,214,.3)',bg:inUse?'rgba(224,160,64,.07)':'rgba(86,214,214,.06)'};
+      loanHistory=(d.loanHistory||[]).slice().reverse().map(h=>({text:[h.borrower,h.from?new Date(h.from).toLocaleDateString():'',h.to?('→ '+new Date(h.to).toLocaleDateString()):'',this.t(h.note)].filter(Boolean).join(' · ')}));
+      const typeLabel={calib:L.calib,repair:L.repair,check:L.check},typeColor={calib:'#56d6d6',repair:'#f06d6d',check:'#a78bfa'};
+      maintenanceRows=(d.maintenance||[]).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(m=>({date:m.date||'',type:typeLabel[m.type]||m.type,note:this.t(m.note),by:m.by||'',color:typeColor[m.type]||'#8a90b8'}));
+      attachments=(d.attachments||[]).filter(a=>a.url).map(a=>({name:a.name||a.url,url:a.url,icon:a.kind==='pdf'?'PDF':'↗'}));
     }
 
     const overlayStyle = `position:fixed;inset:0;z-index:60;display:${open?'flex':'none'};align-items:flex-start;justify-content:center;padding:5vh 18px;overflow-y:auto;background:rgba(5,6,16,.74);backdrop-filter:blur(8px);opacity:${open?1:0}`;
@@ -932,10 +984,10 @@ class Component extends DCLogic {
 
     // ---- 编辑草稿 ----
     const dft=this.state.draft; const editing=this.state.editing && !!dft;
-    let df={ id:'', status:'online', cat:'', img:'', hasImg:false, imgUrl:'none', nameCn:'', nameEn:'', cName:'', cRoleCn:'', cRoleEn:'', cPhone:'', cEmail:'' }, dfBlocks=[];
+    let df={ id:'', status:'online', cat:'', img:'', hasImg:false, imgUrl:'none', nameCn:'', nameEn:'',locationCn:'',locationEn:'',nextCalibDue:'', cName:'', cRoleCn:'', cRoleEn:'', cPhone:'', cEmail:'' }, dfBlocks=[],dfMaintenance=[],dfAttachments=[];
     if(dft){
       df={ id:dft.id, status:dft.status, cat:dft.cat, img:dft.img||'', hasImg:!!dft.img, imgUrl:this.imgUrl(dft.img),
-        nameCn:dft.name.cn, nameEn:dft.name.en,
+        nameCn:dft.name.cn, nameEn:dft.name.en,locationCn:dft.location&&dft.location.cn||'',locationEn:dft.location&&dft.location.en||'',nextCalibDue:dft.nextCalibDue||'',
         cName:dft.contact.name, cRoleCn:dft.contact.role.cn, cRoleEn:dft.contact.role.en, cPhone:dft.contact.phone, cEmail:dft.contact.email };
       const typeNames={richtext:cn?'富文本':'Rich text',latex:'LaTeX',images:cn?'多图':'Images',paramtable:cn?'参数表':'Parameter table',steps:cn?'步骤':'Steps',tips:cn?'提示':'Tips',warning:cn?'警告':'Warning',video:cn?'视频 / 外链':'Video / link',custom:cn?'其他':'Custom'};
       dfBlocks=(dft.blocks||[]).map((b,i)=>{
@@ -943,6 +995,8 @@ class Component extends DCLogic {
         const rows=rowSource.map((r,j)=>({cn:isParams?(r.k&&r.k.cn||''):isImages?(r.caption&&r.caption.cn||''):(r.cn||''),en:isParams?(r.k&&r.k.en||''):isImages?(r.caption&&r.caption.en||''):(r.en||''),v:r.v||'',src:r.src||'',onCn:e=>this.arrSet('blocks.'+i+(isParams?'.rows':'.items'),j,isParams?'k.cn':isImages?'caption.cn':'cn',e.target.value),onEn:e=>this.arrSet('blocks.'+i+(isParams?'.rows':'.items'),j,isParams?'k.en':isImages?'caption.en':'en',e.target.value),onV:e=>this.arrSet('blocks.'+i+'.rows',j,'v',e.target.value),onSrc:e=>this.arrSet('blocks.'+i+'.items',j,'src',e.target.value),onFile:e=>this.onBlockImageFile(e,i,j),remove:()=>this.arrDel('blocks.'+i+(isParams?'.rows':'.items'),j)}));
         return {typeLabel:typeNames[b.type]||b.type,titleCn:b.title&&b.title.cn||'',titleEn:b.title&&b.title.en||'',onTitleCn:e=>this.arrSet('blocks',i,'title.cn',e.target.value),onTitleEn:e=>this.arrSet('blocks',i,'title.en',e.target.value),isText:b.type==='richtext'||b.type==='custom',bodyCn:b.body&&b.body.cn||'',bodyEn:b.body&&b.body.en||'',onBodyCn:e=>this.arrSet('blocks',i,'body.cn',e.target.value),onBodyEn:e=>this.arrSet('blocks',i,'body.en',e.target.value),isLatex:b.type==='latex',tex:b.tex||'',onTex:e=>this.arrSet('blocks',i,'tex',e.target.value),preview:this.renderLatex(b.tex),noteCn:b.note&&b.note.cn||'',noteEn:b.note&&b.note.en||'',onNoteCn:e=>this.arrSet('blocks',i,'note.cn',e.target.value),onNoteEn:e=>this.arrSet('blocks',i,'note.en',e.target.value),isRows:['images','paramtable','steps','tips','warning'].includes(b.type),isParams,isImages,rows,onNewImage:e=>this.onBlockNewImageFile(e,i),addRow:()=>this.setDraft(d=>{const x=d.blocks[i];if(isParams)x.rows.push({k:{cn:'',en:''},v:''});else if(isImages)x.items.push({src:'',caption:{cn:'',en:''}});else x.items.push({cn:'',en:''});}),isVideo:b.type==='video',url:b.url||'',labelCn:b.label&&b.label.cn||'',labelEn:b.label&&b.label.en||'',onUrl:e=>this.arrSet('blocks',i,'url',e.target.value),onLabelCn:e=>this.arrSet('blocks',i,'label.cn',e.target.value),onLabelEn:e=>this.arrSet('blocks',i,'label.en',e.target.value),first:i===0,last:i===(dft.blocks.length-1),up:()=>this.moveBlock(i,i-1),down:()=>this.moveBlock(i,i+1),remove:()=>this.arrDel('blocks',i)};
       });
+      dfMaintenance=(dft.maintenance||[]).map((m,i)=>({date:m.date||'',type:m.type||'calib',cn:m.note&&m.note.cn||'',en:m.note&&m.note.en||'',by:m.by||'',onDate:e=>this.arrSet('maintenance',i,'date',e.target.value),onType:e=>this.arrSet('maintenance',i,'type',e.target.value),onCn:e=>this.arrSet('maintenance',i,'note.cn',e.target.value),onEn:e=>this.arrSet('maintenance',i,'note.en',e.target.value),onBy:e=>this.arrSet('maintenance',i,'by',e.target.value),remove:()=>this.arrDel('maintenance',i)}));
+      dfAttachments=(dft.attachments||[]).map((a,i)=>({name:a.name||'',url:a.url||'',kind:a.kind||'link',onName:e=>this.arrSet('attachments',i,'name',e.target.value),onUrl:e=>this.arrSet('attachments',i,'url',e.target.value),onKind:e=>this.arrSet('attachments',i,'kind',e.target.value),remove:()=>this.arrDel('attachments',i)}));
     }
     const statusOpts=[{v:'online',l:cn?'发布':'Published'},{v:'standby',l:cn?'未发布':'Unpublished'},{v:'maintenance',l:cn?'维护':'Maintenance'}];
     const catOpts=this.state.cats.map(c=>({ v:c.key, l:this.t(c) }));
@@ -967,6 +1021,12 @@ class Component extends DCLogic {
     const categoriesOpen=this.state.showCategories;
     const categoriesOverlayStyle=`position:fixed;inset:0;z-index:79;display:${categoriesOpen?'flex':'none'};align-items:flex-start;justify-content:center;padding:7vh 18px;overflow-y:auto;background:rgba(5,6,16,.84);backdrop-filter:blur(9px)`;
     const categoryRows=this.state.cats.map(c=>({cn:c.cn,en:c.en,locked:c.key==='uncategorized',lockLabel:c.key==='uncategorized'?'●':'×',onCn:e=>this.renameCategory(c.key,'cn',e.target.value),onEn:e=>this.renameCategory(c.key,'en',e.target.value),remove:()=>this.deleteCategory(c.key)}));
+    const sortOpts=[{v:'id',l:cn?'按编号':'ID'},{v:'name',l:cn?'按名称':'Name'},{v:'cat',l:cn?'按分类':'Category'},{v:'status',l:cn?'按状态':'Status'},{v:'updated',l:cn?'最近更新':'Recently updated'}];
+    const lb=this.state.lightbox,lbItem=lb&&lb.list[lb.i]||{src:'',caption:{cn:'',en:''}};
+    const lightbox={src:lbItem.src||'',caption:this.t(lbItem.caption),hasCaption:!!this.t(lbItem.caption)};
+    const lightboxStyle=`position:fixed;inset:0;z-index:120;display:${lb?'flex':'none'};align-items:center;justify-content:center;background:rgba(0,0,0,.92);padding:24px`;
+    const loanModalStyle=`position:fixed;inset:0;z-index:100;display:${this.state.loanModal?'flex':'none'};align-items:center;justify-content:center;padding:24px;background:rgba(5,6,16,.88);backdrop-filter:blur(8px)`;
+    const canLoan=!cloud||(authed&&this.state.approved);
 
     return {
       L, lang, cn,
@@ -974,11 +1034,11 @@ class Component extends DCLogic {
       setCn:()=>this.setState({lang:'cn'}), setEn:()=>this.setState({lang:'en'}),
       showStats: this.props.showStats ?? true,
       cats, cards, noCards: cards.length===0,
-      q, onSearch:(e)=>this.setState({ q:e.target.value }),
+      q, onSearch:(e)=>this.setState({ q:e.target.value }),sortBy:this.state.sortBy,sortOpts,onSort:e=>this.setState({sortBy:e.target.value}),
       stats,
-      sel, detailBlocks,
+      sel, detailBlocks,loan,loanHistory,hasLoanHistory:loanHistory.length>0,maintenanceRows,hasMaintenance:maintenanceRows.length>0,attachments,hasAttachments:attachments.length>0,canLoan,
       overlayStyle, panelStyle,
-      close:()=>this.setState({ selId:null }),
+      close:()=>this.closeDevice(),printDevice:()=>window.print(),downloadQr:()=>this.downloadQr(),
       stop:(e)=>{ e.stopPropagation(); },
 
       // 权限 / 登录
@@ -1000,19 +1060,23 @@ class Component extends DCLogic {
       editSel:()=>this.startEdit(this.state.selId), delSel:()=>this.deleteDevice(this.state.selId),
       startAdd:()=>this.startAdd(), saveDraft:()=>this.saveDraft(), cancelEdit:()=>this.cancelEdit(),
       delDraft:()=>this.deleteDevice(this.state.editOrigId),
-      df, dfBlocks, dfSpecs:[],dfBoot:[],dfCalib:[],dfShutdown:[],dfWarn:[],dfFaq:[], statusOpts, catOpts, blockTypes, showBlockTypes:this.state.showBlockTypes,
+      df, dfBlocks,dfMaintenance,dfAttachments, dfSpecs:[],dfBoot:[],dfCalib:[],dfShutdown:[],dfWarn:[],dfFaq:[], statusOpts, catOpts, blockTypes, showBlockTypes:this.state.showBlockTypes,
       editOverlayStyle, editPanelStyle, saveErr:this.state.saveErr,
       onId:e=>this.dset('id',e.target.value), onStatus:e=>this.dset('status',e.target.value), onCat:e=>this.dset('cat',e.target.value),
       onImgUrl:e=>this.dset('img',e.target.value), onPhotoFile:e=>this.onPhotoFile(e),
       onNameCn:e=>this.dset('name.cn',e.target.value), onNameEn:e=>this.dset('name.en',e.target.value),
+      onLocationCn:e=>this.dset('location.cn',e.target.value),onLocationEn:e=>this.dset('location.en',e.target.value),onNextCalib:e=>this.dset('nextCalibDue',e.target.value),
       onCName:e=>this.dset('contact.name',e.target.value), onCRoleCn:e=>this.dset('contact.role.cn',e.target.value), onCRoleEn:e=>this.dset('contact.role.en',e.target.value),
       onCPhone:e=>this.dset('contact.phone',e.target.value), onCEmail:e=>this.dset('contact.email',e.target.value),
       addBlock:()=>this.setState({showBlockTypes:!this.state.showBlockTypes}),
+      addMaintenance:()=>this.arrAdd('maintenance',{date:'',type:'calib',note:{cn:'',en:''},by:''}),addAttachment:()=>this.arrAdd('attachments',{name:'',url:'',kind:'link'}),
       addSpec:()=>{},addBoot:()=>{},addCalib:()=>{},addShutdown:()=>{},addWarn:()=>{},addFaq:()=>{},
 
       categoriesOverlayStyle,categoryRows,newCatCn:this.state.newCatCn,newCatEn:this.state.newCatEn,
       openCategories:()=>this.setState({showCategories:true}),closeCategories:()=>this.setState({showCategories:false}),
       onNewCatCn:e=>this.setState({newCatCn:e.target.value}),onNewCatEn:e=>this.setState({newCatEn:e.target.value}),createCategory:()=>this.createCategory(),
+      lightbox,lightboxStyle,closeLightbox:()=>this.setState({lightbox:null}),prevLightbox:()=>this.shiftLightbox(-1),nextLightbox:()=>this.shiftLightbox(1),
+      loanModalStyle,loanAction:()=>{const x=this.list().find(y=>y.id===this.state.selId);if(x&&x.loan&&x.loan.status==='in_use')this.returnDevice();else this.setState({loanModal:true});},closeLoan:()=>this.setState({loanModal:false}),loanUntil:this.state.loanUntil,loanNoteCn:this.state.loanNoteCn,loanNoteEn:this.state.loanNoteEn,onLoanUntil:e=>this.setState({loanUntil:e.target.value}),onLoanNoteCn:e=>this.setState({loanNoteCn:e.target.value}),onLoanNoteEn:e=>this.setState({loanNoteEn:e.target.value}),confirmLoan:()=>this.confirmBorrow(),
 
       // 管理
       adminOpen, adminOverlayStyle, pendingUsers, approvedUsers,
