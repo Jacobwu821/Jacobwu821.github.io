@@ -494,7 +494,7 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--text);transition:b
       </div>
       <!-- 负责人 -->
       <div id="edit-sec-records" style="font:600 14px/1 'Noto Sans SC',sans-serif;color:var(--accent);margin:24px 0 11px">{{ L.maintenanceHistory }}</div><div style="display:flex;flex-direction:column;gap:8px"><sc-for list="{{ dfMaintenance }}" as="m" hint-placeholder-count="1"><div style="display:grid;grid-template-columns:130px 110px 1fr 1fr 110px 32px;gap:7px"><input type="date" value="{{ m.date }}" onInput="{{ m.onDate }}" style="padding:8px;background:color-mix(in srgb,var(--text) 5%,transparent);border:1px solid var(--line-strong);border-radius:8px;color:var(--text)"/><select value="{{ m.type }}" onChange="{{ m.onType }}" style="background:var(--sunken);border:1px solid var(--line-strong);border-radius:8px;color:var(--text)"><option value="calib">{{ L.calib }}</option><option value="repair">{{ L.repair }}</option><option value="check">{{ L.check }}</option></select><input value="{{ m.cn }}" onInput="{{ m.onCn }}" placeholder="说明（中）" style="padding:8px;background:color-mix(in srgb,var(--text) 5%,transparent);border:1px solid var(--line-strong);border-radius:8px;color:var(--text)"/><input value="{{ m.en }}" onInput="{{ m.onEn }}" placeholder="Note (EN)" style="padding:8px;background:color-mix(in srgb,var(--text) 5%,transparent);border:1px solid var(--line-strong);border-radius:8px;color:var(--text)"/><input value="{{ m.by }}" onInput="{{ m.onBy }}" placeholder="记录人" style="padding:8px;background:color-mix(in srgb,var(--text) 5%,transparent);border:1px solid var(--line-strong);border-radius:8px;color:var(--text)"/><button onClick="{{ m.remove }}" style="border:1px solid rgba(240,109,109,.3);border-radius:7px;background:rgba(240,109,109,.08);color:var(--danger)">×</button></div></sc-for></div><button onClick="{{ addMaintenance }}" style="margin-top:8px;padding:7px 11px;border-radius:7px;border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);background:rgba(167,139,250,.08);color:var(--accent)">＋ {{ L.addRow }}</button>
-      <div style="font:600 14px/1 'Noto Sans SC',sans-serif;color:var(--accent);margin:24px 0 11px">{{ L.attachments }}</div><div style="display:flex;flex-direction:column;gap:8px"><sc-for list="{{ dfAttachments }}" as="a" hint-placeholder-count="1"><div style="display:grid;grid-template-columns:1fr 2fr 100px 32px;gap:7px"><input value="{{ a.name }}" onInput="{{ a.onName }}" placeholder="文件名 / Name" style="padding:8px;background:color-mix(in srgb,var(--text) 5%,transparent);border:1px solid var(--line-strong);border-radius:8px;color:var(--text)"/><input value="{{ a.url }}" onInput="{{ a.onUrl }}" placeholder="https://…" style="padding:8px;background:color-mix(in srgb,var(--text) 5%,transparent);border:1px solid var(--line-strong);border-radius:8px;color:var(--text)"/><select value="{{ a.kind }}" onChange="{{ a.onKind }}" style="background:var(--sunken);border:1px solid var(--line-strong);border-radius:8px;color:var(--text)"><option value="pdf">PDF</option><option value="link">Link</option></select><button onClick="{{ a.remove }}" style="border:1px solid rgba(240,109,109,.3);border-radius:7px;background:rgba(240,109,109,.08);color:var(--danger)">×</button></div></sc-for></div><button onClick="{{ addAttachment }}" style="margin-top:8px;padding:7px 11px;border-radius:7px;border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);background:rgba(167,139,250,.08);color:var(--accent)">＋ {{ L.addRow }}</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:24px 0 11px"><div><div style="font:600 14px/1 'Noto Sans SC',sans-serif;color:var(--accent)">{{ L.attachments }}</div><div style="margin-top:6px;color:var(--faint);font-size:11px">{{ pdfUploadHint }}</div></div><label style="display:inline-flex;align-items:center;gap:7px;padding:9px 13px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font:600 12px/1 'Noto Sans SC',sans-serif;cursor:pointer;white-space:nowrap">{{ pdfUploadLabel }}<input type="file" accept="application/pdf,.pdf" onChange="{{ onPdfFile }}" style="display:none"/></label></div><div style="display:flex;flex-direction:column;gap:8px"><sc-for list="{{ dfAttachments }}" as="a" hint-placeholder-count="1"><div style="display:grid;grid-template-columns:1fr 2fr 100px 32px;gap:7px"><input value="{{ a.name }}" onInput="{{ a.onName }}" placeholder="文件名 / Name" style="padding:8px;background:color-mix(in srgb,var(--text) 5%,transparent);border:1px solid var(--line-strong);border-radius:8px;color:var(--text)"/><input value="{{ a.url }}" onInput="{{ a.onUrl }}" placeholder="PDF 上传后自动填写，或粘贴网页链接" style="padding:8px;background:color-mix(in srgb,var(--text) 5%,transparent);border:1px solid var(--line-strong);border-radius:8px;color:var(--text)"/><select value="{{ a.kind }}" onChange="{{ a.onKind }}" style="background:var(--sunken);border:1px solid var(--line-strong);border-radius:8px;color:var(--text)"><option value="pdf">PDF</option><option value="link">Link</option></select><button onClick="{{ a.remove }}" style="border:1px solid rgba(240,109,109,.3);border-radius:7px;background:rgba(240,109,109,.08);color:var(--danger)">×</button></div></sc-for></div><button onClick="{{ addAttachment }}" style="margin-top:8px;padding:7px 11px;border-radius:7px;border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);background:rgba(167,139,250,.08);color:var(--accent)">＋ {{ addLinkLabel }}</button>
       <div id="edit-sec-owner" style="font:600 12px/1 'Noto Sans SC',sans-serif;color:var(--accent);letter-spacing:.5px;margin:24px 0 11px">{{ L.secContact }}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div><label style="font:600 10px/1 'Noto Sans SC',sans-serif;color:var(--faint);display:block;margin-bottom:6px">{{ L.cName }}</label><input value="{{ df.cName }}" onInput="{{ onCName }}" style="width:100%;background:color-mix(in srgb,var(--text) 5%,transparent);border:1px solid var(--line-strong);border-radius:9px;padding:9px 11px;color:var(--text);font:500 13px/1.4 'Noto Sans SC',sans-serif;outline:none" /></div>
@@ -740,7 +740,7 @@ class Component extends DCLogic {
       workspaceView:'board', panes:[], columnIds:[], activePaneId:null, splitRatio:.5, paneSections:{},
       devices: this.cloud ? [] : JSON.parse(JSON.stringify(this.SEED_DEVICES)), cats:JSON.parse(JSON.stringify(this.DEFAULT_CATS)),
       ready:false, authMode:'local', auth:null, role:'admin',
-      editing:false, editIsNew:false, editOrigId:null, editBaseRev:0, editBaseJson:'', draft:null, saveErr:'', busy:false,
+      editing:false, editIsNew:false, editOrigId:null, editBaseRev:0, editBaseJson:'', draft:null, saveErr:'', busy:false, pdfUploading:false,
       showAdmin:false, showCategories:false, showBlockTypes:false, lightbox:null, loanModal:false, loanUntil:'', loanNoteCn:'', loanNoteEn:'', deepLinkId:new URLSearchParams(location.search).get('id')||'', newCatCn:'', newCatEn:'', users:[], ownerEmails:[], authEmail:'', authPw:'', authErr:'', authTab:'in', approved:true, pendingCount:0,toast:'',dragDeviceId:'',dragOverStatus:'',calibOwner:'mine', showTools:false, showShortcuts:false, showLabels:false, paneHero:{}, blockPreview:{},
     };
   }
@@ -945,6 +945,31 @@ class Component extends DCLogic {
   }
   onBlockNewImageFile(e,bi){
     const file=e.target.files&&e.target.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>{const img=new Image();img.onload=()=>{const max=1000;let w=img.width,h=img.height;if(w>max||h>max){const r=Math.min(max/w,max/h);w=Math.round(w*r);h=Math.round(h*r);}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);this.setDraft(d=>d.blocks[bi].items.push({src:c.toDataURL('image/jpeg',.82),caption:{cn:'',en:''}}));};img.src=rd.result;};rd.readAsDataURL(file);
+  }
+
+  async onPdfFile(e){
+    const file=e.target.files&&e.target.files[0]; e.target.value=''; if(!file)return;
+    const cn=this.state.lang==='cn',max=20*1024*1024;
+    if(file.type!=='application/pdf'&&!/\.pdf$/i.test(file.name)){this.setState({saveErr:cn?'只能上传 PDF 文件。':'Only PDF files can be uploaded.'});return;}
+    if(file.size>max){this.setState({saveErr:cn?'PDF 不能超过 20 MB。':'PDF must be 20 MB or smaller.'});return;}
+    if(!this.cloud||!this.sb||!this.state.auth){this.setState({saveErr:cn?'请先登录云端账户，再上传 PDF。':'Sign in before uploading a PDF.'});return;}
+    if(this.state.pdfUploading)return;
+    const safeName=file.name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'')||'document.pdf';
+    const device=String(this.state.draft&&this.state.draft.id||'new-device').trim().replace(/[^a-zA-Z0-9_-]+/g,'-')||'new-device';
+    const path=[this.state.auth.id,device,Date.now()+'-'+safeName].join('/');
+    this.setState({pdfUploading:true,saveErr:''});
+    try{
+      const result=await this.sb.storage.from('device-files').upload(path,file,{contentType:'application/pdf',upsert:false});
+      if(result.error)throw result.error;
+      const publicResult=this.sb.storage.from('device-files').getPublicUrl(path);
+      const url=publicResult&&publicResult.data&&publicResult.data.publicUrl;
+      if(!url)throw new Error(cn?'无法生成 PDF 访问地址。':'Could not create a PDF URL.');
+      this.setDraft(d=>{d.attachments=d.attachments||[];d.attachments.push({name:file.name,url,kind:'pdf',storagePath:path});});
+      this.showToast(cn?'PDF 上传成功，保存设备后生效。':'PDF uploaded. Save the device to apply.');
+    }catch(err){
+      const detail=String(err&&err.message||err),setup=/bucket|row-level|policy|unauthorized|not found/i.test(detail);
+      this.setState({saveErr:setup?(cn?'PDF 存储尚未配置，请管理员创建 device-files 存储桶并允许已登录用户上传。':'PDF storage is not configured. Create the device-files bucket and allow authenticated uploads.'):detail});
+    }finally{this.setState({pdfUploading:false});}
   }
 
   async saveDraft(){
@@ -1267,7 +1292,7 @@ class Component extends DCLogic {
       startAdd:()=>this.startAdd(), saveDraft:()=>this.saveDraft(), cancelEdit:()=>this.cancelEdit(),
       delDraft:()=>this.deleteDevice(this.state.editOrigId),
       df, dfBlocks,dfMaintenance,dfAttachments, dfSpecs:[],dfBoot:[],dfCalib:[],dfShutdown:[],dfWarn:[],dfFaq:[], statusOpts, catOpts, blockTypes, showBlockTypes:this.state.showBlockTypes,
-      editOverlayStyle, editPanelStyle, saveErr:this.state.saveErr,
+      editOverlayStyle, editPanelStyle, saveErr:this.state.saveErr,pdfUploadLabel:this.state.pdfUploading?(cn?'上传中…':'Uploading…'):(cn?'上传本地 PDF':'Upload PDF'),pdfUploadHint:cn?'支持本地 PDF，单个文件不超过 20 MB':'Local PDF files up to 20 MB',onPdfFile:e=>this.onPdfFile(e),addLinkLabel:cn?'添加网页链接':'Add web link',
       draftScore:draftScore+'%',draftScoreLabel,draftScoreColor:draftScore>=100?'var(--ok)':draftScore>=50?'var(--warn)':'var(--danger)',editNav,
       onId:e=>this.dset('id',e.target.value), onStatus:e=>this.dset('status',e.target.value), onCat:e=>this.dset('cat',e.target.value),
       onImgUrl:e=>this.dset('img',e.target.value), onPhotoFile:e=>this.onPhotoFile(e),
