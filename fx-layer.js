@@ -104,10 +104,14 @@
         var n = Math.max(24, Math.min(130, Math.round(w * h / density)));
         this.pts = [];
         for (var i = 0; i < n; i++) {
+          var ang = Math.random() * Math.PI * 2, sp = 10 + Math.random() * 16;
           this.pts.push({
             x: Math.random() * w, y: Math.random() * h,
-            vx: (Math.random() - .5) * 14, vy: (Math.random() - .5) * 14,
-            r: .8 + Math.random() * 1.6, ph: Math.random() * Math.PI * 2
+            vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
+            r: .8 + Math.random() * 1.6,
+            ph: Math.random() * Math.PI * 2,
+            // 每个粒子有独立的漂移方向种子，保证持续游动
+            dph: Math.random() * Math.PI * 2, dsp: .4 + Math.random() * .5
           });
         }
       }
@@ -185,14 +189,21 @@
         var baseA = C.dark ? 1 : .8;
         for (var i = 0; i < pts.length; i++) {
           var p = pts[i];
+          // 持续漂浮：给每个粒子叠加缓慢变化的游动加速度，使其永不停下
+          var wobble = this.t * p.dsp + p.dph;
+          p.vx += Math.cos(wobble) * 9 * dt;
+          p.vy += Math.sin(wobble * 1.13) * 9 * dt;
           // 鼠标交互：network 轻微吸引，drift 轻微排斥
           var dx = m.x - p.x, dy = m.y - p.y, d2 = dx * dx + dy * dy;
-          if (d2 < 160 * 160 && d2 > 1) {
-            var d = Math.sqrt(d2), f = (1 - d / 160) * (network ? 12 : -18);
+          if (d2 < 170 * 170 && d2 > 1) {
+            var d = Math.sqrt(d2), f = (1 - d / 170) * (network ? 26 : -34);
             p.vx += dx / d * f * dt;
             p.vy += dy / d * f * dt;
           }
-          p.vx *= .995; p.vy *= .995;
+          // 轻阻尼 + 限速，保留漂浮感但不失控
+          p.vx *= .985; p.vy *= .985;
+          var sp2 = p.vx * p.vx + p.vy * p.vy, max = 46;
+          if (sp2 > max * max) { var s = max / Math.sqrt(sp2); p.vx *= s; p.vy *= s; }
           p.x += p.vx * dt; p.y += p.vy * dt;
           if (p.x < -10) p.x = w + 10; if (p.x > w + 10) p.x = -10;
           if (p.y < -10) p.y = h + 10; if (p.y > h + 10) p.y = -10;
