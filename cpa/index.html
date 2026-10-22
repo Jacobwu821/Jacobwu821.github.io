@@ -72,6 +72,7 @@ h1,h2,h3,h4,p{margin:0}
 h1,h2,h3{text-wrap:balance}
 [hidden]{display:none!important}
 .num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+.u{font:600 .46em/1 var(--font-body);color:var(--muted);margin:0 .14em 0 .06em;letter-spacing:0;vertical-align:.05em}
 .muted{color:var(--muted)}
 .sm{font-size:13px}
 .wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -209,13 +210,16 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 [data-state~="paused"] .state-dot{background:var(--amber)}
 [data-state~="over"] .state-dot{background:var(--red)}
 @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in oklab,var(--accent) 55%,transparent)}100%{box-shadow:0 0 0 9px transparent}}
+.state-pill{color:var(--accent)}
+[data-state~="paused"] .state-pill{color:var(--amber)}
+[data-state~="over"] .state-pill{color:var(--red)}
 .active-sum .ttl{font-size:13.5px;color:var(--ink-2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 120px}
 .dial{position:relative;width:min(100%,336px);aspect-ratio:1;margin:24px auto 16px}
 .dial svg{display:block;width:100%;height:100%;overflow:visible}
 .dial .tk{stroke:var(--rule-2);stroke-width:1.2}
 .dial .tk.l{stroke:var(--muted);stroke-width:1.8}
-.dial .track{fill:none;stroke:var(--surface-2);stroke-width:13}
-.dial .track-edge{fill:none;stroke:var(--rule);stroke-width:1}
+.dial .face{stroke:var(--rule);stroke-width:1}
+.dial .track{fill:none;stroke:color-mix(in oklab,var(--rule) 55%,var(--surface-2));stroke-width:13}
 .dial .prog{fill:none;stroke:var(--accent);stroke-width:13;stroke-linecap:round;transition:stroke-dashoffset .3s linear,stroke .3s}
 .dial .over{fill:none;stroke:var(--red);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .3s linear}
 .dial .cmark line{stroke:var(--ink);stroke-width:2.2;stroke-linecap:round}
@@ -227,6 +231,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .readout .digits{font:500 clamp(36px,10.5vw,58px)/1.08 var(--font-num);letter-spacing:-.035em;font-variant-numeric:tabular-nums;margin:6px 0 6px;white-space:nowrap}
 .readout .sub{font-size:12.5px;color:var(--ink-2)}
 [data-state~="over"] .readout .digits,[data-state~="over"] .readout .label{color:var(--red)}
+[data-state~="over"] .readout .digits{font-size:clamp(34px,9.5vw,54px)}
 [data-state~="warn"] .readout .digits{color:var(--amber)}
 [data-state~="paused"] .readout .digits{opacity:.5}
 .dial.flash{animation:flash 1.2s ease-out 2}
@@ -234,6 +239,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .controls{display:flex;flex-direction:column;align-items:center;gap:12px}
 .ctl-main{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;width:100%}
 .ctl-main .btn.xl{flex:1 1 0;max-width:220px;min-width:0;padding:0 14px}
+.ctl-main .btn.primary{box-shadow:0 12px 26px -14px color-mix(in oklab,var(--accent) 80%,transparent),inset 0 -2px 0 rgba(0,0,0,.14)}
 .active-sum .btn{margin-left:auto}
 .ctl-sub{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .hint{font-size:12px;color:var(--muted)}
@@ -277,7 +283,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .cd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:16px}
 .cd-card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .cd-card .top{display:flex;align-items:center;gap:8px;min-width:0}
-.cd-card .top h4{font:700 16px/1.3 var(--font-display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.cd-card .top h4{font:700 16px/1.3 var(--font-display);min-width:0;flex:1 1 auto;overflow-wrap:anywhere}
 .cd-card .n{display:flex;align-items:baseline;gap:5px}
 .cd-card .n b{font:900 48px/.95 var(--font-display);color:var(--c,var(--accent))}
 .cd-card .n span{font:700 15px var(--font-display);color:var(--ink-2)}
@@ -314,6 +320,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .chart .axl{fill:var(--muted);font:600 11px var(--font-body)}
 .chart .goal{stroke:var(--ink-2);stroke-width:1.2;stroke-dasharray:5 4}
 .chart .goal-t{fill:var(--ink-2);font:700 11px var(--font-body)}
+.chart .goal-t,.chart .ref-t,.chart .pt-l{paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
 .chart .hl{fill:var(--ink);opacity:0}
 .chart .hl.on{opacity:.06}
 .chart .xh{stroke:var(--ink-2);stroke-width:1;stroke-dasharray:3 3;opacity:0}
@@ -382,6 +389,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .cal .day:hover{border-color:var(--ink-2)}
 .cal .day .n{font:600 13px var(--font-num);color:var(--ink-2)}
 .cal .day .h{font:600 12.5px var(--font-num);color:var(--ink)}
+.cal .day .h i{font-style:normal;font-weight:500;color:var(--ink-2)}
 .cal .day.lv1{background:color-mix(in oklab,var(--accent) 10%,var(--surface))}
 .cal .day.lv2{background:color-mix(in oklab,var(--accent) 22%,var(--surface))}
 .cal .day.lv3{background:color-mix(in oklab,var(--accent) 36%,var(--surface))}
@@ -503,7 +511,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   .set-sec{grid-template-columns:minmax(0,1fr)}
   .lg-row{grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"c du a" "k k k" "t t t";row-gap:4px;column-gap:8px}
   .lg-row .c{grid-area:c}.lg-row .du{grid-area:du}.lg-row .a{grid-area:a}.lg-row .k{grid-area:k}.lg-row .t{grid-area:t;font-size:12px}
-  .cbar{grid-template-columns:minmax(0,1fr) 70px 60px;grid-template-areas:"nm v r" "tr tr tr";row-gap:6px}
+  .cbar{grid-template-columns:minmax(0,1fr) 62px 54px;grid-template-areas:"nm v r" "tr tr tr";row-gap:6px;column-gap:8px}
   .cbar .nm{grid-area:nm}.cbar .tr{grid-area:tr}.cbar .v{grid-area:v}.cbar .r{grid-area:r}
   .cbar.head .tr{display:none}
 }
@@ -520,13 +528,19 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   .cal{gap:4px}
   .cal .day{min-height:52px;padding:4px 5px}
   .cal .day .h{font-size:11px}
-  .cal .mk{width:15px;height:15px;font-size:8.5px;line-height:12px;top:3px;right:3px}
+  .cal .mk{width:7px;height:7px;font-size:0;border:0;background:var(--red);top:6px;right:5px;transform:none}
+  .cal .day .h{font-size:10.5px;letter-spacing:-.02em}
+  .course-row{grid-template-columns:30px minmax(0,1fr) auto;grid-template-areas:"sw nm nm" ". tt ops";row-gap:2px}
+  .course-row .sw{grid-area:sw}.course-row .input{grid-area:nm}.course-row .tt{grid-area:tt;padding:0}.course-row .ops{grid-area:ops}
+  .sync{display:none}
   .modal-wrap{place-items:end center;padding:0}
   .modal{width:100%;border-radius:18px 18px 0 0;max-height:92vh;padding-bottom:env(safe-area-inset-bottom,0px)}
   .grid2{grid-template-columns:minmax(0,1fr)}
   .vh h2{font-size:23px}
 }
-@media (max-width:420px){#redo-btn{display:none}.sync{padding:0 6px}}
+@media (max-width:420px){#redo-btn{display:none}}
+@media (max-width:380px){.cal .day .h i{display:none}.cal .day{padding:4px 4px}}
+@media (max-width:370px){.brand h1{font-size:14px}.logo{width:30px;height:30px;font-size:16px}.topbar-in{gap:8px}.cd-chip{padding:0 8px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -572,7 +586,9 @@ function stable(v) {
   return JSON.stringify(v === undefined ? null : v);
 }
 function hms(sec) { sec = Math.max(0, Math.floor(sec)); return `${Math.floor(sec / 3600)}:${pad(Math.floor((sec % 3600) / 60))}:${pad(sec % 60)}`; }
-function hm(sec) { const m = Math.round(Math.max(0, sec) / 60); return `${Math.floor(m / 60)}:${pad(m % 60)}`; }
+function hm(sec) { const m = Math.round(Math.max(0, sec) / 60), h = Math.floor(m / 60), mm = m % 60; return h ? (mm ? `${h}h${pad(mm)}m` : `${h}h`) : `${mm}m`; }
+function hmRich(sec) { const m = Math.round(Math.max(0, sec) / 60), h = Math.floor(m / 60), mm = m % 60, u = t => `<small class="u">${t}</small>`; return h ? `${h}${u('h')}${mm ? pad(mm) + u('m') : ''}` : `${mm}${u('m')}`; }
+const hShort = sec => (sec < 3600 ? `${Math.round(sec / 60)}m` : `${(sec / 3600).toFixed(1)}h`);
 function hmText(sec) { const m = Math.round(Math.max(0, sec) / 60), h = Math.floor(m / 60), mm = m % 60; return h ? (mm ? `${h} 小时 ${mm} 分` : `${h} 小时`) : `${mm} 分钟`; }
 const hours1 = sec => (sec / 3600).toFixed(1);
 const mins = sec => Math.round(sec / 60);
@@ -1165,7 +1181,8 @@ function setupPanel(d, cs) {
 function activeSummary(a) {
   const info = a.mode === 'down' ? `Case ${a.caseType ? a.caseType + ' 分' : '不归类'} · 目标 ${a.target} 分` : '自由学习 · 正计时';
   return `<div class="active-sum">
-    <span class="pill"><span class="state-dot"></span><i class="dot" style="--c:${cvar(a.courseId)}"></i><span class="nm">${esc(courseName(a.courseId))}</span></span>
+    <span class="pill state-pill"><span class="state-dot"></span><span id="state-txt">计时中</span></span>
+    <span class="pill"><i class="dot" style="--c:${cvar(a.courseId)}"></i><span class="nm">${esc(courseName(a.courseId))}</span></span>
     <span class="pill num">${info}</span>
     ${a.title ? `<span class="ttl">${esc(a.title)}</span>` : ''}
     <button class="btn sm ghost" data-act="edit-active">${icon('edit')}修改</button>
@@ -1186,7 +1203,9 @@ function dialHTML(cfg) {
   }
   return `<div class="dial" role="timer" aria-live="off">
     <svg viewBox="0 0 260 260" aria-hidden="true">
+      <defs><radialGradient id="dial-face" cx="50%" cy="38%" r="65%"><stop offset="0" style="stop-color:var(--surface)"/><stop offset="1" style="stop-color:var(--surface-2)"/></radialGradient></defs>
       <g>${ticks}</g>
+      <circle class="face" cx="130" cy="130" r="98" fill="url(#dial-face)"/>
       <circle class="track" cx="130" cy="130" r="${R1}"/>
       <circle class="prog" id="ring-prog" cx="130" cy="130" r="${R1}" transform="rotate(-90 130 130)" stroke-dasharray="${C1.toFixed(2)}" stroke-dashoffset="${C1.toFixed(2)}"/>
       <circle class="over" id="ring-over" cx="130" cy="130" r="${R2}" transform="rotate(-90 130 130)" stroke-dasharray="${C2.toFixed(2)}" stroke-dashoffset="${C2.toFixed(2)}"/>
@@ -1243,7 +1262,7 @@ function todayCard() {
   const need = Math.max(0, S.settings.checkinMin * 60 - savedSec);
   return `<section class="card">
     <div class="card-h"><h3>今日</h3><span class="muted sm">${mdw(tk)}</span></div>
-    <div class="today-total"><span class="big num" id="today-total">${hm(live)}</span><span class="muted">/ 目标 ${hm(goal)}</span></div>
+    <div class="today-total"><span class="big num" id="today-total">${hmRich(live)}</span><span class="muted">/ 目标 ${hm(goal)}</span></div>
     <div class="goalbar"><i id="today-bar" style="width:${pct(live, goal)}%"></i></div>
     <div class="goal-meta"><span>${st.todayDone ? '<span class="ok-txt">今日已打卡</span>' : `打卡还差 <b class="num">${hm(need)}</b>`}</span><span>连续打卡 <b class="num">${st.cur}</b> 天</span></div>
     ${rows.length ? `<ul class="crows">${rows.map(r => `<li><i class="dot" style="--c:${cvar(r.id)}"></i><span class="nm">${esc(courseName(r.id))}</span><span class="num">${hm(r.v)}</span></li>`).join('')}</ul>` : ''}
@@ -1285,7 +1304,8 @@ function updateDial(a, now) {
         label = run ? '剩余' : '已暂停 · 剩余'; digits = hms(Math.ceil(T - el)); frac = el / T; sub = `已用 ${hms(el)} · 目标 ${a.target} 分`;
         if (S.settings.warnBefore > 0 && T - el <= S.settings.warnBefore * 60) state += ' warn';
       } else {
-        label = run ? '超时 · 仍在计时' : '已暂停 · 超时'; digits = '+' + hms(el - T); frac = 1; ofrac = Math.min(1, (el - T) / T); sub = `总用时 ${hms(el)} · 目标 ${a.target} 分`; state += ' over';
+        const ov = Math.floor(el - T);
+        label = run ? '超时 · 仍在计时' : '已暂停 · 超时'; digits = '+' + (ov < 3600 ? `${Math.floor(ov / 60)}:${pad(ov % 60)}` : hms(ov)); frac = 1; ofrac = Math.min(1, (el - T) / T); sub = `总用时 ${hms(el)} · 目标 ${a.target} 分`; state += ' over';
       }
     } else {
       label = run ? '已学习' : '已暂停'; digits = hms(el); frac = (el % 3600) / 3600;
@@ -1299,9 +1319,15 @@ function updateDial(a, now) {
   over.style.strokeDashoffset = (C2 * (1 - ofrac)).toFixed(2);
   over.style.opacity = ofrac > 0 ? 1 : 0;
   $('#rd-label').textContent = label;
-  $('#rd-digits').textContent = digits;
+  const dg = $('#rd-digits');
+  dg.textContent = digits;
+  dg.style.fontSize = digits.length > 7 ? 'clamp(30px,8.4vw,47px)' : '';
   $('#rd-sub').textContent = sub;
-  if (card.dataset.state !== state) card.dataset.state = state;
+  if (card.dataset.state !== state) {
+    card.dataset.state = state;
+    const st = $('#state-txt');
+    if (st) st.textContent = state.includes('over') ? '超时中' : state.includes('paused') ? '已暂停' : '计时中';
+  }
   const g = $('#grace');
   if (g && a) {
     const left = (S.settings.graceSec || 0) - (now - a.startedAt) / 1000;
@@ -1314,7 +1340,7 @@ function tick() {
   if (UI.view === 'timer') {
     updateDial(a, now);
     const tt = $('#today-total');
-    if (tt) { const v = todayLive(); tt.textContent = hm(v); $('#today-bar').style.width = pct(v, S.settings.dailyGoal * 60) + '%'; }
+    if (tt) { const v = todayLive(), h = hmRich(v); if (tt.innerHTML !== h) tt.innerHTML = h; $('#today-bar').style.width = pct(v, S.settings.dailyGoal * 60) + '%'; }
   }
   const base = S.settings.title || 'CPA 备考计时簿';
   let t = base;
@@ -1416,9 +1442,9 @@ function viewStats() {
     `<div class="seg-sm" role="group" aria-label="统计范围">${[[7, '7 天'], [30, '30 天'], [90, '90 天'], [0, '全部']].map(([v, t]) => `<button aria-pressed="${R === v}" data-act="stats-range" data-v="${v}">${t}</button>`).join('')}</div>`)
     + `<div class="tiles">
       <div class="tile hero"><div class="k">累计总时长</div><div class="v">${hours1(gt)}<small>小时</small></div><div class="s">共 ${live.length} 条记录 · ${dm.size} 个学习日</div></div>
-      <div class="tile"><div class="k">本周</div><div class="v">${hm(weekTotal)}</div><div class="s">从周一 ${md(wk)} 起</div></div>
-      <div class="tile"><div class="k">${rLabel}合计</div><div class="v">${hm(rangeTotal)}</div><div class="s">学习 ${studyDays} / ${span} 天</div></div>
-      <div class="tile"><div class="k">${rLabel}日均</div><div class="v">${hm(rangeTotal / span)}</div><div class="s">每日目标 ${hm(S.settings.dailyGoal * 60)}</div></div>
+      <div class="tile"><div class="k">本周</div><div class="v">${hmRich(weekTotal)}</div><div class="s">从周一 ${md(wk)} 起</div></div>
+      <div class="tile"><div class="k">${rLabel}合计</div><div class="v">${hmRich(rangeTotal)}</div><div class="s">学习 ${studyDays} / ${span} 天</div></div>
+      <div class="tile"><div class="k">${rLabel}日均</div><div class="v">${hmRich(rangeTotal / span)}</div><div class="s">每日目标 ${hm(S.settings.dailyGoal * 60)}</div></div>
       <div class="tile"><div class="k">连续打卡</div><div class="v">${st.cur}<small>天</small></div><div class="s">最长 ${st.best} 天</div></div>
     </div>
     <section class="panel">
@@ -1498,14 +1524,14 @@ function viewCheckin() {
     const lv = v <= 0 ? 0 : v < goal * 0.25 ? 1 : v < goal * 0.5 ? 2 : v < goal ? 3 : 4;
     const out = k.slice(0, 7) !== ym, fut = k > tk;
     cal += `<button class="day lv${lv}${out ? ' out' : ''}${fut ? ' future' : ''}${k === tk ? ' today' : ''}" ${fut ? 'disabled' : `data-act="day" data-k="${k}"`} aria-label="${md(k)} ${v ? hm(v) : '无记录'}${checkedDay(k) ? ' 已打卡' : ''}">
-      <span class="n">${keyDate(k).getDate()}</span>${v ? `<span class="h">${hm(v)}</span>` : ''}${checkedDay(k) ? '<span class="mk" aria-hidden="true">✓</span>' : ''}</button>`;
+      <span class="n">${keyDate(k).getDate()}</span>${v ? `<span class="h">${v < 3600 ? Math.round(v / 60) + '<i>m</i>' : (v / 3600).toFixed(1) + '<i>h</i>'}</span>` : ''}${checkedDay(k) ? '<span class="mk" aria-hidden="true">✓</span>' : ''}</button>`;
   }
   return viewHead('每日打卡', `一天学满 ${hmText(thr)} 自动打卡，学习日从凌晨 ${S.settings.dayStartHour} 点开始算。门槛和目标都可以在设置里改。`)
     + `<div class="ck-top">
       <section class="card ck-today">
         <div>
           <div class="eyebrow">今天 · ${mdw(tk)}</div>
-          <div class="ck-big num">${hm(live)}</div>
+          <div class="ck-big num">${hmRich(live)}</div>
           <div class="goalbar"><i style="width:${pct(live, goal)}%"></i></div>
           <div class="goal-meta"><span>每日目标 ${hm(goal)}</span><span>${live >= goal ? '<span class="ok-txt">已达成</span>' : `还差 ${hm(goal - live)}`}</span></div>
           ${S.active ? `<p class="live-note"><span class="state-dot"></span>含正在进行的计时，结束记录后才计入打卡</p>` : ''}
@@ -1546,7 +1572,7 @@ function deltaTag(s) {
 function rowHTML(s) {
   const kind = s.mode === 'down'
     ? `<span class="ktag case">Case${s.caseType ? ' ' + s.caseType : ''}${s.target ? ` · 目标 ${s.target}` : ''}</span>${deltaTag(s)}`
-    : `<span class="ktag">自由学习</span>`;
+    : '';
   return `<div class="lg-row">
     <span class="t num">${hhmm(s.start)}–${hhmm(s.end)}</span>
     <span class="c"><i class="dot" style="--c:${cvar(s.courseId)}"></i><span>${esc(courseName(s.courseId))}</span></span>
@@ -2132,7 +2158,7 @@ function cdModal(c, presetTitle) {
 function dayBody(k) {
   const list = sessionsLive().filter(s => dayKey(s.start) === k);
   const tot = list.reduce((a, s) => a + s.dur, 0);
-  return `<div class="day-tot"><div><div class="eyebrow">当天合计</div><b class="num">${hm(tot)}</b></div><div>${checkedDay(k) ? '<span class="ok-txt">已打卡</span>' : `<span class="muted sm">打卡门槛 ${hmText(S.settings.checkinMin * 60)}</span>`}</div></div>
+  return `<div class="day-tot"><div><div class="eyebrow">当天合计</div><b class="num">${hmRich(tot)}</b></div><div>${checkedDay(k) ? '<span class="ok-txt">已打卡</span>' : `<span class="muted sm">打卡门槛 ${hmText(S.settings.checkinMin * 60)}</span>`}</div></div>
     ${list.length ? `<ul class="day-list">${list.map(s => `<li><span class="t">${hhmm(s.start)}</span><span class="nm"><i class="dot" style="--c:${cvar(s.courseId)}"></i> ${esc(courseName(s.courseId))}${s.mode === 'down' ? ` <span class="ktag case">Case${s.caseType ? ' ' + s.caseType : ''}</span>` : ''} ${s.title ? `<span class="muted sm">${esc(s.title)}</span>` : ''}</span><span class="num">${hm(s.dur)}</span><span><button class="btn icon sm ghost" data-act="edit-session" data-id="${s.id}" aria-label="编辑">${icon('edit')}</button><button class="btn icon sm ghost" data-act="del-session" data-id="${s.id}" aria-label="删除">${icon('trash')}</button></span></li>`).join('')}</ul>` : '<p class="muted">这一天没有记录。</p>'}
     <label class="f"><span>这一天的小结</span><textarea class="input day-note" rows="3" maxlength="1000" placeholder="写点什么">${esc(S.notes[k] || '')}</textarea></label>`;
 }
