@@ -5,6 +5,7 @@ self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=
 self.addEventListener('fetch',event=>{
   const req=event.request;
   if(req.method!=='GET')return;
+  if(new URL(req.url).pathname.startsWith(new URL('./cpa/',self.registration.scope).pathname))return;
   if(req.mode==='navigate'){
     event.respondWith(fetch(req).then(res=>{const copy=res.clone();caches.open(CACHE).then(c=>c.put('./index.html',copy));return res;}).catch(()=>caches.match('./index.html')));
     return;

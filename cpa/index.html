@@ -1,0 +1,2495 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2064%2064'%3E%3Crect%20width%3D'64'%20height%3D'64'%20rx%3D'14'%20fill%3D'%231d6a51'%2F%3E%3Ctext%20x%3D'32'%20y%3D'45'%20font-size%3D'38'%20font-weight%3D'900'%20text-anchor%3D'middle'%20fill%3D'%23fff'%20font-family%3D'serif'%3E%E7%B0%BF%3C%2Ftext%3E%3C%2Fsvg%3E">
+<meta name="theme-color" content="#ecf0e9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1411" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="计时簿">
+<title>CPA 备考计时簿</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="CPA 备考计时：倒计日、分课程累计时长、Case 倒计时与超时续计、进步曲线、每日打卡。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Serif+SC:wght@600;700;900&display=swap">
+<style>
+/* Layout: 一本“计时账簿”——顶部索引页签 + 每个视图一张工作纸；桌面端计时盘与侧栏并排，手机端单列 + 底部页签 */
+:root{
+  color-scheme:light;
+  --bg:#ecf0e9; --surface:#fbfcf9; --surface-2:#f1f4ee; --ink:#15201a; --ink-2:#45524a; --muted:#6f7c74;
+  --rule:#d8dfd4; --rule-2:#bfc9bb;
+  --acc-ledger:#1d6a51; --acc-ink:#24519c; --acc-wine:#8c2c47; --acc-graphite:#3c4650;
+  --accent:var(--acc-ledger); --on-accent:#ffffff;
+  --red:#b3271f; --amber:#93600b; --good:#1d7a3c;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#6250d6; --s8:#e34948;
+  --scrim:rgba(12,18,14,.46);
+  --font-display:"Noto Serif SC","Source Han Serif SC","Songti SC","STSong","SimSun",serif;
+  --font-body:system-ui,-apple-system,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  --font-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  --radius:14px; --radius-sm:10px;
+  --shadow:0 1px 0 rgba(21,32,26,.04),0 14px 34px -22px rgba(21,32,26,.45);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#0e1411; --surface:#151d19; --surface-2:#1b2520; --ink:#e4ebe6; --ink-2:#b2bfb7; --muted:#83918a;
+  --rule:#26312b; --rule-2:#36443c;
+  --acc-ledger:#5cb892; --acc-ink:#86aaee; --acc-wine:#e58ba1; --acc-graphite:#b9c3cd;
+  --on-accent:#0a130e; --red:#f07a6e; --amber:#e3ab4f; --good:#5cc483;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --scrim:rgba(0,0,0,.6);
+  --shadow:0 1px 0 rgba(0,0,0,.2),0 18px 40px -24px rgba(0,0,0,.8);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0e1411; --surface:#151d19; --surface-2:#1b2520; --ink:#e4ebe6; --ink-2:#b2bfb7; --muted:#83918a;
+  --rule:#26312b; --rule-2:#36443c;
+  --acc-ledger:#5cb892; --acc-ink:#86aaee; --acc-wine:#e58ba1; --acc-graphite:#b9c3cd;
+  --on-accent:#0a130e; --red:#f07a6e; --amber:#e3ab4f; --good:#5cc483;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --scrim:rgba(0,0,0,.6);
+  --shadow:0 1px 0 rgba(0,0,0,.2),0 18px 40px -24px rgba(0,0,0,.8);
+}
+:root[data-accent="ink"]{--accent:var(--acc-ink)}
+:root[data-accent="wine"]{--accent:var(--acc-wine)}
+:root[data-accent="graphite"]{--accent:var(--acc-graphite)}
+:root{
+  --accent-soft:color-mix(in oklab,var(--accent) 13%,var(--surface));
+  --accent-line:color-mix(in oklab,var(--accent) 45%,var(--rule));
+  --red-soft:color-mix(in oklab,var(--red) 12%,var(--surface));
+  --amber-soft:color-mix(in oklab,var(--amber) 15%,var(--surface));
+}
+
+/* ---------- base ---------- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--font-body);-webkit-font-smoothing:antialiased;min-height:100vh}
+body.modal-open{overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3,h4,p{margin:0}
+h1,h2,h3{text-wrap:balance}
+[hidden]{display:none!important}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.sm{font-size:13px}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--c,var(--muted));flex:none}
+.link{border:0;background:none;padding:0;color:var(--accent);font-weight:600;font-size:13px;cursor:pointer}
+.link:hover{text-decoration:underline;text-underline-offset:3px}
+kbd{font:600 11px var(--font-num);padding:1px 6px;border-radius:5px;border:1px solid var(--rule-2);border-bottom-width:2px;background:var(--surface);color:var(--ink-2)}
+
+/* ---------- top bar ---------- */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:25;background:color-mix(in oklab,var(--bg) 88%,transparent);-webkit-backdrop-filter:saturate(1.2) blur(12px);backdrop-filter:saturate(1.2) blur(12px);border-bottom:1px solid var(--rule)}
+.topbar-in{display:flex;align-items:center;gap:12px;min-height:62px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;flex:0 1 auto;border:0;background:none;padding:0;cursor:pointer;text-align:left}
+.logo{flex:none;width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font:900 18px/1 var(--font-display);box-shadow:inset 0 -2px 0 rgba(0,0,0,.16)}
+.brand h1{font:700 18px/1.2 var(--font-display);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tabs{display:flex;gap:2px;margin-left:10px}
+.tab{position:relative;display:inline-flex;align-items:center;gap:7px;height:62px;padding:0 12px;border:0;background:none;color:var(--ink-2);font-weight:600;cursor:pointer;white-space:nowrap}
+.tab:hover{color:var(--ink)}
+.tab[aria-current="page"]{color:var(--ink)}
+.tab[aria-current="page"]::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;background:var(--accent);border-radius:2px}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:4px;flex:none}
+.cd-chip{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--rule-2);background:var(--surface);cursor:pointer;white-space:nowrap;font-size:13px;color:var(--ink-2);margin-right:4px}
+.cd-chip b{font:900 17px/1 var(--font-display);color:var(--accent)}
+.cd-chip .cd-t{max-width:12em;overflow:hidden;text-overflow:ellipsis}
+.sync{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 10px;border-radius:999px;border:0;background:transparent;color:var(--muted);font-size:12.5px;cursor:pointer;white-space:nowrap}
+.sync:hover{background:var(--surface-2)}
+.sync[data-s="synced"] .i{color:var(--accent)}
+.sync[data-s="error"]{color:var(--red)}
+.sync[data-s="syncing"] .i,.sync[data-s="connecting"] .i{animation:blink 1s ease-in-out infinite}
+@keyframes blink{50%{opacity:.35}}
+.demo-bar{background:var(--amber-soft);border-bottom:1px solid color-mix(in oklab,var(--amber) 35%,var(--rule))}
+.demo-bar .wrap{display:flex;align-items:center;gap:12px;min-height:44px;font-size:13.5px;flex-wrap:wrap;padding-block:6px}
+.bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:25;display:none;justify-content:space-around;background:color-mix(in oklab,var(--surface) 94%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--rule);padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px))}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;border:0;background:none;color:var(--muted);font-size:11.5px;font-weight:600;cursor:pointer;border-radius:10px;min-width:0}
+.bn .i{width:21px;height:21px}
+.bn[aria-current="page"]{color:var(--accent)}
+
+/* ---------- buttons & inputs ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:10px;border:1px solid var(--rule-2);background:var(--surface);color:var(--ink);font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s;-webkit-tap-highlight-color:transparent}
+.btn:hover{background:var(--surface-2)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{background:color-mix(in oklab,var(--accent) 88%,var(--ink))}
+.btn.danger{color:var(--red);border-color:color-mix(in oklab,var(--red) 35%,var(--rule-2))}
+.btn.danger:hover{background:var(--red-soft)}
+.btn.danger-solid{background:var(--red);border-color:var(--red);color:#fff}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.icon{width:38px;padding:0}
+.btn.sm{height:32px;padding:0 11px;font-size:13px;border-radius:8px}
+.btn.icon.sm{width:32px;padding:0}
+.btn.xl{height:54px;padding:0 26px;font-size:16px;border-radius:14px}
+.btn.xl .i{width:20px;height:20px}
+.hold{position:relative;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+.hold::after{content:"";position:absolute;inset:0;background:color-mix(in oklab,var(--red) 24%,transparent);transform:scaleX(0);transform-origin:left;pointer-events:none}
+.hold.holding::after{transform:scaleX(1);transition:transform .9s linear}
+.input{height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--rule-2);background:var(--surface);width:100%;min-width:0}
+textarea.input{height:auto;padding:9px 12px;resize:vertical;line-height:1.5}
+select.input{padding-right:30px}
+.input.sm{height:34px;font-size:13.5px;width:auto}
+.input:focus{outline:2px solid color-mix(in oklab,var(--accent) 55%,transparent);outline-offset:1px;border-color:var(--accent)}
+input[type=number]{-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--rule-2);background:var(--surface);cursor:pointer;color:var(--ink-2);font-weight:600;font-size:14px;max-width:100%}
+.chip:hover{border-color:var(--ink-2);color:var(--ink)}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);box-shadow:inset 0 0 0 1px var(--accent)}
+.chip .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip.add{border-style:dashed;color:var(--muted)}
+.seg-sm{display:inline-flex;padding:3px;gap:2px;border-radius:10px;background:var(--surface-2);border:1px solid var(--rule)}
+.seg-sm button{height:30px;padding:0 12px;border:0;border-radius:7px;background:none;color:var(--ink-2);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.seg-sm button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--rule-2),0 1px 2px rgba(0,0,0,.06)}
+.tog{appearance:none;-webkit-appearance:none;margin:0;width:44px;height:26px;border-radius:99px;background:var(--rule-2);cursor:pointer;transition:background .2s;position:relative;flex:none}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .2s}
+.tog:checked{background:var(--accent)}
+.tog:checked::after{transform:translateX(18px)}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.sw{width:30px;height:30px;border-radius:50%;border:3px solid var(--surface);box-shadow:0 0 0 1px var(--rule-2);background:var(--c);cursor:pointer;padding:0}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--ink)}
+
+/* ---------- page ---------- */
+#view{padding-block:26px 72px}
+.vh{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.vh h2{font:700 26px/1.25 var(--font-display);letter-spacing:.01em}
+.vh p{margin-top:4px;font-size:14px}
+.vh-a{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);padding:20px;min-width:0}
+.card-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px}
+.card-h h3{font:700 16px/1.3 var(--font-display)}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--muted);font-weight:700}
+.panel{margin-top:26px;min-width:0}
+.panel-h{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.panel-h h3{font:700 19px/1.3 var(--font-display)}
+.panel-h p{font-size:13.5px;margin-top:2px}
+.sheet{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);padding:18px 20px;min-width:0}
+.empty{text-align:center;padding:44px 20px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.empty h3{font:700 20px var(--font-display)}
+.empty p{max-width:36em;color:var(--ink-2)}
+.empty-sm{padding:18px;border:1px dashed var(--rule-2);border-radius:12px;color:var(--ink-2);font-size:14px;text-align:center}
+.note{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;font-size:13.5px;background:var(--surface-2);border:1px solid var(--rule)}
+.note.warn{background:var(--amber-soft);border-color:color-mix(in oklab,var(--amber) 35%,var(--rule))}
+.err{color:var(--red);font-size:13.5px;font-weight:600}
+
+/* ---------- timer ---------- */
+.timer-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:20px;align-items:start}
+.timer-card{padding:22px 24px 26px;box-shadow:var(--shadow)}
+.setup{display:flex;flex-direction:column;gap:18px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:var(--surface-2);border:1px solid var(--rule);border-radius:12px}
+.seg button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:9px 14px;border:0;border-radius:9px;background:transparent;cursor:pointer;text-align:left;color:var(--ink-2);min-width:0}
+.seg button b{font-weight:700;color:var(--ink);font-size:15px}
+.seg button span{font-size:12.5px;color:var(--muted)}
+.seg button[aria-checked="true"]{background:var(--surface);box-shadow:0 0 0 1px var(--rule-2),0 2px 6px -2px rgba(0,0,0,.12)}
+.field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.field-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.lbl{font-size:12.5px;font-weight:700;color:var(--ink-2);letter-spacing:.04em}
+.lbl em,.f>span em{font-style:normal;color:var(--muted);font-weight:400}
+.field-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:start}
+.stepper{display:inline-flex;align-self:flex-start;align-items:center;border:1px solid var(--rule-2);border-radius:10px;overflow:hidden;background:var(--surface);height:40px}
+.stepper button{width:40px;height:100%;border:0;background:var(--surface-2);cursor:pointer;font:600 14px var(--font-num);color:var(--ink-2)}
+.stepper button:hover{color:var(--ink);background:var(--rule)}
+.stepper input{width:58px;height:100%;border:0;text-align:center;font:600 18px var(--font-num);background:transparent;padding:0}
+.stepper input:focus{outline:none;background:var(--accent-soft)}
+.stepper .unit{padding:0 10px 0 2px;color:var(--muted);font-size:13px}
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.qbtn{height:28px;padding:0 10px;border-radius:7px;border:1px dashed var(--rule-2);background:none;color:var(--ink-2);font-size:12.5px;cursor:pointer;font-weight:600}
+.qbtn:hover{border-style:solid;color:var(--ink)}
+.active-sum{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:10px 12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--rule)}
+.pill{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;background:var(--surface);border:1px solid var(--rule);font-size:13px;font-weight:600;max-width:100%;min-width:0}
+.pill .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.state-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+[data-state~="running"] .state-dot{animation:pulse 1.6s ease-out infinite}
+[data-state~="paused"] .state-dot{background:var(--amber)}
+[data-state~="over"] .state-dot{background:var(--red)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in oklab,var(--accent) 55%,transparent)}100%{box-shadow:0 0 0 9px transparent}}
+.active-sum .ttl{font-size:13.5px;color:var(--ink-2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 120px}
+.dial{position:relative;width:min(100%,336px);aspect-ratio:1;margin:24px auto 16px}
+.dial svg{display:block;width:100%;height:100%;overflow:visible}
+.dial .tk{stroke:var(--rule-2);stroke-width:1.2}
+.dial .tk.l{stroke:var(--muted);stroke-width:1.8}
+.dial .track{fill:none;stroke:var(--surface-2);stroke-width:13}
+.dial .track-edge{fill:none;stroke:var(--rule);stroke-width:1}
+.dial .prog{fill:none;stroke:var(--accent);stroke-width:13;stroke-linecap:round;transition:stroke-dashoffset .3s linear,stroke .3s}
+.dial .over{fill:none;stroke:var(--red);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .3s linear}
+.dial .cmark line{stroke:var(--ink);stroke-width:2.2;stroke-linecap:round}
+.dial .cmark text{fill:var(--ink-2);font:600 11px var(--font-num)}
+[data-state~="warn"] .dial .prog{stroke:var(--amber)}
+[data-state~="over"] .dial .prog{stroke:color-mix(in oklab,var(--red) 35%,var(--surface-2))}
+.readout{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 17%}
+.readout .label{font-size:13px;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.readout .digits{font:500 clamp(36px,10.5vw,58px)/1.08 var(--font-num);letter-spacing:-.035em;font-variant-numeric:tabular-nums;margin:6px 0 6px;white-space:nowrap}
+.readout .sub{font-size:12.5px;color:var(--ink-2)}
+[data-state~="over"] .readout .digits,[data-state~="over"] .readout .label{color:var(--red)}
+[data-state~="warn"] .readout .digits{color:var(--amber)}
+[data-state~="paused"] .readout .digits{opacity:.5}
+.dial.flash{animation:flash 1.2s ease-out 2}
+@keyframes flash{0%{transform:scale(1)}15%{transform:scale(1.03)}30%{transform:scale(1)}}
+.controls{display:flex;flex-direction:column;align-items:center;gap:12px}
+.ctl-main{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;width:100%}
+.ctl-main .btn.xl{flex:1 1 0;max-width:220px;min-width:0;padding:0 14px}
+.active-sum .btn{margin-left:auto}
+.ctl-sub{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.hint{font-size:12px;color:var(--muted)}
+.grace{margin-top:14px;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--amber-soft);font-size:13.5px;flex-wrap:wrap;text-align:center}
+.side{display:flex;flex-direction:column;gap:16px;min-width:0}
+.today-total{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.today-total .big{font:500 38px/1 var(--font-num);letter-spacing:-.02em}
+.goalbar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin:12px 0 7px;border:1px solid var(--rule)}
+.goalbar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .4s}
+.goal-meta{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+.goal-meta b{color:var(--ink)}
+.ok-txt{color:var(--good);font-weight:700}
+.crows{list-style:none;margin:12px 0 0;padding:0}
+.crows li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--rule);font-size:14px}
+.crows .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crows .num{font-size:13.5px}
+.grand{display:flex;align-items:baseline;gap:6px}
+.grand .num{font:500 38px/1 var(--font-num);letter-spacing:-.02em}
+.grand .u{color:var(--muted);font-size:14px}
+.live-note{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:10px}
+.recent li{grid-template-columns:auto minmax(0,1fr) auto auto}
+.recent .t{font-size:12.5px;color:var(--muted)}
+.onboard{background:var(--accent-soft);border-color:var(--accent-line)}
+.backup-card{background:var(--amber-soft);border-color:color-mix(in oklab,var(--amber) 35%,var(--rule))}
+.onboard ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+
+/* ---------- countdown days ---------- */
+.cd-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px 28px;align-items:end;padding:26px 28px;border-radius:18px;background:var(--surface);border:1px solid var(--rule);box-shadow:var(--shadow)}
+.cd-hero .t{font:700 22px/1.3 var(--font-display);display:flex;align-items:center;gap:10px;min-width:0}
+.cd-hero .t span{overflow:hidden;text-overflow:ellipsis}
+.cd-hero .meta{color:var(--ink-2);margin-top:6px;font-size:14px}
+.cd-hero .note-t{color:var(--muted);font-size:13.5px;margin-top:8px;max-width:40em}
+.cd-big{display:flex;align-items:baseline;gap:6px;justify-self:end}
+.cd-big b{font:900 clamp(72px,15vw,140px)/.86 var(--font-display);color:var(--c,var(--accent));letter-spacing:-.03em}
+.cd-big span{font:700 22px var(--font-display);color:var(--ink-2)}
+.cd-prog{grid-column:1/-1;display:flex;flex-direction:column;gap:6px}
+.bar{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden;border:1px solid var(--rule)}
+.bar i{display:block;height:100%;background:var(--c,var(--accent));border-radius:99px}
+.cd-prog .row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);gap:8px}
+.cd-actions{display:flex;gap:4px;margin-left:auto;flex:none}
+.cd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:16px}
+.cd-card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.cd-card .top{display:flex;align-items:center;gap:8px;min-width:0}
+.cd-card .top h4{font:700 16px/1.3 var(--font-display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.cd-card .n{display:flex;align-items:baseline;gap:5px}
+.cd-card .n b{font:900 48px/.95 var(--font-display);color:var(--c,var(--accent))}
+.cd-card .n span{font:700 15px var(--font-display);color:var(--ink-2)}
+.cd-card .meta{font-size:13px;color:var(--ink-2)}
+.cd-card.past{opacity:.7}
+.cd-card.past .n b{color:var(--muted)}
+.sugg{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+
+/* ---------- stats ---------- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.tile{padding:16px 18px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--rule);min-width:0}
+.tile .k{font-size:12.5px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+.tile .v{font:500 27px/1.15 var(--font-num);margin-top:6px;letter-spacing:-.02em;white-space:nowrap}
+.tile .v small{font:500 13px var(--font-body);color:var(--muted);margin-left:4px;letter-spacing:0}
+.tile .s{font-size:12.5px;color:var(--ink-2);margin-top:3px}
+.tile.hero{background:var(--accent-soft);border-color:var(--accent-line)}
+.tile.hero .v{font:900 34px/1.1 var(--font-display);letter-spacing:0}
+.cbars{display:flex;flex-direction:column}
+.cbar{display:grid;grid-template-columns:minmax(80px,180px) minmax(0,1fr) 78px 70px;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--rule);font-size:14px}
+.cbar:last-child{border-bottom:0}
+.cbar .nm{display:flex;align-items:center;gap:8px;min-width:0}
+.cbar .nm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cbar .tr{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.cbar .tr i{display:block;height:100%;background:var(--c);border-radius:99px}
+.cbar .v{text-align:right;font-weight:600}
+.cbar .r{text-align:right;color:var(--muted);font-size:13px}
+.cbar.head{font-size:12px;color:var(--muted);font-weight:700;padding-top:0}
+.cbar.head .tr{background:none}
+.chart{position:relative;width:100%;min-width:0}
+.chart svg{display:block;max-width:100%;height:auto;overflow:visible;touch-action:pan-y}
+.chart .grid{stroke:var(--rule);stroke-width:1}
+.chart .base{stroke:var(--rule-2);stroke-width:1}
+.chart .ax{fill:var(--muted);font:500 11px var(--font-num)}
+.chart .axl{fill:var(--muted);font:600 11px var(--font-body)}
+.chart .goal{stroke:var(--ink-2);stroke-width:1.2;stroke-dasharray:5 4}
+.chart .goal-t{fill:var(--ink-2);font:700 11px var(--font-body)}
+.chart .hl{fill:var(--ink);opacity:0}
+.chart .hl.on{opacity:.06}
+.chart .xh{stroke:var(--ink-2);stroke-width:1;stroke-dasharray:3 3;opacity:0}
+.chart .xh.on{opacity:.7}
+.chart .line{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.chart .area{fill:var(--accent);opacity:.09}
+.chart .tline{fill:none;stroke:var(--ink-2);stroke-width:1.4;stroke-dasharray:1.5 4;stroke-linecap:round}
+.chart .ref{stroke:var(--muted);stroke-width:1.3;stroke-dasharray:7 5}
+.chart .ref-t{fill:var(--muted);font:700 11px var(--font-body)}
+.chart .pt-l{fill:var(--ink);font:600 12px var(--font-num)}
+.chart .pt{cursor:pointer}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink-2);margin:0 0 10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--c)}
+.legend svg{width:22px;height:10px;overflow:visible}
+.ctabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.ctabs button{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:9px;border:1px solid var(--rule-2);background:var(--surface);font-weight:700;font-size:13.5px;cursor:pointer;color:var(--ink-2)}
+.ctabs button[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.ctabs .cnt{font:600 11.5px var(--font-num);opacity:.7}
+.case-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px 18px;padding:14px 0 16px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin-bottom:14px}
+.case-sum div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.case-sum span{font-size:12px;color:var(--muted);font-weight:700}
+.case-sum b{font:600 19px var(--font-num);white-space:nowrap}
+.case-sum b small{font:500 12px var(--font-body);color:var(--muted);margin-left:3px}
+.good-t{color:var(--good)}
+.tbl-wrap{overflow-x:auto;margin-top:14px}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px}
+.tbl th{text-align:left;font-size:12px;color:var(--muted);font-weight:700;padding:6px 8px;border-bottom:1.5px solid var(--ink-2)}
+.tbl td{padding:8px;border-bottom:1px solid var(--rule)}
+.tbl .r{text-align:right}
+.tbl td.num,.tbl th.r{font-variant-numeric:tabular-nums}
+.delta{font:600 12.5px var(--font-num);padding:1px 7px;border-radius:6px;white-space:nowrap}
+.delta.over{color:var(--red);background:var(--red-soft)}
+.delta.ok{color:var(--good);background:color-mix(in oklab,var(--good) 12%,var(--surface))}
+
+/* ---------- tooltip ---------- */
+.tip{position:fixed;z-index:80;pointer-events:none;min-width:150px;max-width:270px;padding:10px 12px;border-radius:10px;background:var(--ink);color:var(--surface);font-size:12.5px;line-height:1.5;box-shadow:0 10px 28px rgba(0,0,0,.28)}
+.tip b{font-weight:700}
+.tip .r{display:flex;align-items:center;gap:8px}
+.tip .r i{width:8px;height:8px;border-radius:2px;background:var(--c);flex:none}
+.tip .r .v{margin-left:auto;font-family:var(--font-num);padding-left:12px}
+.tip .tot{border-top:1px solid color-mix(in oklab,var(--surface) 30%,transparent);margin-top:5px;padding-top:5px;display:flex;justify-content:space-between;font-weight:700}
+
+/* ---------- check-in ---------- */
+.ck-top{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px}
+.ck-today{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center}
+.ck-big{font:500 52px/1 var(--font-num);letter-spacing:-.03em;margin-top:8px}
+.ck-stats{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;align-content:center}
+.ck-stats div{display:flex;flex-direction:column;gap:2px}
+.ck-stats span{font-size:12.5px;color:var(--muted);font-weight:700}
+.ck-stats b{font:600 26px/1.1 var(--font-num)}
+.ck-stats b small{font:500 13px var(--font-body);color:var(--muted);margin-left:3px}
+.stamp{--sz:118px;width:var(--sz);height:var(--sz);border-radius:50%;border:3px solid var(--red);box-shadow:inset 0 0 0 3px var(--surface),inset 0 0 0 4.5px var(--red);color:var(--red);display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-12deg);font-family:var(--font-display);opacity:.92;flex:none}
+.stamp .s1{font-weight:900;font-size:25px;letter-spacing:.14em;margin-left:.14em}
+.stamp .s2{font:600 10.5px var(--font-num);letter-spacing:.06em;margin-top:3px}
+.stamp.anim{animation:stamp .6s cubic-bezier(.2,1.5,.45,1) both}
+@keyframes stamp{0%{opacity:0;transform:rotate(-26deg) scale(1.9)}60%{opacity:1;transform:rotate(-10deg) scale(.94)}100%{opacity:.92;transform:rotate(-12deg) scale(1)}}
+.stamp.empty{border:2px dashed var(--rule-2);box-shadow:none;color:var(--muted);transform:none;opacity:1}
+.stamp.empty .s1{font-size:18px;font-weight:700}
+.cal-h{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.cal-h h4{font:700 17px var(--font-display);min-width:7.5em;text-align:center}
+.cal-h .sum{margin-left:auto;font-size:13px;color:var(--ink-2)}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.cal .dow{font-size:12px;color:var(--muted);text-align:center;font-weight:700;padding-bottom:2px}
+.cal .day{position:relative;min-height:66px;border-radius:10px;border:1px solid var(--rule);background:var(--surface);padding:6px 7px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;text-align:left;min-width:0}
+.cal .day:hover{border-color:var(--ink-2)}
+.cal .day .n{font:600 13px var(--font-num);color:var(--ink-2)}
+.cal .day .h{font:600 12.5px var(--font-num);color:var(--ink)}
+.cal .day.lv1{background:color-mix(in oklab,var(--accent) 10%,var(--surface))}
+.cal .day.lv2{background:color-mix(in oklab,var(--accent) 22%,var(--surface))}
+.cal .day.lv3{background:color-mix(in oklab,var(--accent) 36%,var(--surface))}
+.cal .day.lv4{background:color-mix(in oklab,var(--accent) 52%,var(--surface))}
+.cal .day.out{opacity:.38}
+.cal .day.future{cursor:default;background:transparent;border-style:dashed}
+.cal .day.today{box-shadow:0 0 0 2px var(--accent)}
+.cal .mk{position:absolute;top:5px;right:5px;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--red);color:var(--red);font:900 10px/15px var(--font-display);text-align:center;transform:rotate(-12deg);background:var(--surface)}
+.hm svg{display:block;max-width:100%;height:auto}
+.hm .hc{cursor:pointer}
+.hm .lv0{fill:var(--surface-2);stroke:var(--rule);stroke-width:1}
+.hm .lv1{fill:color-mix(in oklab,var(--accent) 24%,var(--surface))}
+.hm .lv2{fill:color-mix(in oklab,var(--accent) 46%,var(--surface))}
+.hm .lv3{fill:color-mix(in oklab,var(--accent) 70%,var(--surface))}
+.hm .lv4{fill:var(--accent)}
+.hm-legend{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);margin-top:10px;justify-content:flex-end;flex-wrap:wrap}
+.hm-legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+
+/* ---------- records ---------- */
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.rec-sum{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;padding:12px 4px;margin-bottom:8px;font-size:14px;color:var(--ink-2)}
+.rec-sum b{font:600 17px var(--font-num);color:var(--ink);text-decoration:underline double;text-underline-offset:5px;text-decoration-thickness:1px}
+.lg-day{margin-bottom:22px}
+.lg-dh{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:0 6px 6px;border-bottom:1.5px solid var(--ink-2)}
+.lg-dh .d{font:700 15px var(--font-display)}
+.lg-dh .d small{font:500 12.5px var(--font-body);color:var(--muted);margin-left:8px}
+.lg-dh .sum{font:600 15px var(--font-num);text-decoration:underline double;text-underline-offset:5px;text-decoration-thickness:1px}
+.lg-row{display:grid;grid-template-columns:112px minmax(0,1fr) minmax(0,1.6fr) 64px 76px;gap:12px;align-items:center;padding:9px 6px;border-bottom:1px solid var(--rule);font-size:14px}
+.lg-row:hover{background:var(--surface-2)}
+.lg-row .t{color:var(--ink-2);font-size:13px;white-space:nowrap}
+.lg-row .c{display:flex;align-items:center;gap:8px;min-width:0}
+.lg-row .c span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lg-row .k{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.lg-row .ttl{color:var(--ink-2);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.lg-row .nt{color:var(--muted);font-size:12.5px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lg-row .du{text-align:right;font-weight:600}
+.lg-row .a{display:flex;justify-content:flex-end;gap:2px}
+.ktag{display:inline-flex;align-items:center;height:22px;font-size:12px;padding:0 8px;border-radius:6px;background:var(--surface-2);border:1px solid var(--rule);font-weight:700;color:var(--ink-2);white-space:nowrap}
+.ktag.case{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft)}
+
+/* ---------- settings ---------- */
+.set-sec{padding:22px 0;border-top:1px solid var(--rule);display:grid;grid-template-columns:minmax(0,230px) minmax(0,1fr);gap:14px 36px}
+.set-sec:first-of-type{border-top:0;padding-top:4px}
+.set-sec h3{font:700 17px/1.3 var(--font-display)}
+.set-sec .desc{font-size:13px;color:var(--muted);margin-top:4px}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px dashed var(--rule);flex-wrap:wrap}
+.srow:last-child{border-bottom:0}
+.srow .sl{min-width:0;flex:1 1 220px}
+.srow .sl b{display:block;font-weight:600;font-size:14.5px}
+.srow .sl span{display:block;font-size:12.5px;color:var(--muted)}
+.srow .sc{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.srow .input{width:auto}
+.inp-num{width:86px!important;text-align:right;font-family:var(--font-num)}
+.course-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px dashed var(--rule)}
+.course-row.arch{opacity:.6}
+.course-row .tt{font:500 13px var(--font-num);color:var(--muted);white-space:nowrap;padding:0 4px}
+.course-row .ops{display:flex;gap:2px}
+.add-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.add-row .input{flex:1 1 160px;width:auto}
+.ct-chip{display:inline-flex;align-items:center;gap:4px;height:34px;padding:0 6px 0 13px;border-radius:999px;border:1px solid var(--rule-2);background:var(--surface);font:600 13.5px var(--font-num)}
+.ct-chip button{width:24px;height:24px;border-radius:50%;border:0;background:none;color:var(--muted);cursor:pointer;display:grid;place-items:center;padding:0}
+.ct-chip button:hover{background:var(--red-soft);color:var(--red)}
+.ct-chip .i{width:14px;height:14px}
+.kbd-list{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:13.5px;align-items:center}
+
+/* ---------- modal ---------- */
+.modal-wrap{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px}
+.scrim{position:absolute;inset:0;background:var(--scrim);animation:fade .15s ease-out}
+.modal{position:relative;width:min(560px,100%);max-height:min(90vh,880px);display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--rule);border-radius:16px;box-shadow:0 30px 80px -24px rgba(0,0,0,.5);animation:pop .18s ease-out;outline:none}
+.modal.wide{width:min(720px,100%)}
+.modal header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 16px 8px 20px}
+.modal header h3{font:700 19px/1.3 var(--font-display)}
+.m-body{padding:6px 20px 18px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.modal footer{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;padding:12px 20px 16px;border-top:1px solid var(--rule)}
+.modal footer .left{margin-right:auto}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98)}}
+.form{display:flex;flex-direction:column;gap:14px}
+.f{display:flex;flex-direction:column;gap:6px;min-width:0}
+.f>span{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.dur-in{display:flex;align-items:center;gap:6px}
+.dur-in .input{width:64px;text-align:right;font-family:var(--font-num);padding:0 10px}
+.dur-in b{font-weight:600;font-size:13.5px;color:var(--ink-2)}
+.finish-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:14px 16px;border-radius:12px;background:var(--surface-2);border:1px solid var(--rule);flex-wrap:wrap}
+.finish-hero .fh-t{font:500 40px/1 var(--font-num);letter-spacing:-.03em;margin-top:4px}
+.finish-hero .fh-side{font-size:13.5px;color:var(--ink-2);text-align:right}
+.radio{display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer}
+.radio input{margin-top:4px;accent-color:var(--accent)}
+.mono{font-family:var(--font-num);font-size:12.5px}
+.day-list{list-style:none;margin:0;padding:0}
+.day-list li{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--rule);font-size:14px}
+.day-list .t{font:500 12.5px var(--font-num);color:var(--muted)}
+.day-list .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.day-tot{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.day-tot b{font:500 30px var(--font-num)}
+
+/* ---------- toasts ---------- */
+.toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:90;display:flex;flex-direction:column;gap:8px;align-items:center;width:min(540px,calc(100% - 32px));pointer-events:none}
+.toast{pointer-events:auto;display:flex;align-items:center;gap:10px;padding:9px 9px 9px 16px;border-radius:12px;background:var(--ink);color:var(--surface);box-shadow:0 14px 34px -10px rgba(0,0,0,.45);opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;font-size:14px;max-width:100%}
+.toast.in{opacity:1;transform:none}
+.toast .tx{flex:1;min-width:0}
+.toast .t-act{border:0;background:color-mix(in oklab,var(--surface) 20%,transparent);color:inherit;font-weight:700;padding:7px 13px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.toast .t-x{border:0;background:none;color:inherit;opacity:.6;cursor:pointer;width:28px;height:28px;display:grid;place-items:center;padding:0}
+.toast.over{background:var(--red);color:#fff}
+.toast.stamp-t{background:var(--surface);color:var(--red);border:2px solid var(--red);font-weight:700}
+
+/* ---------- responsive ---------- */
+@media (max-width:1060px){.sync span{display:none}.cd-chip .cd-t{display:none}}
+@media (max-width:900px){.timer-layout,.ck-top{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:860px){
+  .tabs{display:none}
+  .bottomnav{display:flex}
+  #view{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  .toasts{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}
+@media (max-width:760px){
+  .set-sec{grid-template-columns:minmax(0,1fr)}
+  .lg-row{grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"c du a" "k k k" "t t t";row-gap:4px;column-gap:8px}
+  .lg-row .c{grid-area:c}.lg-row .du{grid-area:du}.lg-row .a{grid-area:a}.lg-row .k{grid-area:k}.lg-row .t{grid-area:t;font-size:12px}
+  .cbar{grid-template-columns:minmax(0,1fr) 70px 60px;grid-template-areas:"nm v r" "tr tr tr";row-gap:6px}
+  .cbar .nm{grid-area:nm}.cbar .tr{grid-area:tr}.cbar .v{grid-area:v}.cbar .r{grid-area:r}
+  .cbar.head .tr{display:none}
+}
+@media (max-width:560px){
+  .timer-card{padding:16px 16px 20px}
+  .field-row{grid-template-columns:minmax(0,1fr)}
+  .brand h1{font-size:15.5px}
+  .top-actions .btn.icon{width:34px;height:34px}
+  .cd-chip{padding:0 10px;margin-right:0}
+  .cd-hero{grid-template-columns:minmax(0,1fr);padding:20px}
+  .cd-big{justify-self:start}
+  .ck-today{grid-template-columns:minmax(0,1fr)}
+  .ck-today .stamp{justify-self:center}
+  .cal{gap:4px}
+  .cal .day{min-height:52px;padding:4px 5px}
+  .cal .day .h{font-size:11px}
+  .cal .mk{width:15px;height:15px;font-size:8.5px;line-height:12px;top:3px;right:3px}
+  .modal-wrap{place-items:end center;padding:0}
+  .modal{width:100%;border-radius:18px 18px 0 0;max-height:92vh;padding-bottom:env(safe-area-inset-bottom,0px)}
+  .grid2{grid-template-columns:minmax(0,1fr)}
+  .vh h2{font-size:23px}
+}
+@media (max-width:420px){#redo-btn{display:none}.sync{padding:0 6px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="wrap topbar-in">
+  <button class="brand" data-act="go" data-v="timer" aria-label="回到计时"><span class="logo" aria-hidden="true">簿</span><h1 id="app-title">CPA 备考计时簿</h1></button>
+  <nav class="tabs" id="tabs" aria-label="主导航"></nav>
+  <div class="top-actions">
+    <button class="cd-chip" id="cd-chip" data-act="go" data-v="days" hidden></button>
+    <button class="sync" id="sync" data-act="sync-info" data-s="local"></button>
+    <button class="btn icon ghost" id="undo-btn" data-act="undo" aria-label="撤销"></button>
+    <button class="btn icon ghost" id="redo-btn" data-act="redo" aria-label="重做"></button>
+    <button class="btn icon ghost" id="set-btn" data-act="go" data-v="settings" aria-label="设置"></button>
+  </div>
+</div></div>
+<div class="demo-bar" id="demo-bar" hidden><div class="wrap"><b>正在看示例数据</b><span>这些数字是演示用的，改动不会保存，也不会影响你的真实记录。</span><button class="btn sm" data-act="demo-off">退出示例</button></div></div>
+<main class="wrap" id="view" aria-live="off"><p class="muted">正在加载…</p></main>
+<nav class="bottomnav" id="bottomnav" aria-label="主导航"></nav>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(function () {
+'use strict';
+
+/* =================== 工具 =================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const clone = o => (o == null ? o : JSON.parse(JSON.stringify(o)));
+const pad = n => String(n).padStart(2, '0');
+const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const pct = (a, b) => (b > 0 ? clamp((a / b) * 100, 0, 100) : 0);
+const DAYMS = 864e5;
+const WD = ['日', '一', '二', '三', '四', '五', '六'];
+const MINUS = '−';
+
+function stable(v) {
+  if (Array.isArray(v)) return '[' + v.map(stable).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).sort().filter(k => v[k] !== undefined).map(k => JSON.stringify(k) + ':' + stable(v[k])).join(',') + '}';
+  return JSON.stringify(v === undefined ? null : v);
+}
+function hms(sec) { sec = Math.max(0, Math.floor(sec)); return `${Math.floor(sec / 3600)}:${pad(Math.floor((sec % 3600) / 60))}:${pad(sec % 60)}`; }
+function hm(sec) { const m = Math.round(Math.max(0, sec) / 60); return `${Math.floor(m / 60)}:${pad(m % 60)}`; }
+function hmText(sec) { const m = Math.round(Math.max(0, sec) / 60), h = Math.floor(m / 60), mm = m % 60; return h ? (mm ? `${h} 小时 ${mm} 分` : `${h} 小时`) : `${mm} 分钟`; }
+const hours1 = sec => (sec / 3600).toFixed(1);
+const mins = sec => Math.round(sec / 60);
+function toKey(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+function keyDate(k) { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); }
+function addDays(k, n) { const d = keyDate(k); d.setDate(d.getDate() + n); return toKey(d); }
+function diffDays(a, b) { return Math.round((keyDate(b) - keyDate(a)) / DAYMS); }
+function dayKey(ms) { return toKey(new Date(ms - (S.settings.dayStartHour || 0) * 36e5)); }
+const todayKey = () => dayKey(Date.now());
+const calToday = () => toKey(new Date());
+function mondayOf(k) { const d = keyDate(k); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return toKey(d); }
+function md(k) { const d = keyDate(k); return `${d.getMonth() + 1}月${d.getDate()}日`; }
+function mdw(k) { const d = keyDate(k); return `${d.getMonth() + 1}月${d.getDate()}日 周${WD[d.getDay()]}`; }
+function ymd(k) { const d = keyDate(k); return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 周${WD[d.getDay()]}`; }
+function hhmm(ms) { const d = new Date(ms); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function monthKey(ms) { const d = new Date(ms); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; }
+function composeStart(date, time) {
+  const [y, mo, d] = date.split('-').map(Number), [hh, mm] = time.split(':').map(Number);
+  const dt = new Date(y, mo - 1, d, hh, mm, 0, 0);
+  if (hh < (S.settings.dayStartHour || 0)) dt.setDate(dt.getDate() + 1);
+  return dt.getTime();
+}
+
+const ICONS = {
+  timer: '<circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5l2.3 2.3M9.5 2.5h5M12 2.5V6"/>',
+  flag: '<path d="M5.5 21V4"/><path d="M5.5 4.5H17l-2.2 4 2.2 4H5.5"/>',
+  chart: '<path d="M3 20.5h18"/><path d="M6.5 17v-6M11 17V5.5M15.5 17v-8M20 17v-4"/>',
+  check: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="m9 14.8 2 2 4-4"/>',
+  list: '<path d="M9 6.5h11M9 12h11M9 17.5h11"/><path d="M4.5 6.5h.01M4.5 12h.01M4.5 17.5h.01" stroke-width="2.8"/>',
+  gear: '<path d="M4 6h9M18 6h2M4 12h3M12 12h8M4 18h11M20 18h0"/><circle cx="15.5" cy="6" r="2.2"/><circle cx="9.5" cy="12" r="2.2"/><circle cx="17.5" cy="18" r="2.2"/>',
+  undo: '<path d="M9 14.5 4 9.5l5-5"/><path d="M4 9.5h10.5a5.5 5.5 0 0 1 0 11H10"/>',
+  redo: '<path d="m15 14.5 5-5-5-5"/><path d="M20 9.5H9.5a5.5 5.5 0 0 0 0 11H14"/>',
+  cloud: '<path d="M7 18.5h10.5a4.5 4.5 0 0 0 .4-8.98A6 6 0 0 0 6.3 10.6 4 4 0 0 0 7 18.5z"/>',
+  device: '<rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/>',
+  play: '<path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/>',
+  pause: '<path d="M9 5.5v13M15 5.5v13" stroke-width="2.6"/>',
+  stop: '<rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="currentColor"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  edit: '<path d="M4.5 19.5h4l10-10-4-4-10 10z"/><path d="m13 7 4 4"/>',
+  trash: '<path d="M4.5 7h15M10 11v6M14 11v6M6.5 7l.9 12.5h9.2L17.5 7M9.5 7V4.5h5V7"/>',
+  restore: '<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5"/>',
+  star: '<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
+  starF: '<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" fill="currentColor"/>',
+  x: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  down: '<path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 20h14"/>',
+  up: '<path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M5 20h14"/>',
+  bell: '<path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5h-14z"/><path d="M10 20.5h4"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  chevL: '<path d="m14.5 6-6 6 6 6"/>',
+  chevR: '<path d="m9.5 6 6 6-6 6"/>',
+  arrUp: '<path d="M12 19V5M6.5 10.5 12 5l5.5 5.5"/>',
+  arrDown: '<path d="M12 5v14M6.5 13.5 12 19l5.5-5.5"/>',
+  archive: '<rect x="3.5" y="4.5" width="17" height="4" rx="1"/><path d="M5 8.5V19h14V8.5M10 12.5h4"/>',
+  copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/>',
+  note: '<path d="M5 4.5h14v15H5z"/><path d="M8.5 9h7M8.5 12.5h7M8.5 16h4"/>'
+};
+const icon = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+
+/* =================== 数据 =================== */
+const LSKEY = 'cpa-ledger-data-v1', UIKEY = 'cpa-ledger-ui-v1';
+const ACCENTS = [['ledger', '账本绿'], ['ink', '墨水蓝'], ['wine', '酒红'], ['graphite', '石墨']];
+const DEFAULT = () => ({
+  schema: 1,
+  settings: { title: 'CPA 备考计时簿', dailyGoal: 360, checkinMin: 60, dayStartHour: 4, graceSec: 120, minRecordSec: 60, warnBefore: 5, sound: true, volume: 0.7, notify: false, wakeLock: true, theme: 'auto', accent: 'ledger', lastBackup: 0, backupEvery: 7 },
+  courses: [{ id: 'c1', name: '课程 1', color: 0, archived: false }, { id: 'c2', name: '课程 2', color: 1, archived: false }],
+  caseTypes: [60, 120, 180, 240, 360],
+  countdowns: [], pinned: null, notes: {}, sessions: {}, active: null
+});
+function migrate(d) {
+  const b = DEFAULT();
+  if (!d || typeof d !== 'object') return b;
+  const o = {
+    schema: 1,
+    settings: { ...b.settings, ...(d.settings && typeof d.settings === 'object' ? d.settings : {}) },
+    courses: Array.isArray(d.courses) && d.courses.length ? d.courses.filter(c => c && c.id).map(c => ({ id: String(c.id), name: String(c.name || '未命名课程'), color: Number.isFinite(+c.color) ? +c.color % 8 : 0, archived: !!c.archived })) : b.courses,
+    caseTypes: Array.isArray(d.caseTypes) ? [...new Set(d.caseTypes.map(Number).filter(n => n > 0 && n <= 1440))].sort((x, y) => x - y) : b.caseTypes,
+    countdowns: Array.isArray(d.countdowns) ? d.countdowns.filter(c => c && c.id && c.date) : [],
+    pinned: d.pinned ?? null,
+    notes: d.notes && typeof d.notes === 'object' && !Array.isArray(d.notes) ? { ...d.notes } : {},
+    sessions: {},
+    active: d.active && Array.isArray(d.active.segs) ? d.active : null
+  };
+  const src = Array.isArray(d.sessions) ? d.sessions : Object.values(d.sessions || {});
+  for (const s of src) {
+    if (!s || !s.id || !Number.isFinite(+s.start) || !Number.isFinite(+s.dur)) continue;
+    o.sessions[s.id] = { ...s, start: +s.start, dur: +s.dur, end: Number.isFinite(+s.end) ? +s.end : +s.start + s.dur * 1000, mode: s.mode === 'down' ? 'down' : 'up', caseType: s.caseType ? +s.caseType : null, target: s.target ? +s.target : null, title: s.title || '', note: s.note || '' };
+  }
+  return o;
+}
+
+let S = DEFAULT();
+let DV = 0;
+let Hist = { undo: [], redo: [] };
+const UI = {
+  view: 'timer', demo: false, stampAnim: false, themeByApp: false, onboardHidden: false,
+  draft: { mode: 'up', courseId: 'c1', caseType: 60, target: 60, title: '', targets: {} },
+  statsRange: 30, caseSel: null, caseCourse: 'all',
+  rec: { course: 'all', kind: 'all', range: '30' }, recDays: 30,
+  calMonth: null
+};
+function loadUI() {
+  try {
+    const u = JSON.parse(localStorage.getItem(UIKEY) || 'null');
+    if (!u) return;
+    if (u.view) UI.view = u.view;
+    if (u.statsRange != null) UI.statsRange = u.statsRange;
+    if (u.caseCourse) UI.caseCourse = u.caseCourse;
+    if (u.caseSel) UI.caseSel = u.caseSel;
+    if (u.rec) Object.assign(UI.rec, u.rec);
+    if (u.draft) Object.assign(UI.draft, u.draft);
+    UI.onboardHidden = !!u.onboardHidden;
+    UI.backupSnooze = +u.backupSnooze || 0;
+  } catch (e) {}
+}
+function saveUI() {
+  try { localStorage.setItem(UIKEY, JSON.stringify({ view: UI.view, statsRange: UI.statsRange, caseCourse: UI.caseCourse, caseSel: UI.caseSel, rec: UI.rec, draft: UI.draft, onboardHidden: UI.onboardHidden, backupSnooze: UI.backupSnooze })); } catch (e) {}
+}
+
+const Store = {
+  mode: 'local', localSrc: null, realS: null, realHist: null, quotaWarned: false,
+  load() {
+    try {
+      const raw = localStorage.getItem(LSKEY);
+      if (!raw) return null;
+      const j = JSON.parse(raw);
+      this.localSrc = j._src || 'local';
+      return migrate(j);
+    } catch (e) { return null; }
+  },
+  saveLocal() {
+    try { localStorage.setItem(LSKEY, JSON.stringify({ ...realState(), _src: this.mode })); }
+    catch (e) { if (!this.quotaWarned) { this.quotaWarned = true; toast('浏览器拒绝保存数据（隐私模式或存储已满），请尽快导出备份', { ms: 9000 }); } }
+  }
+};
+const realState = () => (UI.demo ? Store.realS : S);
+
+function commit(label, fn, opt = {}) {
+  const undoable = opt.undoable !== false;
+  let entry = null;
+  if (undoable) { const snap = clone(S); if (opt.patchSnap) opt.patchSnap(snap); entry = { label, snap, timer: !!opt.timer }; }
+  fn(S);
+  DV++;
+  if (entry) { Hist.undo.push(entry); if (Hist.undo.length > 80) Hist.undo.shift(); Hist.redo.length = 0; }
+  persist();
+  if (opt.render === false) renderChrome(); else render();
+  return entry;
+}
+function persist() {
+  if (UI.demo) return;
+  Store.saveLocal();
+  if (Store.mode === 'cloud') Cloud.sync();
+}
+function restoreSnap(snap, timer) {
+  const n = clone(snap);
+  n.settings = S.settings; n.notes = S.notes;
+  if (!timer) n.active = S.active;
+  S = n;
+}
+function undo() {
+  const e = Hist.undo.pop();
+  if (!e) { toast('没有可以撤销的操作'); return; }
+  Hist.redo.push({ label: e.label, snap: clone(S), timer: e.timer });
+  restoreSnap(e.snap, e.timer); afterHistory();
+  toast(`已撤销：${e.label}`, { action: '重做', fn: redo });
+}
+function redo() {
+  const e = Hist.redo.pop();
+  if (!e) { toast('没有可以重做的操作'); return; }
+  Hist.undo.push({ label: e.label, snap: clone(S), timer: e.timer });
+  restoreSnap(e.snap, e.timer); afterHistory();
+  toast(`已重做：${e.label}`, { action: '撤销', fn: undo });
+}
+function afterHistory() { DV++; persist(); render(); syncWake(); }
+function undoEntry(e) {
+  if (e && Hist.undo[Hist.undo.length - 1] === e) undo();
+  else toast('之后又有新的操作了，请用右上角的撤销按钮逐步撤回');
+}
+
+/* ---------- 派生统计（按数据版本缓存） ---------- */
+const memo = {};
+function cached(name, fn) { const m = memo[name]; if (m && m.v === DV) return m.val; const val = fn(); memo[name] = { v: DV, val }; return val; }
+const sessionsLive = () => cached('live', () => Object.values(S.sessions).filter(s => !s.del).sort((a, b) => a.start - b.start));
+const sessionsTrash = () => Object.values(S.sessions).filter(s => s.del).sort((a, b) => b.del - a.del);
+const dayMap = () => cached('days', () => {
+  const m = new Map();
+  for (const s of sessionsLive()) {
+    const k = dayKey(s.start);
+    let d = m.get(k);
+    if (!d) m.set(k, (d = { total: 0, by: {}, n: 0 }));
+    d.total += s.dur; d.n++; d.by[s.courseId] = (d.by[s.courseId] || 0) + s.dur;
+  }
+  return m;
+});
+const courseTotals = () => cached('ct', () => { const t = {}; for (const s of sessionsLive()) t[s.courseId] = (t[s.courseId] || 0) + s.dur; return t; });
+const grandTotal = () => cached('gt', () => sessionsLive().reduce((a, s) => a + s.dur, 0));
+const courseById = id => S.courses.find(c => c.id === id);
+const activeCourses = () => S.courses.filter(c => !c.archived);
+const courseName = id => courseById(id)?.name ?? '（已删除的课程）';
+const cvar = id => { const c = courseById(id); return c ? `var(--s${(c.color % 8) + 1})` : 'var(--muted)'; };
+function checkedDay(k) { const d = dayMap().get(k); return !!d && d.total > 0 && d.total >= S.settings.checkinMin * 60; }
+const streaks = () => cached('streak', () => {
+  const t = todayKey();
+  let cur = 0, k = checkedDay(t) ? t : addDays(t, -1);
+  while (checkedDay(k)) { cur++; k = addDays(k, -1); }
+  let best = 0, run = 0, prev = null;
+  for (const k2 of [...dayMap().keys()].filter(checkedDay).sort()) { run = prev && diffDays(prev, k2) === 1 ? run + 1 : 1; best = Math.max(best, run); prev = k2; }
+  return { cur, best, todayDone: checkedDay(t) };
+});
+function orderedCourseIds() {
+  const ids = S.courses.map(c => c.id);
+  for (const s of sessionsLive()) if (!ids.includes(s.courseId)) ids.push(s.courseId);
+  return ids;
+}
+
+/* =================== 计时引擎 =================== */
+function elapsed(a = S.active, now = Date.now()) {
+  if (!a) return 0;
+  let t = 0;
+  for (const [s, e] of a.segs) t += (e ?? now) - s;
+  return Math.max(0, t / 1000 + (a.adj || 0));
+}
+const isRunning = a => !!a && a.segs.length > 0 && a.segs[a.segs.length - 1][1] == null;
+function todayLive() {
+  const tk = todayKey();
+  let v = dayMap().get(tk)?.total || 0;
+  if (S.active && dayKey(S.active.startedAt) === tk) v += elapsed();
+  return v;
+}
+function resetAlerts(a) {
+  if (!a || a.mode !== 'down' || !a.target) return;
+  const el = elapsed(a), T = a.target * 60, wb = (S.settings.warnBefore || 0) * 60;
+  if (el < T) a.alerted = false;
+  if (el < T - wb) a.warned = false;
+}
+
+function startTimer() {
+  if (UI.demo) { toast('示例模式下不能计时，请先退出示例'); return; }
+  if (S.active) return;
+  readDraftInputs();
+  const d = UI.draft;
+  const c = courseById(d.courseId);
+  if (!c || c.archived) { toast('请先选择一门课程'); return; }
+  ensureAudio();
+  const now = Date.now();
+  commit('开始计时', s => {
+    s.active = { id: uid('s'), courseId: d.courseId, mode: d.mode, caseType: d.mode === 'down' ? d.caseType : null, target: d.mode === 'down' ? clamp(Math.round(d.target) || 60, 1, 1440) : null, title: (d.title || '').trim(), note: '', startedAt: now, segs: [[now, null]], adj: 0, warned: false, alerted: false };
+  }, { timer: true });
+  Wake.on();
+}
+function pauseTimer() {
+  const a = S.active; if (!a || !isRunning(a)) return;
+  commit('暂停计时', s => { s.active.segs[s.active.segs.length - 1][1] = Date.now(); }, { undoable: false });
+  Wake.off();
+}
+function resumeTimer() {
+  const a = S.active; if (!a || isRunning(a)) return;
+  ensureAudio();
+  commit('继续计时', s => { s.active.segs.push([Date.now(), null]); }, { undoable: false });
+  Wake.on();
+}
+function discardTimer(label) {
+  if (!S.active) return;
+  const el = elapsed();
+  const e = commit(label, s => { s.active = null; }, { timer: true });
+  Wake.off();
+  toast(`${label === '撤销开始' ? '已撤销开始' : '已放弃本次计时'}（${hms(el)} 没有记录）`, { action: '恢复', fn: () => undoEntry(e) });
+}
+function adjustBy(sec) {
+  const a = S.active; if (!a) return;
+  const el = elapsed(a);
+  if (el + sec < 0) sec = -Math.floor(el);
+  if (!sec) return;
+  const m = Math.abs(Math.round(sec / 60));
+  const e = commit(sec > 0 ? `计时加 ${m} 分钟` : `计时减 ${m} 分钟`, s => { s.active.adj = (s.active.adj || 0) + sec; resetAlerts(s.active); }, { timer: true });
+  toast(`已${sec > 0 ? '加上' : '减去'} ${m} 分钟`, { action: '撤销', fn: () => undoEntry(e) });
+}
+function openFinish() {
+  const a = S.active; if (!a) return;
+  const finishAt = Date.now(), el = elapsed(a, finishAt);
+  // 校正过的时长（±5 分、从几点开始算）体现在开始时间上，让“开始–结束”与时长一致
+  const start = Math.min(finishAt - 1000, Math.round(a.startedAt - (a.adj || 0) * 1000));
+  const rec = { id: a.id, courseId: a.courseId, mode: a.mode, caseType: a.caseType, target: a.target, title: a.title || '', note: a.note || '', start, dur: Math.max(1, Math.round(el)), end: finishAt };
+  sessionModal(rec, { kind: 'finish', finishAt, short: el < (S.settings.minRecordSec || 0) });
+}
+function checkAlerts(a, now) {
+  if (a.mode !== 'down' || !a.target || !isRunning(a)) return;
+  const el = elapsed(a, now), T = a.target * 60, wb = (S.settings.warnBefore || 0) * 60;
+  if (!a.alerted && el >= T) {
+    commit('目标时间到', s => { s.active.alerted = true; s.active.warned = true; }, { undoable: false, render: false });
+    chime();
+    notify('目标时间到', `${courseName(a.courseId)} · 目标 ${a.target} 分钟已到，超时部分继续计时`);
+    toast(`目标 ${a.target} 分钟到了，现在开始记超时，结束时按“结束并记录”`, { kind: 'over', ms: 9000 });
+    const d = $('.dial'); if (d) { d.classList.remove('flash'); void d.offsetWidth; d.classList.add('flash'); }
+  } else if (!a.warned && wb > 0 && T > wb && el >= T - wb && el < T) {
+    commit('提醒', s => { s.active.warned = true; }, { undoable: false, render: false });
+    beep();
+    toast(`距离目标还剩 ${S.settings.warnBefore} 分钟`, { ms: 5000 });
+  }
+}
+
+/* ---------- 声音 / 通知 / 常亮 ---------- */
+let AC = null;
+function ensureAudio() {
+  try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); } catch (e) { AC = null; }
+}
+function tone(f, t0, dur, gain) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = 'sine'; o.frequency.value = f;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), t0 + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g).connect(AC.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function chime() {
+  if (!S.settings.sound || !AC) return;
+  try { const t = AC.currentTime + 0.02, v = (S.settings.volume ?? 0.7) * 0.35; [[880, 0], [1108.7, 0.2], [1318.5, 0.4], [1760, 0.62]].forEach(([f, d]) => tone(f, t + d, 1.4, v)); } catch (e) {}
+}
+function beep() {
+  if (!S.settings.sound || !AC) return;
+  try { const t = AC.currentTime + 0.02, v = (S.settings.volume ?? 0.7) * 0.3; tone(660, t, 0.5, v); tone(660, t + 0.3, 0.5, v); } catch (e) {}
+}
+function notify(title, body) {
+  if (!S.settings.notify) return;
+  try { if ('Notification' in window && Notification.permission === 'granted') new Notification(title, { body }); } catch (e) {}
+}
+async function askNotify() {
+  try {
+    if (!('Notification' in window)) throw 0;
+    const p = await Notification.requestPermission();
+    if (p !== 'granted') { toast('浏览器没有允许通知，到时只会响铃和弹出提示'); commit('', s => { s.settings.notify = false; }, { undoable: false }); }
+  } catch (e) { toast('当前环境不支持系统通知，到时只会响铃和弹出提示'); commit('', s => { s.settings.notify = false; }, { undoable: false }); }
+}
+const Wake = {
+  lock: null,
+  async on() { if (!S.settings.wakeLock || !navigator.wakeLock || this.lock) return; try { this.lock = await navigator.wakeLock.request('screen'); this.lock.addEventListener?.('release', () => { this.lock = null; }); } catch (e) { this.lock = null; } },
+  off() { try { this.lock?.release(); } catch (e) {} this.lock = null; }
+};
+function syncWake() { if (S.active && isRunning(S.active)) Wake.on(); else Wake.off(); }
+
+/* =================== 云端同步（Artifact db 能力；不可用时用本机存储） =================== */
+let syncState = 'local';
+function setSync(s) { syncState = s; renderSync(); }
+const Cloud = {
+  db: null, base: {}, queue: new Map(), inflight: null, flushing: false, unsub: [], dirty: false, retryTm: null,
+  async init() {
+    const c = window.claude;
+    if (!c || typeof c.use !== 'function') { setSync('local'); return; }
+    setSync('connecting');
+    let db = null, user = null;
+    try { [db, user] = await Promise.all([c.use('db'), c.use('user').catch(() => null)]); } catch (e) { db = null; }
+    if (!db) { setSync('local'); return; }
+    let can = null;
+    try { can = user ? await user.can('data.write') : null; } catch (e) { can = null; }
+    if (can === false) { setSync('readonly'); return; }
+    this.db = db;
+    try {
+      const [meta, act, months] = await Promise.all([db.doc('app/meta').get(), db.doc('app/active').get(), db.collection('months').get()]);
+      if (!meta.exists) {
+        Store.mode = 'cloud';
+        this.sync();
+      } else {
+        const local = realState();
+        const localHas = Object.keys(local.sessions).length > 0 && Store.localSrc !== 'cloud';
+        if (localHas) { try { localStorage.setItem(LSKEY + '-local-backup', JSON.stringify(local)); } catch (e) {} }
+        const remote = migrate({ ...meta.data(), active: act.exists ? act.data().active : null, sessions: [] });
+        this.base = { 'app/meta': stable(meta.data()) };
+        if (act.exists) this.base['app/active'] = stable(act.data());
+        for (const doc of months.docs) {
+          const data = doc.data() || {};
+          this.base['months/' + doc.id] = stable(data);
+          for (const s of Object.values(data.items || {})) if (s && s.id) remote.sessions[s.id] = clone(s);
+        }
+        Object.assign(remote, migrate(remote));
+        if (UI.demo) Store.realS = remote; else S = remote;
+        DV++; Store.mode = 'cloud'; Store.saveLocal(); applyTheme();
+        if (localHas) toast('已载入云端数据。这台设备上原来的数据另存了一份，可在 设置 › 数据 里导出或合并', { ms: 10000 });
+      }
+      this.subscribe();
+      if (!this.flushing) setSync('synced');
+      render(); syncWake();
+    } catch (e) {
+      Store.mode = 'local'; this.db = null;
+      setSync(e && e.code === 'invalid_argument' ? 'readonly' : 'error');
+    }
+  },
+  subscribe() {
+    const db = this.db;
+    const onErr = e => { if (e && e.code === 'revoked') this.fallback('云端访问已被收回，之后的数据先保存在本机'); else setSync('error'); };
+    this.unsub.push(db.doc('app/meta').onSnapshot(s => { this.remote('app/meta', s.exists ? s.data() : null); this.after(); }, onErr));
+    this.unsub.push(db.doc('app/active').onSnapshot(s => { this.remote('app/active', s.exists ? s.data() : null); this.after(); }, onErr));
+    this.unsub.push(db.collection('months').onSnapshot(q => { for (const ch of q.docChanges()) this.remote('months/' + ch.doc.id, ch.type === 'removed' ? { items: {} } : ch.doc.data()); this.after(); }, onErr));
+  },
+  remote(path, data) {
+    if (!data || this.queue.has(path) || this.inflight === path) return;
+    const j = stable(data);
+    if (this.base[path] === j) return;
+    this.base[path] = j;
+    const T = realState();
+    if (path === 'app/meta') {
+      const m = migrate({ ...data, sessions: [] });
+      T.settings = m.settings; T.courses = m.courses; T.caseTypes = m.caseTypes; T.countdowns = m.countdowns; T.notes = m.notes; T.pinned = m.pinned;
+      applyTheme();
+    } else if (path === 'app/active') {
+      T.active = clone(data.active ?? null);
+      syncWake();
+    } else if (path.startsWith('months/')) {
+      const mk = path.slice(7);
+      for (const [id, s] of Object.entries(T.sessions)) if (monthKey(s.start) === mk) delete T.sessions[id];
+      for (const s of Object.values(data.items || {})) if (s && s.id) T.sessions[s.id] = clone(s);
+    }
+    this.dirty = true;
+  },
+  after() { if (!this.dirty) return; this.dirty = false; DV++; Store.saveLocal(); scheduleRender(); },
+  docsFor(T) {
+    const out = {
+      'app/meta': { schema: 1, settings: T.settings, courses: T.courses, caseTypes: T.caseTypes, countdowns: T.countdowns, notes: T.notes, pinned: T.pinned ?? null },
+      'app/active': { active: T.active ?? null }
+    };
+    const months = {};
+    for (const s of Object.values(T.sessions)) (months[monthKey(s.start)] = months[monthKey(s.start)] || {})[s.id] = s;
+    for (const mk in months) out['months/' + mk] = { items: months[mk] };
+    for (const p in this.base) if (p.startsWith('months/') && !out[p]) out[p] = { items: {} };
+    return out;
+  },
+  sync() {
+    if (!this.db || Store.mode !== 'cloud') return;
+    const docs = this.docsFor(realState());
+    for (const p in docs) {
+      const j = stable(docs[p]);
+      if (this.base[p] !== j) { this.base[p] = j; this.queue.set(p, JSON.parse(j)); }
+    }
+    this.flush();
+  },
+  async flush() {
+    if (this.flushing || !this.queue.size) return;
+    this.flushing = true; setSync('syncing');
+    let ok = true;
+    while (this.queue.size && this.db) {
+      const [p, d] = this.queue.entries().next().value;
+      this.queue.delete(p); this.inflight = p;
+      try { await this.write(p, d); }
+      catch (e) { ok = false; this.inflight = null; this.onFail(e, p); break; }
+      this.inflight = null;
+    }
+    this.flushing = false;
+    if (Store.mode === 'cloud') setSync(ok ? 'synced' : 'error');
+  },
+  async write(p, d) {
+    try { await this.db.doc(p).set(d); }
+    catch (e) { if (e && e.code === 'unavailable') { await sleep(600 + Math.random() * 900); await this.db.doc(p).set(d); } else throw e; }
+  },
+  onFail(e, p) {
+    const code = e && e.code;
+    if (['invalid_argument', 'not_granted', 'revoked', 'capability_disabled', 'capability_removed', 'quota_exceeded'].includes(code)) {
+      this.fallback(code === 'quota_exceeded' ? '云端空间已满，之后的数据先保存在本机，请导出备份' : '没有云端写入权限，之后的数据先保存在本机浏览器');
+      return;
+    }
+    delete this.base[p];
+    for (const q of this.queue.keys()) delete this.base[q];
+    this.queue.clear();
+    clearTimeout(this.retryTm);
+    this.retryTm = setTimeout(() => this.sync(), 5000);
+  },
+  fallback(msg) {
+    this.unsub.forEach(u => { try { u(); } catch (e) {} });
+    this.unsub = []; this.queue.clear(); this.db = null;
+    Store.mode = 'local'; Store.saveLocal(); setSync('readonly');
+    toast(msg, { ms: 9000 });
+  }
+};
+
+/* =================== 渲染：外框 =================== */
+const NAV = [['timer', '计时', 'timer'], ['days', '倒计日', 'flag'], ['stats', '统计', 'chart'], ['checkin', '打卡', 'check'], ['records', '记录', 'list']];
+function buildChrome() {
+  $('#tabs').innerHTML = NAV.map(([v, t, i]) => `<button class="tab" data-act="go" data-v="${v}">${icon(i)}${t}</button>`).join('');
+  $('#bottomnav').innerHTML = NAV.map(([v, t, i]) => `<button class="bn" data-act="go" data-v="${v}">${icon(i)}<span>${t}</span></button>`).join('');
+  $('#undo-btn').innerHTML = icon('undo');
+  $('#redo-btn').innerHTML = icon('redo');
+  $('#set-btn').innerHTML = icon('gear');
+}
+function heroCountdown() {
+  const list = S.countdowns.map(c => ({ ...c, n: diffDays(calToday(), c.date) })).filter(c => c.n >= 0);
+  return list.find(c => c.id === S.pinned) || list.sort((a, b) => a.n - b.n)[0] || null;
+}
+function renderChrome() {
+  $('#app-title').textContent = S.settings.title || 'CPA 备考计时簿';
+  for (const b of $$('.tab,.bn')) b.setAttribute('aria-current', b.dataset.v === UI.view ? 'page' : 'false');
+  $('#set-btn').setAttribute('aria-current', UI.view === 'settings' ? 'page' : 'false');
+  const h = heroCountdown(), chip = $('#cd-chip');
+  if (h) { chip.hidden = false; chip.innerHTML = h.n === 0 ? `<span class="cd-t">${esc(h.title)}</span><b>今天</b>` : `<span class="cd-t">距${esc(h.title)}</span><b>${h.n}</b>天`; chip.title = `${h.title} · ${ymd(h.date)}`; }
+  else chip.hidden = true;
+  const u = Hist.undo[Hist.undo.length - 1], r = Hist.redo[Hist.redo.length - 1];
+  const ub = $('#undo-btn'), rb = $('#redo-btn');
+  ub.disabled = !u; ub.title = u ? `撤销：${u.label}（Ctrl+Z）` : '没有可以撤销的操作';
+  rb.disabled = !r; rb.title = r ? `重做：${r.label}（Ctrl+Shift+Z）` : '没有可以重做的操作';
+  $('#demo-bar').hidden = !UI.demo;
+  renderSync();
+}
+function renderSync() {
+  const el = $('#sync'); if (!el) return;
+  const map = { local: ['device', '本机保存'], readonly: ['device', '本机保存'], connecting: ['cloud', '连接云端…'], syncing: ['cloud', '同步中…'], synced: ['cloud', '云端已同步'], error: ['cloud', '同步异常'] };
+  const [ic, tx] = map[syncState] || map.local;
+  el.dataset.s = syncState; el.innerHTML = `${icon(ic)}<span>${tx}</span>`; el.title = tx + '（点击查看说明）';
+}
+
+let renderQueued = false;
+function scheduleRender() { if (renderQueued) return; renderQueued = true; requestAnimationFrame(() => { renderQueued = false; render(); }); }
+function render() {
+  renderChrome();
+  const host = $('#view');
+  const a = document.activeElement;
+  const f = a && a.id && host.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) ? { id: a.id, s: a.selectionStart, e: a.selectionEnd } : null;
+  const fn = VIEWS[UI.view] || VIEWS.timer;
+  host.innerHTML = fn();
+  host.dataset.view = UI.view;
+  mountView();
+  if (f) { const el = document.getElementById(f.id); if (el) { el.focus(); try { if (f.s != null) el.setSelectionRange(f.s, f.e); } catch (e) {} } }
+  tick();
+  Modal.refresh();
+  UI.stampAnim = false;
+}
+function go(v, anchor) {
+  UI.view = v; saveUI(); hideTip(); render();
+  window.scrollTo(0, 0);
+  if (anchor) setTimeout(() => document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30);
+}
+const viewHead = (t, sub, actions = '') => `<div class="vh"><div><h2>${t}</h2>${sub ? `<p class="muted">${sub}</p>` : ''}</div>${actions ? `<div class="vh-a">${actions}</div>` : ''}</div>`;
+
+/* =================== 视图：计时 =================== */
+const R1 = 106, C1 = 2 * Math.PI * R1, R2 = 92, C2 = 2 * Math.PI * R2;
+function viewTimer() {
+  const a = S.active, d = UI.draft;
+  const cs = activeCourses();
+  if (!cs.some(c => c.id === d.courseId)) d.courseId = cs[0]?.id || null;
+  const cfg = a || { mode: d.mode, target: d.target, caseType: d.caseType };
+  return `<div class="timer-layout">
+    <section class="card timer-card" id="timer-card" data-state="idle">
+      ${a ? activeSummary(a) : setupPanel(d, cs)}
+      ${dialHTML(cfg)}
+      <div class="controls">${controlsHTML(a)}</div>
+      ${a ? `<div class="grace" id="grace" hidden><span>刚才是误触开始的吗？</span><button class="btn sm" data-act="undo-start">撤销开始</button><span class="muted" id="grace-left"></span></div>` : ''}
+    </section>
+    <aside class="side">
+      ${backupCard()}
+      ${onboardCard()}
+      ${todayCard()}
+      ${totalsCard()}
+      ${recentCard()}
+    </aside>
+  </div>`;
+}
+function setupPanel(d, cs) {
+  const courseChips = cs.length
+    ? cs.map(c => `<button class="chip" aria-pressed="${c.id === d.courseId}" data-act="pick-course" data-v="${c.id}"><i class="dot" style="--c:var(--s${(c.color % 8) + 1})"></i><span class="nm">${esc(c.name)}</span></button>`).join('')
+    : `<span class="muted sm">还没有课程。</span>`;
+  const caseChips = S.caseTypes.map(m => `<button class="chip num" aria-pressed="${m === d.caseType}" data-act="pick-case" data-v="${m}">${m} 分</button>`).join('')
+    + `<button class="chip" aria-pressed="${d.caseType == null}" data-act="pick-case" data-v="">不归类</button><button class="chip add" data-act="custom-case">${icon('plus')}自定义</button>`;
+  const base = d.caseType || d.target;
+  return `<div class="setup">
+    <div class="seg" role="radiogroup" aria-label="计时方式">
+      <button role="radio" aria-checked="${d.mode === 'up'}" data-act="set-mode" data-v="up"><b>自由学习</b><span>正计时，可随时暂停</span></button>
+      <button role="radio" aria-checked="${d.mode === 'down'}" data-act="set-mode" data-v="down"><b>Case 练习</b><span>倒计时，超时后继续累计</span></button>
+    </div>
+    <div class="field">
+      <div class="field-h"><span class="lbl">课程</span><button class="link" data-act="go" data-v="settings" data-anchor="set-courses">管理课程</button></div>
+      <div class="chips">${courseChips}<button class="chip add" data-act="quick-course">${icon('plus')}添加</button></div>
+    </div>
+    ${d.mode === 'down' ? `
+    <div class="field">
+      <div class="field-h"><span class="lbl">Case 类型 <em>（按建议时长分组统计）</em></span></div>
+      <div class="chips">${caseChips}</div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label class="lbl" for="tgt">我的目标</label>
+        <div class="stepper"><button data-act="tgt" data-v="-5" aria-label="减 5 分钟">${MINUS}5</button><input id="tgt" type="number" inputmode="numeric" min="1" max="1440" value="${d.target}"><span class="unit">分钟</span><button data-act="tgt" data-v="5" aria-label="加 5 分钟">+5</button></div>
+        <div class="quick"><button class="qbtn" data-act="tgt-set" data-v="${base}">= ${base}</button><button class="qbtn" data-act="tgt-set" data-v="${Math.round(base * 1.25)}">×1.25</button><button class="qbtn" data-act="tgt-set" data-v="${Math.round(base * 1.5)}">×1.5</button></div>
+      </div>
+      <div class="field">
+        <label class="lbl" for="case-title">Case 名称 <em>选填</em></label>
+        <input id="case-title" class="input" maxlength="80" placeholder="例如：Case 3 · Revenue" value="${esc(d.title)}">
+      </div>
+    </div>` : `
+    <div class="field">
+      <label class="lbl" for="case-title">学习内容 <em>选填</em></label>
+      <input id="case-title" class="input" maxlength="80" placeholder="例如：eBook 第 4 章 + 课后题" value="${esc(d.title)}">
+    </div>`}
+  </div>`;
+}
+function activeSummary(a) {
+  const info = a.mode === 'down' ? `Case ${a.caseType ? a.caseType + ' 分' : '不归类'} · 目标 ${a.target} 分` : '自由学习 · 正计时';
+  return `<div class="active-sum">
+    <span class="pill"><span class="state-dot"></span><i class="dot" style="--c:${cvar(a.courseId)}"></i><span class="nm">${esc(courseName(a.courseId))}</span></span>
+    <span class="pill num">${info}</span>
+    ${a.title ? `<span class="ttl">${esc(a.title)}</span>` : ''}
+    <button class="btn sm ghost" data-act="edit-active">${icon('edit')}修改</button>
+  </div>`;
+}
+function dialHTML(cfg) {
+  let ticks = '';
+  for (let i = 0; i < 60; i++) {
+    const ang = (i / 60) * 2 * Math.PI - Math.PI / 2, long = i % 5 === 0;
+    const r1 = long ? 118 : 121, r2 = 126;
+    ticks += `<line class="tk${long ? ' l' : ''}" x1="${(130 + r1 * Math.cos(ang)).toFixed(2)}" y1="${(130 + r1 * Math.sin(ang)).toFixed(2)}" x2="${(130 + r2 * Math.cos(ang)).toFixed(2)}" y2="${(130 + r2 * Math.sin(ang)).toFixed(2)}"/>`;
+  }
+  let mark = '';
+  if (cfg.mode === 'down' && cfg.caseType && cfg.target && cfg.caseType < cfg.target) {
+    const ang = (cfg.caseType / cfg.target) * 2 * Math.PI - Math.PI / 2;
+    const p = r => `${(130 + r * Math.cos(ang)).toFixed(2)}`, q = r => `${(130 + r * Math.sin(ang)).toFixed(2)}`;
+    mark = `<g class="cmark"><line x1="${p(97)}" y1="${q(97)}" x2="${p(115)}" y2="${q(115)}"/><text x="${p(84)}" y="${(+q(84) + 4).toFixed(2)}" text-anchor="middle">${cfg.caseType}</text></g>`;
+  }
+  return `<div class="dial" role="timer" aria-live="off">
+    <svg viewBox="0 0 260 260" aria-hidden="true">
+      <g>${ticks}</g>
+      <circle class="track" cx="130" cy="130" r="${R1}"/>
+      <circle class="prog" id="ring-prog" cx="130" cy="130" r="${R1}" transform="rotate(-90 130 130)" stroke-dasharray="${C1.toFixed(2)}" stroke-dashoffset="${C1.toFixed(2)}"/>
+      <circle class="over" id="ring-over" cx="130" cy="130" r="${R2}" transform="rotate(-90 130 130)" stroke-dasharray="${C2.toFixed(2)}" stroke-dashoffset="${C2.toFixed(2)}"/>
+      ${mark}
+    </svg>
+    <div class="readout"><div class="label" id="rd-label">准备开始</div><div class="digits num" id="rd-digits">0:00:00</div><div class="sub" id="rd-sub"></div></div>
+  </div>`;
+}
+function controlsHTML(a) {
+  if (!a) return `<div class="ctl-main"><button class="btn primary xl" data-act="start">${icon('play')}开始计时</button></div><div class="hint">快捷键 <kbd>空格</kbd> 开始 / 暂停</div>`;
+  const run = isRunning(a);
+  return `<div class="ctl-main">
+      ${run ? `<button class="btn xl" data-act="pause">${icon('pause')}暂停</button>` : `<button class="btn xl" data-act="resume">${icon('play')}继续</button>`}
+      <button class="btn primary xl" data-act="finish">${icon('stop')}结束并记录</button>
+    </div>
+    <div class="ctl-sub">
+      <button class="btn sm" data-act="adj" data-v="-300">${MINUS}5 分</button>
+      <button class="btn sm" data-act="adj" data-v="300">+5 分</button>
+      <button class="btn sm" data-act="adjust">${icon('clock')}校正时长</button>
+      <button class="btn sm danger hold" data-act="discard" data-hold="discard" title="按住约 1 秒放弃本次计时">按住放弃</button>
+    </div>
+    ${run ? '' : `<div class="hint">已暂停，暂停的时间不计入</div>`}`;
+}
+function backupDue() {
+  if (UI.demo || Store.mode === 'cloud' || !S.settings.backupEvery) return 0;
+  const live = sessionsLive(); if (!live.length) return 0;
+  if (UI.backupSnooze && Date.now() < UI.backupSnooze) return 0;
+  const since = S.settings.lastBackup || Math.min(...live.map(s => s.created || s.start));
+  const days = Math.floor((Date.now() - since) / DAYMS);
+  return days >= S.settings.backupEvery ? days : 0;
+}
+function backupCard() {
+  const d = backupDue(); if (!d) return '';
+  return `<section class="card backup-card">
+    <div class="card-h"><h3>该备份了</h3><button class="link" data-act="backup-snooze">3 天后再提醒</button></div>
+    <p class="sm">${S.settings.lastBackup ? `距离上次导出已经 ${d} 天。` : `已经记录了 ${d} 天，还没有导出过备份。`}数据只存在这个浏览器里，清理浏览器数据时会被一起清掉。</p>
+    <div style="margin-top:10px"><button class="btn sm primary" data-act="export-json">${icon('down')}导出备份</button></div>
+  </section>`;
+}
+function onboardCard() {
+  if (UI.onboardHidden || sessionsLive().length || S.active) return '';
+  return `<section class="card onboard">
+    <div class="card-h"><h3>第一次用？三步开始</h3><button class="link" data-act="hide-onboard">知道了</button></div>
+    <ol>
+      <li>到 <button class="link" data-act="go" data-v="settings" data-anchor="set-courses">设置 › 课程</button> 把“课程 1 / 课程 2”改成你的科目名</li>
+      <li>到 <button class="link" data-act="go" data-v="days">倒计日</button> 添加考试日期</li>
+      <li>选好课程，点“开始计时”。结束时会自动记入累计和打卡</li>
+    </ol>
+  </section>`;
+}
+function todayCard() {
+  const tk = todayKey(), saved = dayMap().get(tk), savedSec = saved?.total || 0, live = todayLive(), goal = S.settings.dailyGoal * 60, st = streaks();
+  const rows = orderedCourseIds().map(id => ({ id, v: saved?.by[id] || 0 })).filter(r => r.v > 0);
+  const need = Math.max(0, S.settings.checkinMin * 60 - savedSec);
+  return `<section class="card">
+    <div class="card-h"><h3>今日</h3><span class="muted sm">${mdw(tk)}</span></div>
+    <div class="today-total"><span class="big num" id="today-total">${hm(live)}</span><span class="muted">/ 目标 ${hm(goal)}</span></div>
+    <div class="goalbar"><i id="today-bar" style="width:${pct(live, goal)}%"></i></div>
+    <div class="goal-meta"><span>${st.todayDone ? '<span class="ok-txt">今日已打卡</span>' : `打卡还差 <b class="num">${hm(need)}</b>`}</span><span>连续打卡 <b class="num">${st.cur}</b> 天</span></div>
+    ${rows.length ? `<ul class="crows">${rows.map(r => `<li><i class="dot" style="--c:${cvar(r.id)}"></i><span class="nm">${esc(courseName(r.id))}</span><span class="num">${hm(r.v)}</span></li>`).join('')}</ul>` : ''}
+    ${S.active ? `<p class="live-note"><span class="state-dot"></span>上面的今日合计已包含正在进行的计时</p>` : ''}
+  </section>`;
+}
+function totalsCard() {
+  const ct = courseTotals(), gt = grandTotal();
+  const rows = orderedCourseIds().map(id => ({ id, v: ct[id] || 0, c: courseById(id) })).filter(r => (r.c && !r.c.archived) || r.v > 0);
+  return `<section class="card">
+    <div class="card-h"><h3>累计学习</h3><button class="link" data-act="go" data-v="stats">看统计</button></div>
+    <div class="grand"><span class="num">${hours1(gt)}</span><span class="u">小时</span></div>
+    <ul class="crows">${rows.map(r => `<li><i class="dot" style="--c:${cvar(r.id)}"></i><span class="nm">${esc(courseName(r.id))}</span><span class="num">${hours1(r.v)} h</span></li>`).join('')}</ul>
+  </section>`;
+}
+function recentCard() {
+  const list = sessionsLive().slice(-5).reverse();
+  return `<section class="card">
+    <div class="card-h"><h3>最近记录</h3><span><button class="link" data-act="add-session">补录</button> · <button class="link" data-act="go" data-v="records">全部</button></span></div>
+    ${list.length ? `<ul class="crows recent">${list.map(s => `<li><i class="dot" style="--c:${cvar(s.courseId)}"></i><span class="nm">${esc(courseName(s.courseId))}${s.mode === 'down' ? ` <span class="muted sm">· Case${s.caseType ? ' ' + s.caseType : ''}</span>` : ''}<br><span class="t num">${md(dayKey(s.start))} ${hhmm(s.start)}</span></span><span class="num">${hm(s.dur)}</span><button class="btn icon sm ghost" data-act="edit-session" data-id="${s.id}" aria-label="编辑这条记录">${icon('edit')}</button></li>`).join('')}</ul>`
+      : `<p class="muted sm">还没有记录。点“开始计时”，结束时会自动记到这里；忘了计时也可以点“补录”。</p>`}
+  </section>`;
+}
+let lastFrac = 0;
+function updateDial(a, now) {
+  const prog = $('#ring-prog'); if (!prog) return;
+  const over = $('#ring-over'), card = $('#timer-card');
+  let frac = 0, ofrac = 0, label, digits, sub = '', state = 'idle';
+  if (!a) {
+    const d = UI.draft;
+    if (d.mode === 'down') { label = '目标'; digits = hms((d.target || 0) * 60); sub = d.caseType ? `${d.caseType} 分钟 case · 超时后自动续计` : '超时后自动续计'; }
+    else { label = '准备开始'; digits = hms(0); sub = '正计时 · 可随时暂停'; }
+  } else {
+    const el = elapsed(a, now), run = isRunning(a);
+    state = run ? 'running' : 'paused';
+    if (a.mode === 'down' && a.target) {
+      const T = a.target * 60;
+      if (el < T) {
+        label = run ? '剩余' : '已暂停 · 剩余'; digits = hms(Math.ceil(T - el)); frac = el / T; sub = `已用 ${hms(el)} · 目标 ${a.target} 分`;
+        if (S.settings.warnBefore > 0 && T - el <= S.settings.warnBefore * 60) state += ' warn';
+      } else {
+        label = run ? '超时 · 仍在计时' : '已暂停 · 超时'; digits = '+' + hms(el - T); frac = 1; ofrac = Math.min(1, (el - T) / T); sub = `总用时 ${hms(el)} · 目标 ${a.target} 分`; state += ' over';
+      }
+    } else {
+      label = run ? '已学习' : '已暂停'; digits = hms(el); frac = (el % 3600) / 3600;
+      sub = `第 ${Math.floor(el / 3600) + 1} 个小时 · 每圈 60 分钟`;
+    }
+  }
+  prog.style.transition = frac < lastFrac - 0.001 ? 'none' : '';
+  lastFrac = frac;
+  prog.style.strokeDashoffset = (C1 * (1 - frac)).toFixed(2);
+  prog.style.opacity = frac > 0.0005 ? 1 : 0;
+  over.style.strokeDashoffset = (C2 * (1 - ofrac)).toFixed(2);
+  over.style.opacity = ofrac > 0 ? 1 : 0;
+  $('#rd-label').textContent = label;
+  $('#rd-digits').textContent = digits;
+  $('#rd-sub').textContent = sub;
+  if (card.dataset.state !== state) card.dataset.state = state;
+  const g = $('#grace');
+  if (g && a) {
+    const left = (S.settings.graceSec || 0) - (now - a.startedAt) / 1000;
+    g.hidden = !(left > 0);
+    if (left > 0) $('#grace-left').textContent = `${Math.ceil(left)} 秒后隐藏`;
+  }
+}
+function tick() {
+  const a = S.active, now = Date.now();
+  if (UI.view === 'timer') {
+    updateDial(a, now);
+    const tt = $('#today-total');
+    if (tt) { const v = todayLive(); tt.textContent = hm(v); $('#today-bar').style.width = pct(v, S.settings.dailyGoal * 60) + '%'; }
+  }
+  const base = S.settings.title || 'CPA 备考计时簿';
+  let t = base;
+  if (a) {
+    const el = elapsed(a, now);
+    const txt = a.mode === 'down' && a.target ? (el < a.target * 60 ? hms(Math.ceil(a.target * 60 - el)) : '+' + hms(el - a.target * 60)) : hms(el);
+    t = `${isRunning(a) ? '▶' : '❚❚'} ${txt} · ${courseName(a.courseId)}`;
+  }
+  if (document.title !== t) document.title = t;
+  if (a && !UI.demo) checkAlerts(a, now);
+}
+function readDraftInputs() {
+  const t = $('#tgt'); if (t) UI.draft.target = clamp(Math.round(+t.value) || UI.draft.caseType || 60, 1, 1440);
+  const c = $('#case-title'); if (c) UI.draft.title = c.value;
+}
+function setTarget(v) {
+  const d = UI.draft;
+  d.target = clamp(Math.round(v) || 1, 1, 1440);
+  if (d.caseType) d.targets[d.caseType] = d.target;
+  saveUI(); render();
+}
+
+/* =================== 视图：倒计日 =================== */
+function cdMeta(c) {
+  const n = diffDays(calToday(), c.date);
+  const tgt = keyDate(c.date).getTime(), created = c.created || Date.now();
+  const frac = tgt > created ? clamp((Date.now() - created) / (tgt - created), 0, 1) : 1;
+  return { n, frac };
+}
+function weeksText(n) { const w = Math.floor(n / 7), d = n % 7; return w ? `${w} 周${d ? ` ${d} 天` : ''}` : `${d} 天`; }
+function viewDays() {
+  const add = `<button class="btn primary" data-act="cd-new">${icon('plus')}新建倒计日</button>`;
+  if (!S.countdowns.length) {
+    return viewHead('倒计日', '把考试、报名截止这些日子放在这里，顶部会一直显示最近的一个。', add) + `<div class="card empty">
+      <h3>还没有倒计日</h3>
+      <p>添加一个考试日期，比如 Core 1 考试。设为“置顶”的那个会显示在每一页的顶部。</p>
+      <div class="sugg">${['Core 1 考试', 'Core 2 考试', 'CFE 考试', '报名截止'].map(t => `<button class="chip" data-act="cd-new" data-title="${t}">${icon('plus')}${t}</button>`).join('')}</div>
+    </div>`;
+  }
+  const all = S.countdowns.map(c => ({ ...c, ...cdMeta(c) }));
+  const up = all.filter(c => c.n >= 0).sort((a, b) => a.n - b.n), past = all.filter(c => c.n < 0).sort((a, b) => b.n - a.n);
+  const hero = up.find(c => c.id === S.pinned) || up[0];
+  const rest = up.filter(c => c !== hero);
+  const card = c => `<article class="cd-card${c.n < 0 ? ' past' : ''}" style="--c:var(--s${(c.color % 8) + 1})">
+      <div class="top"><i class="dot"></i><h4>${esc(c.title)}</h4><div class="cd-actions">
+        ${c.n >= 0 ? `<button class="btn icon sm ghost" data-act="cd-pin" data-id="${c.id}" aria-label="置顶" title="置顶到顶部">${icon(S.pinned === c.id ? 'starF' : 'star')}</button>` : ''}
+        <button class="btn icon sm ghost" data-act="cd-edit" data-id="${c.id}" aria-label="编辑">${icon('edit')}</button></div></div>
+      <div class="n">${c.n > 0 ? `<b class="num-d">${c.n}</b><span>天后</span>` : c.n === 0 ? '<b>今天</b>' : `<b>${-c.n}</b><span>天前</span>`}</div>
+      <div class="meta">${ymd(c.date)}${c.n > 6 ? ` · 还有 ${weeksText(c.n)}` : ''}</div>
+      ${c.n >= 0 ? `<div class="bar"><i style="width:${(c.frac * 100).toFixed(1)}%"></i></div>` : ''}
+      ${c.note ? `<div class="meta muted">${esc(c.note)}</div>` : ''}
+    </article>`;
+  return viewHead('倒计日', '置顶的那个会显示在每一页顶部；日期按自然日计算。', add)
+    + (hero ? `<section class="cd-hero" style="--c:var(--s${(hero.color % 8) + 1})">
+        <div style="min-width:0">
+          <div class="eyebrow">${S.pinned === hero.id ? '置顶' : '最近的一个'}</div>
+          <div class="t"><i class="dot"></i><span>${esc(hero.title)}</span></div>
+          <div class="meta">${ymd(hero.date)}${hero.n > 6 ? ` · 还有 ${weeksText(hero.n)}` : ''}</div>
+          ${hero.note ? `<p class="note-t">${esc(hero.note)}</p>` : ''}
+        </div>
+        <div class="cd-big">${hero.n === 0 ? '<b>今天</b>' : `<span>还有</span><b>${hero.n}</b><span>天</span>`}</div>
+        <div class="cd-prog"><div class="bar"><i style="width:${(hero.frac * 100).toFixed(1)}%"></i></div>
+          <div class="row"><span>从添加那天起已走过 ${Math.round(hero.frac * 100)}%</span><span><button class="link" data-act="cd-edit" data-id="${hero.id}">编辑</button></span></div></div>
+      </section>` : '')
+    + (rest.length ? `<div class="cd-grid">${rest.map(card).join('')}</div>` : '')
+    + (past.length ? `<div class="panel"><div class="panel-h"><h3>已经过去</h3></div><div class="cd-grid" style="margin-top:0">${past.map(card).join('')}</div></div>` : '');
+}
+
+/* =================== 视图：统计 =================== */
+function viewStats() {
+  const live = sessionsLive();
+  if (!live.length) {
+    return viewHead('统计', '累计时长、每日走势和 Case 进步曲线都在这里。') + `<div class="card empty">
+      <h3>还没有可以统计的记录</h3>
+      <p>完成第一次计时后，这里会出现总时长、各课程累计、每日柱状图和 Case 用时的折线图。</p>
+      <div class="sugg"><button class="btn primary" data-act="go" data-v="timer">${icon('play')}去计时</button>${UI.demo ? '' : `<button class="btn" data-act="demo-on">先看看示例数据</button>`}</div>
+    </div>`;
+  }
+  const R = UI.statsRange, tk = todayKey(), dm = dayMap();
+  const firstKey = dayKey(live[0].start);
+  const startKey = R ? addDays(tk, -(R - 1)) : (firstKey < tk ? firstKey : tk);
+  const span = diffDays(startKey, tk) + 1;
+  let rangeTotal = 0, studyDays = 0, best = { k: null, v: 0 };
+  const rangeBy = {};
+  for (let i = 0; i < span; i++) {
+    const k = addDays(startKey, i), d = dm.get(k);
+    if (!d) continue;
+    rangeTotal += d.total; if (d.total > 0) studyDays++;
+    if (d.total > best.v) best = { k, v: d.total };
+    for (const id in d.by) rangeBy[id] = (rangeBy[id] || 0) + d.by[id];
+  }
+  const wk = mondayOf(tk); let weekTotal = 0;
+  for (let i = 0; i < 7; i++) weekTotal += dm.get(addDays(wk, i))?.total || 0;
+  const gt = grandTotal(), ct = courseTotals(), st = streaks();
+  const rLabel = R ? `近 ${R} 天` : '全部';
+  const ids = orderedCourseIds().filter(id => (ct[id] || 0) > 0 || (courseById(id) && !courseById(id).archived));
+  const maxC = Math.max(1, ...ids.map(id => rangeBy[id] || 0));
+  return viewHead('统计', `数据截至今天 ${mdw(tk)}。点柱子可以查看那一天的明细。`,
+    `<div class="seg-sm" role="group" aria-label="统计范围">${[[7, '7 天'], [30, '30 天'], [90, '90 天'], [0, '全部']].map(([v, t]) => `<button aria-pressed="${R === v}" data-act="stats-range" data-v="${v}">${t}</button>`).join('')}</div>`)
+    + `<div class="tiles">
+      <div class="tile hero"><div class="k">累计总时长</div><div class="v">${hours1(gt)}<small>小时</small></div><div class="s">共 ${live.length} 条记录 · ${dm.size} 个学习日</div></div>
+      <div class="tile"><div class="k">本周</div><div class="v">${hm(weekTotal)}</div><div class="s">从周一 ${md(wk)} 起</div></div>
+      <div class="tile"><div class="k">${rLabel}合计</div><div class="v">${hm(rangeTotal)}</div><div class="s">学习 ${studyDays} / ${span} 天</div></div>
+      <div class="tile"><div class="k">${rLabel}日均</div><div class="v">${hm(rangeTotal / span)}</div><div class="s">每日目标 ${hm(S.settings.dailyGoal * 60)}</div></div>
+      <div class="tile"><div class="k">连续打卡</div><div class="v">${st.cur}<small>天</small></div><div class="s">最长 ${st.best} 天</div></div>
+    </div>
+    <section class="panel">
+      <div class="panel-h"><div><h3>各课程累计</h3><p class="muted">左边是全部时间的累计，右边是${rLabel}内的时长</p></div></div>
+      <div class="sheet"><div class="cbars">
+        <div class="cbar head"><span>课程</span><span class="tr"></span><span class="v">累计</span><span class="r">${rLabel}</span></div>
+        ${ids.map(id => `<div class="cbar" style="--c:${cvar(id)}"><span class="nm"><i class="dot"></i><span>${esc(courseName(id))}</span></span><span class="tr"><i style="width:${pct(rangeBy[id] || 0, maxC)}%"></i></span><span class="v num">${hours1(ct[id] || 0)} h</span><span class="r num">${hm(rangeBy[id] || 0)}</span></div>`).join('')}
+      </div></div>
+    </section>
+    <section class="panel">
+      <div class="panel-h"><div><h3>每日学习时长</h3><p class="muted">${span > 120 ? '时间跨度较长，按周汇总显示' : '按课程分段堆叠，虚线是每日目标'}</p></div></div>
+      <div class="sheet"><div class="legend">${ids.map(id => `<span><i style="--c:${cvar(id)}"></i>${esc(courseName(id))}</span>`).join('')}</div><div class="chart" id="bar-chart"></div></div>
+    </section>
+    ${caseSection()}`;
+}
+function caseSection() {
+  const all = sessionsLive().filter(s => s.mode === 'down' && s.caseType);
+  const filt = s => UI.caseCourse === 'all' || s.courseId === UI.caseCourse;
+  const types = [...new Set([...S.caseTypes, ...all.map(s => s.caseType)])].sort((a, b) => a - b);
+  const counts = {}; for (const t of types) counts[t] = all.filter(s => s.caseType === t && filt(s)).length;
+  let sel = UI.caseSel;
+  if (!types.includes(sel) || !counts[sel]) sel = types.find(t => counts[t]) ?? types[0];
+  UI.caseSel = sel;
+  const pts = all.filter(s => s.caseType === sel && filt(s));
+  const courseSel = `<select class="input sm" data-ui="caseCourse" aria-label="按课程筛选"><option value="all">全部课程</option>${S.courses.map(c => `<option value="${c.id}" ${UI.caseCourse === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select>`;
+  let inner;
+  if (!types.length) inner = `<div class="empty-sm">还没有 case 类型，可以在设置里添加。</div>`;
+  else if (!pts.length) inner = `<div class="empty-sm">还没有 ${sel} 分钟 case 的记录。在计时页选“Case 练习”，再选 ${sel} 分就会记到这一组。</div>`;
+  else {
+    const ys = pts.map(s => s.dur / 60);
+    const last3 = ys.slice(-3), avg3 = last3.reduce((a, b) => a + b, 0) / last3.length;
+    const withT = pts.filter(s => s.target), met = withT.filter(s => s.dur / 60 <= s.target + 0.5).length;
+    const imp = ys.length > 1 ? Math.round((1 - avg3 / ys[0]) * 100) : null;
+    inner = `<div class="case-sum">
+        <div><span>练习次数</span><b>${pts.length}<small>次</small></b></div>
+        <div><span>第一次</span><b>${Math.round(ys[0])}<small>分</small></b></div>
+        <div><span>最近一次</span><b>${Math.round(ys[ys.length - 1])}<small>分</small></b></div>
+        <div><span>最快</span><b>${Math.round(Math.min(...ys))}<small>分</small></b></div>
+        <div><span>最近 ${last3.length} 次平均</span><b>${Math.round(avg3)}<small>分</small></b></div>
+        <div><span>对比第一次</span><b class="${imp > 0 ? 'good-t' : ''}">${imp == null ? '—' : imp > 0 ? `快 ${imp}%` : imp < 0 ? `慢 ${-imp}%` : '持平'}</b></div>
+        <div><span>达到目标</span><b>${withT.length ? `${met}/${withT.length}` : '—'}</b></div>
+      </div>
+      <div class="legend">
+        <span><svg viewBox="0 0 22 10"><line x1="0" y1="5" x2="22" y2="5" style="stroke:var(--accent);stroke-width:2.2"/><circle cx="11" cy="5" r="3.6" style="fill:var(--accent)"/></svg>实际用时（实心 = 达到目标）</span>
+        <span><svg viewBox="0 0 22 10"><circle cx="11" cy="5" r="3.6" style="fill:var(--surface);stroke:var(--red);stroke-width:2"/></svg>超过目标（空心）</span>
+        <span><svg viewBox="0 0 22 10"><line x1="0" y1="5" x2="22" y2="5" style="stroke:var(--ink-2);stroke-width:1.4;stroke-dasharray:1.5 4;stroke-linecap:round"/></svg>我的目标</span>
+        <span><svg viewBox="0 0 22 10"><line x1="0" y1="5" x2="22" y2="5" style="stroke:var(--muted);stroke-width:1.3;stroke-dasharray:7 5"/></svg>Case 建议时长 ${sel} 分</span>
+      </div>
+      <div class="chart" id="case-chart"></div>
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>日期</th><th>名称</th><th>课程</th><th class="r">目标</th><th class="r">实际</th><th class="r">对比目标</th><th></th></tr></thead><tbody>
+        ${pts.map((s, i) => ({ s, i })).reverse().map(({ s, i }) => { const d = s.target ? Math.round(s.dur / 60) - s.target : null; return `<tr><td class="num">${i + 1}</td><td class="num">${md(dayKey(s.start))}</td><td>${esc(s.title || '—')}</td><td><i class="dot" style="--c:${cvar(s.courseId)}"></i> ${esc(courseName(s.courseId))}</td><td class="r num">${s.target ? s.target + ' 分' : '—'}</td><td class="r num"><b>${Math.round(s.dur / 60)} 分</b></td><td class="r">${d == null ? '—' : d > 0 ? `<span class="delta over">+${d}</span>` : `<span class="delta ok">${d === 0 ? '±0' : MINUS + -d}</span>`}</td><td class="r"><button class="btn icon sm ghost" data-act="edit-session" data-id="${s.id}" aria-label="编辑">${icon('edit')}</button></td></tr>`; }).join('')}
+      </tbody></table></div>`;
+  }
+  return `<section class="panel" id="case-panel">
+    <div class="panel-h"><div><h3>Case 进步曲线</h3><p class="muted">同一类 case 每次实际花了多久。60 分钟的 case 写了 180 分钟，也还是记在 60 分钟这一组。</p></div>${courseSel}</div>
+    <div class="sheet">
+      <div class="ctabs" role="tablist">${types.map(t => `<button role="tab" aria-selected="${t === sel}" data-act="case-sel" data-v="${t}">${t} 分钟<span class="cnt">${counts[t]}</span></button>`).join('')}</div>
+      ${inner}
+    </div>
+  </section>`;
+}
+
+/* =================== 视图：打卡 =================== */
+function stampHTML(k, anim) { const d = keyDate(k); return `<div class="stamp${anim ? ' anim' : ''}" role="img" aria-label="今日已打卡"><span class="s1">已打卡</span><span class="s2">${d.getFullYear()}·${pad(d.getMonth() + 1)}·${pad(d.getDate())}</span></div>`; }
+function viewCheckin() {
+  const tk = todayKey(), st = streaks(), live = todayLive(), savedSec = dayMap().get(tk)?.total || 0;
+  const goal = S.settings.dailyGoal * 60, thr = S.settings.checkinMin * 60;
+  const ym = UI.calMonth || tk.slice(0, 7);
+  const [y, m] = ym.split('-').map(Number);
+  const first = toKey(new Date(y, m - 1, 1)), dim = new Date(y, m, 0).getDate();
+  let mDays = 0, mTotal = 0;
+  for (let i = 0; i < dim; i++) { const k = addDays(first, i), d = dayMap().get(k); if (d) mTotal += d.total; if (checkedDay(k)) mDays++; }
+  const off = (keyDate(first).getDay() + 6) % 7, cells = Math.ceil((off + dim) / 7) * 7;
+  let cal = ['一', '二', '三', '四', '五', '六', '日'].map(w => `<div class="dow">${w}</div>`).join('');
+  for (let i = 0; i < cells; i++) {
+    const k = addDays(first, i - off), d = dayMap().get(k), v = d?.total || 0;
+    const lv = v <= 0 ? 0 : v < goal * 0.25 ? 1 : v < goal * 0.5 ? 2 : v < goal ? 3 : 4;
+    const out = k.slice(0, 7) !== ym, fut = k > tk;
+    cal += `<button class="day lv${lv}${out ? ' out' : ''}${fut ? ' future' : ''}${k === tk ? ' today' : ''}" ${fut ? 'disabled' : `data-act="day" data-k="${k}"`} aria-label="${md(k)} ${v ? hm(v) : '无记录'}${checkedDay(k) ? ' 已打卡' : ''}">
+      <span class="n">${keyDate(k).getDate()}</span>${v ? `<span class="h">${hm(v)}</span>` : ''}${checkedDay(k) ? '<span class="mk" aria-hidden="true">✓</span>' : ''}</button>`;
+  }
+  return viewHead('每日打卡', `一天学满 ${hmText(thr)} 自动打卡，学习日从凌晨 ${S.settings.dayStartHour} 点开始算。门槛和目标都可以在设置里改。`)
+    + `<div class="ck-top">
+      <section class="card ck-today">
+        <div>
+          <div class="eyebrow">今天 · ${mdw(tk)}</div>
+          <div class="ck-big num">${hm(live)}</div>
+          <div class="goalbar"><i style="width:${pct(live, goal)}%"></i></div>
+          <div class="goal-meta"><span>每日目标 ${hm(goal)}</span><span>${live >= goal ? '<span class="ok-txt">已达成</span>' : `还差 ${hm(goal - live)}`}</span></div>
+          ${S.active ? `<p class="live-note"><span class="state-dot"></span>含正在进行的计时，结束记录后才计入打卡</p>` : ''}
+        </div>
+        ${st.todayDone ? stampHTML(tk, UI.stampAnim) : `<div class="stamp empty"><span class="s1">未打卡</span><span class="s2">还差 ${hm(Math.max(0, thr - savedSec))}</span></div>`}
+      </section>
+      <section class="card ck-stats">
+        <div><span>当前连续</span><b>${st.cur}<small>天</small></b></div>
+        <div><span>最长连续</span><b>${st.best}<small>天</small></b></div>
+        <div><span>${m}月打卡</span><b>${mDays}<small>天</small></b></div>
+        <div><span>${m}月合计</span><b>${hours1(mTotal)}<small>小时</small></b></div>
+      </section>
+    </div>
+    <section class="panel">
+      <div class="sheet">
+        <div class="cal-h"><button class="btn icon sm" data-act="cal-move" data-v="-1" aria-label="上个月">${icon('chevL')}</button><h4>${y}年${m}月</h4><button class="btn icon sm" data-act="cal-move" data-v="1" aria-label="下个月">${icon('chevR')}</button>${ym !== tk.slice(0, 7) ? `<button class="btn sm ghost" data-act="cal-move" data-v="0">回到本月</button>` : ''}<span class="sum">点某一天可以查看、补录或写小结</span></div>
+        <div class="cal">${cal}</div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel-h"><div><h3>学习热力图</h3><p class="muted">颜色越深，那天学得越多（以每日目标为满格）</p></div></div>
+      <div class="sheet"><div class="hm chart" id="heatmap"></div>
+        <div class="hm-legend"><span>少</span><i style="background:var(--surface-2);border:1px solid var(--rule)"></i><i style="background:color-mix(in oklab,var(--accent) 24%,var(--surface))"></i><i style="background:color-mix(in oklab,var(--accent) 46%,var(--surface))"></i><i style="background:color-mix(in oklab,var(--accent) 70%,var(--surface))"></i><i style="background:var(--accent)"></i><span>达到目标</span></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel-h"><div><h3>今日小结</h3><p class="muted">写给自己的一句话，会保存在这一天</p></div></div>
+      <textarea id="today-note" class="input" rows="3" maxlength="1000" placeholder="今天做了什么、卡在哪里、明天先做什么">${esc(S.notes[tk] || '')}</textarea>
+    </section>`;
+}
+
+/* =================== 视图：记录 =================== */
+function deltaTag(s) {
+  if (!s.target) return '';
+  const d = Math.round(s.dur / 60) - s.target;
+  return d > 0 ? `<span class="delta over" title="比目标多 ${d} 分钟">+${d}</span>` : `<span class="delta ok" title="在目标之内">${d === 0 ? '±0' : MINUS + -d}</span>`;
+}
+function rowHTML(s) {
+  const kind = s.mode === 'down'
+    ? `<span class="ktag case">Case${s.caseType ? ' ' + s.caseType : ''}${s.target ? ` · 目标 ${s.target}` : ''}</span>${deltaTag(s)}`
+    : `<span class="ktag">自由学习</span>`;
+  return `<div class="lg-row">
+    <span class="t num">${hhmm(s.start)}–${hhmm(s.end)}</span>
+    <span class="c"><i class="dot" style="--c:${cvar(s.courseId)}"></i><span>${esc(courseName(s.courseId))}</span></span>
+    <span class="k">${kind}${s.src === 'manual' ? '<span class="ktag">补录</span>' : ''}${s.title ? `<span class="ttl">${esc(s.title)}</span>` : ''}${s.note ? `<span class="nt">${esc(s.note)}</span>` : ''}</span>
+    <span class="du num">${hm(s.dur)}</span>
+    <span class="a"><button class="btn icon sm ghost" data-act="edit-session" data-id="${s.id}" aria-label="编辑">${icon('edit')}</button><button class="btn icon sm ghost" data-act="del-session" data-id="${s.id}" aria-label="删除">${icon('trash')}</button></span>
+  </div>`;
+}
+function viewRecords() {
+  const f = UI.rec, tk = todayKey();
+  let list = sessionsLive();
+  if (f.course !== 'all') list = list.filter(s => s.courseId === f.course);
+  if (f.kind === 'case') list = list.filter(s => s.mode === 'down');
+  else if (f.kind === 'free') list = list.filter(s => s.mode !== 'down');
+  else if (f.kind === 'manual') list = list.filter(s => s.src === 'manual');
+  if (f.range !== 'all') { const from = addDays(tk, -(+f.range - 1)); list = list.filter(s => dayKey(s.start) >= from); }
+  const groups = new Map();
+  for (const s of list) { const k = dayKey(s.start); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(s); }
+  const keys = [...groups.keys()].sort().reverse();
+  const total = list.reduce((a, s) => a + s.dur, 0), trashN = sessionsTrash().length;
+  const shown = keys.slice(0, UI.recDays);
+  const sel = (key, opts) => `<select class="input sm" data-ui="rec.${key}" aria-label="筛选">${opts.map(([v, t]) => `<option value="${v}" ${f[key] === v ? 'selected' : ''}>${t}</option>`).join('')}</select>`;
+  return viewHead('学习记录', '记错了可以直接改；删掉的记录会进回收站，随时能恢复。',
+    `<button class="btn" data-act="open-trash">${icon('trash')}回收站${trashN ? ` <span class="num">${trashN}</span>` : ''}</button><button class="btn primary" data-act="add-session">${icon('plus')}补录</button>`)
+    + `<div class="filters">
+      ${sel('course', [['all', '全部课程'], ...S.courses.map(c => [c.id, c.name + (c.archived ? '（已归档）' : '')])].map(([v, t]) => [v, esc(t)]))}
+      ${sel('kind', [['all', '全部类型'], ['case', '只看 Case 练习'], ['free', '只看自由学习'], ['manual', '只看补录']])}
+      ${sel('range', [['7', '近 7 天'], ['30', '近 30 天'], ['90', '近 90 天'], ['all', '全部时间']])}
+    </div>
+    <div class="rec-sum"><span>共 ${list.length} 条 · ${keys.length} 天</span><span>合计 <b>${hm(total)}</b></span></div>
+    ${keys.length ? `<div class="sheet">${shown.map(k => { const g = groups.get(k), sum = g.reduce((a, s) => a + s.dur, 0); return `<div class="lg-day"><div class="lg-dh"><span class="d">${md(k)}<small>周${WD[keyDate(k).getDay()]}${k === tk ? ' · 今天' : ''}</small></span><span class="sum">${hm(sum)}</span></div>${g.map(rowHTML).join('')}</div>`; }).join('')}
+      ${keys.length > shown.length ? `<div style="text-align:center"><button class="btn" data-act="rec-more">再显示 30 天（还有 ${keys.length - shown.length} 天）</button></div>` : ''}</div>`
+      : `<div class="card empty"><h3>这个筛选下没有记录</h3><p>换个筛选条件，或者点“补录”手动添加一条。</p></div>`}`;
+}
+
+/* =================== 视图：设置 =================== */
+function viewSettings() {
+  const st = S.settings, ct = courseTotals();
+  const num = (key, val, min, max, step, unit) => `<input class="input inp-num" type="number" data-set="${key}" data-type="num" min="${min}" max="${max}" step="${step}" value="${val}" aria-label="${unit}"><span class="muted sm">${unit}</span>`;
+  const selR = (key, val, opts) => `<select class="input" data-set="${key}" data-type="num">${opts.map(([v, t]) => `<option value="${v}" ${+val === +v ? 'selected' : ''}>${t}</option>`).join('')}</select>`;
+  const tog = (key, val, label) => `<input type="checkbox" class="tog" data-set="${key}" ${val ? 'checked' : ''} aria-label="${label}">`;
+  const backupAge = st.lastBackup ? Math.floor((Date.now() - st.lastBackup) / DAYMS) : null;
+  let hasLocalBackup = false; try { hasLocalBackup = !!localStorage.getItem(LSKEY + '-local-backup'); } catch (e) {}
+  return viewHead('设置', '这里的每一项都可以按自己的习惯改，改完立即生效。')
+    + `<div class="sheet">
+    <section class="set-sec"><div><h3>基本</h3><p class="desc">名称、每日目标和打卡规则</p></div><div>
+      <div class="srow"><div class="sl"><b>计时簿名称</b><span>显示在左上角</span></div><div class="sc"><input class="input" style="width:220px" data-set="title" maxlength="24" value="${esc(st.title)}" aria-label="计时簿名称"></div></div>
+      <div class="srow"><div class="sl"><b>每日学习目标</b><span>用于进度条、柱状图虚线和热力图</span></div><div class="sc">${num('dailyGoalH', +(st.dailyGoal / 60).toFixed(2), 0.5, 20, 0.5, '小时')}</div></div>
+      <div class="srow"><div class="sl"><b>打卡门槛</b><span>一天累计学满这么久就算打卡</span></div><div class="sc">${num('checkinMin', st.checkinMin, 1, 1440, 5, '分钟')}</div></div>
+      <div class="srow"><div class="sl"><b>学习日从几点开始</b><span>熬夜过了零点，仍算前一天的学习</span></div><div class="sc">${selR('dayStartHour', st.dayStartHour, [0, 1, 2, 3, 4, 5, 6].map(h => [h, h === 0 ? '0 点（按自然日）' : `凌晨 ${h} 点`]))}</div></div>
+    </div></section>
+    <section class="set-sec" id="set-courses"><div><h3>课程</h3><p class="desc">改名直接在框里改。归档的课程不再出现在计时页，但累计时长保留。</p></div><div>
+      ${S.courses.map((c, i) => `<div class="course-row${c.archived ? ' arch' : ''}">
+        <button class="sw" style="--c:var(--s${(c.color % 8) + 1})" data-act="course-color" data-id="${c.id}" aria-label="换颜色"></button>
+        <input class="input" id="cn-${c.id}" data-course-name="${c.id}" value="${esc(c.name)}" maxlength="30" aria-label="课程名称">
+        <span class="tt">${hours1(ct[c.id] || 0)} h</span>
+        <span class="ops">
+          <button class="btn icon sm ghost" data-act="course-move" data-id="${c.id}" data-v="-1" ${i === 0 ? 'disabled' : ''} aria-label="上移">${icon('arrUp')}</button>
+          <button class="btn icon sm ghost" data-act="course-move" data-id="${c.id}" data-v="1" ${i === S.courses.length - 1 ? 'disabled' : ''} aria-label="下移">${icon('arrDown')}</button>
+          <button class="btn icon sm ghost" data-act="course-archive" data-id="${c.id}" aria-label="${c.archived ? '取消归档' : '归档'}" title="${c.archived ? '取消归档' : '归档'}">${icon(c.archived ? 'restore' : 'archive')}</button>
+          <button class="btn icon sm ghost" data-act="course-del" data-id="${c.id}" aria-label="删除">${icon('trash')}</button>
+        </span></div>`).join('')}
+      <div class="add-row"><input class="input" id="new-course" maxlength="30" placeholder="新课程名称，例如：FR / MA / Audit"><button class="btn" data-act="course-add">${icon('plus')}添加课程</button></div>
+    </div></section>
+    <section class="set-sec"><div><h3>Case 类型</h3><p class="desc">按建议时长分组。删掉一个类型不会删除已有记录。</p></div><div>
+      <div class="chips">${S.caseTypes.map(m => `<span class="ct-chip">${m} 分<button data-act="case-del" data-v="${m}" aria-label="删除 ${m} 分钟类型">${icon('x')}</button></span>`).join('') || '<span class="muted sm">还没有类型</span>'}</div>
+      <div class="add-row"><input class="input" id="new-case" type="number" min="1" max="1440" placeholder="分钟数，例如 90"><button class="btn" data-act="case-add">${icon('plus')}添加类型</button></div>
+    </div></section>
+    <section class="set-sec"><div><h3>计时与提醒</h3><p class="desc">防误触、提示音、提醒时机</p></div><div>
+      <div class="srow"><div class="sl"><b>误触保护</b><span>开始后这段时间内显示“撤销开始”按钮</span></div><div class="sc">${selR('graceSec', st.graceSec, [[0, '关闭'], [60, '1 分钟'], [120, '2 分钟'], [300, '5 分钟'], [600, '10 分钟']])}</div></div>
+      <div class="srow"><div class="sl"><b>过短提醒</b><span>结束时如果短于这个时长，提醒可能是误触</span></div><div class="sc">${selR('minRecordSec', st.minRecordSec, [[0, '关闭'], [30, '30 秒'], [60, '1 分钟'], [180, '3 分钟'], [300, '5 分钟']])}</div></div>
+      <div class="srow"><div class="sl"><b>倒计时快到时提醒</b><span>距离目标还剩多久时轻响一声</span></div><div class="sc">${selR('warnBefore', st.warnBefore, [[0, '不提醒'], [1, '1 分钟'], [3, '3 分钟'], [5, '5 分钟'], [10, '10 分钟'], [15, '15 分钟']])}</div></div>
+      <div class="srow"><div class="sl"><b>提示音</b><span>目标时间到时响铃</span></div><div class="sc">${tog('sound', st.sound, '提示音')}<input type="range" data-set="volume" data-type="num" min="0.1" max="1" step="0.05" value="${st.volume}" aria-label="音量" style="accent-color:var(--accent)"><button class="btn sm" data-act="test-sound">试听</button></div></div>
+      <div class="srow"><div class="sl"><b>系统通知</b><span>页面在后台时也弹通知（需要浏览器允许）</span></div><div class="sc">${tog('notify', st.notify, '系统通知')}</div></div>
+      <div class="srow"><div class="sl"><b>计时时保持屏幕常亮</b><span>手机上计时不锁屏（部分浏览器支持）</span></div><div class="sc">${tog('wakeLock', st.wakeLock, '保持屏幕常亮')}</div></div>
+    </div></section>
+    <section class="set-sec"><div><h3>外观</h3><p class="desc">主题和强调色</p></div><div>
+      <div class="srow"><div class="sl"><b>主题</b></div><div class="sc"><div class="seg-sm">${[['auto', '跟随系统'], ['light', '浅色'], ['dark', '深色']].map(([v, t]) => `<button aria-pressed="${st.theme === v}" data-act="set-theme" data-v="${v}">${t}</button>`).join('')}</div></div></div>
+      <div class="srow"><div class="sl"><b>强调色</b></div><div class="sc"><div class="swatches">${ACCENTS.map(([v, t]) => `<button class="sw" style="--c:var(--acc-${v})" aria-pressed="${st.accent === v}" data-act="set-accent" data-v="${v}" title="${t}" aria-label="${t}"></button>`).join('')}</div></div></div>
+    </div></section>
+    <section class="set-sec" id="set-data"><div><h3>数据与备份</h3><p class="desc">${Store.mode === 'cloud' ? '当前数据保存在云端，打开这个页面的设备会自动同步。' : '当前数据只保存在这个浏览器里。清除浏览器数据或换设备会丢失，请定期导出备份。'}</p></div><div>
+      <div class="srow"><div class="sl"><b>导出备份（JSON）</b><span>${backupAge == null ? '还没有导出过' : backupAge === 0 ? '今天导出过' : `上次导出是 ${backupAge} 天前`}。可以随时导入恢复</span></div><div class="sc"><button class="btn" data-act="export-json">${icon('down')}导出备份</button></div></div>
+      <div class="srow"><div class="sl"><b>备份提醒</b><span>隔这么多天没导出，就在计时页提醒一次</span></div><div class="sc">${selR('backupEvery', st.backupEvery, [[0, '不提醒'], [3, '每 3 天'], [7, '每 7 天'], [14, '每 14 天'], [30, '每 30 天']])}</div></div>
+      <div class="srow"><div class="sl"><b>导出表格（CSV）</b><span>用 Excel 打开，每条记录一行</span></div><div class="sc"><button class="btn" data-act="export-csv">${icon('down')}导出 CSV</button></div></div>
+      <div class="srow"><div class="sl"><b>导入备份</b><span>从 JSON 备份恢复，可以合并或替换</span></div><div class="sc"><button class="btn" data-act="import">${icon('up')}导入</button></div></div>
+      ${hasLocalBackup ? `<div class="srow"><div class="sl"><b>本机旧数据</b><span>切换到云端前，这台设备上的数据另存了一份</span></div><div class="sc"><button class="btn" data-act="local-backup-merge">合并到当前数据</button></div></div>` : ''}
+      <div class="srow"><div class="sl"><b>清空全部记录</b><span>删除所有学习记录、倒计日和小结（保留课程和设置）。清空后仍可撤销</span></div><div class="sc"><button class="btn danger" data-act="clear-all">${icon('trash')}清空</button></div></div>
+    </div></section>
+    <section class="set-sec"><div><h3>快捷键</h3></div><div class="kbd-list">
+      <span><kbd>空格</kbd></span><span>在计时页开始 / 暂停</span>
+      <span><kbd>Ctrl</kbd> + <kbd>Z</kbd></span><span>撤销上一步</span>
+      <span><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></span><span>重做</span>
+      <span><kbd>Esc</kbd></span><span>关闭弹窗</span>
+    </div></section>
+  </div>`;
+}
+
+const VIEWS = { timer: viewTimer, days: viewDays, stats: viewStats, checkin: viewCheckin, records: viewRecords, settings: viewSettings };
+
+/* =================== 图表 =================== */
+function niceTicks(max, n = 4) {
+  if (!(max > 0)) max = 1;
+  const raw = max / n, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  const step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
+  const top = Math.ceil(max / step - 1e-9) * step, ticks = [];
+  for (let v = 0; v <= top + 1e-9; v += step) ticks.push(+v.toFixed(6));
+  return { ticks, top };
+}
+const tickH = t => (t === 0 ? '0' : t < 1 ? `${Math.round(t * 60)}m` : `${+t.toFixed(2)}h`);
+function roundTop(x, y, w, h, r) { r = Math.max(0, Math.min(r, w / 2, h)); return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`; }
+function showTip(html, cx, cy) {
+  const t = $('#tip'); t.innerHTML = html; t.hidden = false;
+  const r = t.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight;
+  let x = cx + 14, y = cy - r.height - 12;
+  if (x + r.width > vw - 8) x = cx - r.width - 14;
+  if (x < 8) x = 8;
+  if (y < 8) y = cy + 16;
+  if (y + r.height > vh - 8) y = vh - r.height - 8;
+  t.style.left = x + 'px'; t.style.top = y + 'px';
+}
+function hideTip() { const t = $('#tip'); if (t) t.hidden = true; }
+
+function drawBars() {
+  const host = $('#bar-chart'); if (!host) return;
+  const R = UI.statsRange, tk = todayKey(), dm = dayMap(), live = sessionsLive();
+  const firstKey = live.length ? dayKey(live[0].start) : tk;
+  const startKey = R ? addDays(tk, -(R - 1)) : (firstKey < tk ? firstKey : tk);
+  const span = diffDays(startKey, tk) + 1, weekly = span > 120;
+  const order = orderedCourseIds();
+  const buckets = [];
+  if (!weekly) {
+    for (let i = 0; i < span; i++) { const k = addDays(startKey, i), d = dm.get(k); buckets.push({ k, label: span <= 14 ? `${keyDate(k).getDate()} ${WD[keyDate(k).getDay()]}` : `${keyDate(k).getMonth() + 1}/${keyDate(k).getDate()}`, title: mdw(k), by: d?.by || {}, total: d?.total || 0 }); }
+  } else {
+    let w = mondayOf(startKey);
+    while (w <= tk) {
+      const by = {}; let total = 0;
+      for (let j = 0; j < 7; j++) { const d = dm.get(addDays(w, j)); if (!d) continue; total += d.total; for (const id in d.by) by[id] = (by[id] || 0) + d.by[id]; }
+      buckets.push({ k: w, label: `${keyDate(w).getMonth() + 1}/${keyDate(w).getDate()}`, title: `${md(w)} 起的一周`, by, total, week: true });
+      w = addDays(w, 7);
+    }
+  }
+  const W = Math.max(300, host.clientWidth), H = W < 520 ? 210 : 250;
+  const m = { l: 40, r: 10, t: 18, b: 28 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const goalH = weekly ? 0 : S.settings.dailyGoal / 60;
+  const maxV = Math.max(goalH, ...buckets.map(b => b.total / 3600), 0.5);
+  const { ticks, top } = niceTicks(maxV);
+  const y = v => m.t + ih - (v / top) * ih;
+  const n = buckets.length, slot = iw / n, bw = clamp(slot * 0.66, 2, 30);
+  let s = '';
+  for (const t of ticks) s += `<line class="grid" x1="${m.l}" x2="${W - m.r}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}"/><text class="ax" x="${m.l - 8}" y="${(y(t) + 3.5).toFixed(1)}" text-anchor="end">${tickH(t)}</text>`;
+  s += `<rect class="hl" id="bar-hl" x="0" y="${m.t}" width="${slot.toFixed(2)}" height="${ih}"/>`;
+  buckets.forEach((b, i) => {
+    const x0 = m.l + slot * i + (slot - bw) / 2;
+    const segs = order.filter(id => (b.by[id] || 0) > 0);
+    let acc = 0;
+    segs.forEach((id, j) => {
+      const v = b.by[id] / 3600;
+      const yb = y(acc) - (j ? 1 : 0), yt = y(acc + v) + (j < segs.length - 1 ? 1 : 0), h = yb - yt;
+      if (h > 0.4) s += j === segs.length - 1 ? `<path d="${roundTop(x0, yt, bw, h, 3)}" style="fill:${cvar(id)}"/>` : `<rect x="${x0.toFixed(2)}" y="${yt.toFixed(2)}" width="${bw.toFixed(2)}" height="${h.toFixed(2)}" style="fill:${cvar(id)}"/>`;
+      acc += v;
+    });
+  });
+  s += `<line class="base" x1="${m.l}" x2="${W - m.r}" y1="${y(0)}" y2="${y(0)}"/>`;
+  if (goalH) s += `<line class="goal" x1="${m.l}" x2="${W - m.r}" y1="${y(goalH).toFixed(1)}" y2="${y(goalH).toFixed(1)}"/><text class="goal-t" x="${W - m.r}" y="${(y(goalH) - 6).toFixed(1)}" text-anchor="end">每日目标 ${tickH(goalH)}</text>`;
+  const every = Math.max(1, Math.ceil(n / Math.max(1, Math.floor(iw / (span <= 14 ? 44 : 50)))));
+  buckets.forEach((b, i) => { if ((n - 1 - i) % every === 0) s += `<text class="ax" x="${(m.l + slot * (i + 0.5)).toFixed(1)}" y="${H - 8}" text-anchor="middle">${b.label}</text>`; });
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="每日学习时长柱状图">${s}</svg>`;
+  const svg = host.querySelector('svg'), hl = $('#bar-hl');
+  const idxAt = e => { const r = svg.getBoundingClientRect(); const x = ((e.clientX - r.left) / r.width) * W; const i = Math.floor((x - m.l) / slot); return i >= 0 && i < n ? i : -1; };
+  svg.addEventListener('pointermove', e => {
+    const i = idxAt(e); if (i < 0) { hl.classList.remove('on'); hideTip(); return; }
+    const b = buckets[i]; hl.setAttribute('x', (m.l + slot * i).toFixed(2)); hl.classList.add('on');
+    const rows = order.filter(id => b.by[id] > 0).map(id => `<div class="r"><i style="--c:${cvar(id)}"></i>${esc(courseName(id))}<span class="v">${hm(b.by[id])}</span></div>`).join('');
+    showTip(`<b>${b.title}</b>${rows || '<div>没有记录</div>'}<div class="tot"><span>合计</span><span class="num">${hm(b.total)}</span></div>`, e.clientX, e.clientY);
+  });
+  svg.addEventListener('pointerleave', () => { hl.classList.remove('on'); hideTip(); });
+  svg.addEventListener('click', e => { const i = idxAt(e); if (i >= 0 && !buckets[i].week) { hideTip(); dayModal(buckets[i].k); } });
+}
+
+function drawCase() {
+  const host = $('#case-chart'); if (!host) return;
+  const filt = s => UI.caseCourse === 'all' || s.courseId === UI.caseCourse;
+  const pts = sessionsLive().filter(s => s.mode === 'down' && s.caseType === UI.caseSel && filt(s));
+  if (!pts.length) return;
+  const ref = UI.caseSel;
+  const W = Math.max(300, host.clientWidth), H = W < 520 ? 240 : 290;
+  const m = { l: 44, r: 22, t: 26, b: 30 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const ys = pts.map(s => s.dur / 60);
+  const maxV = Math.max(...ys, ...pts.map(s => s.target || 0), ref) * 1.08;
+  const { ticks, top } = niceTicks(maxV, 5);
+  const n = pts.length;
+  const x = i => (n === 1 ? m.l + iw / 2 : m.l + (i / (n - 1)) * iw);
+  const y = v => m.t + ih - (v / top) * ih;
+  let s = '';
+  for (const t of ticks) s += `<line class="grid" x1="${m.l}" x2="${W - m.r}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}"/><text class="ax" x="${m.l - 8}" y="${(y(t) + 3.5).toFixed(1)}" text-anchor="end">${+t.toFixed(1)}</text>`;
+  s += `<text class="axl" x="${m.l - 8}" y="${m.t - 12}" text-anchor="end">分钟</text>`;
+  s += `<line class="ref" x1="${m.l}" x2="${W - m.r}" y1="${y(ref).toFixed(1)}" y2="${y(ref).toFixed(1)}"/><text class="ref-t" x="${m.l + 6}" y="${(y(ref) - 6).toFixed(1)}">建议 ${ref} 分</text>`;
+  const tp = pts.map((p, i) => (p.target ? `${x(i).toFixed(1)},${y(p.target).toFixed(1)}` : null)).filter(Boolean);
+  if (tp.length > 1) s += `<polyline class="tline" points="${tp.join(' ')}"/>`;
+  else if (tp.length === 1) { const [px, py] = tp[0].split(','); s += `<line class="tline" x1="${+px - 14}" x2="${+px + 14}" y1="${py}" y2="${py}"/>`; }
+  const line = ys.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  if (n > 1) s += `<path class="area" d="${line}L${x(n - 1).toFixed(1)},${y(0)}L${x(0).toFixed(1)},${y(0)}Z"/><path class="line" d="${line}"/>`;
+  s += `<line class="base" x1="${m.l}" x2="${W - m.r}" y1="${y(0)}" y2="${y(0)}"/>`;
+  s += `<line class="xh" id="case-xh" x1="0" x2="0" y1="${m.t}" y2="${y(0)}"/>`;
+  pts.forEach((p, i) => {
+    const over = p.target && ys[i] > p.target + 0.5;
+    s += `<circle class="pt" data-i="${i}" cx="${x(i).toFixed(1)}" cy="${y(ys[i]).toFixed(1)}" r="${i === n - 1 ? 5.5 : 4.5}" style="${over ? 'fill:var(--surface);stroke:var(--red);stroke-width:2.2' : 'fill:var(--accent);stroke:var(--surface);stroke-width:2'}"/>`;
+  });
+  const lx = x(n - 1), ly = y(ys[n - 1]);
+  s += `<text class="pt-l" x="${lx.toFixed(1)}" y="${(ly - 12).toFixed(1)}" text-anchor="${n === 1 ? 'middle' : 'end'}">${Math.round(ys[n - 1])} 分</text>`;
+  const every = Math.max(1, Math.ceil(n / Math.max(1, Math.floor(iw / 42))));
+  pts.forEach((p, i) => { if ((n - 1 - i) % every === 0 || i === 0) s += `<text class="ax" x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle">#${i + 1}</text>`; });
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${ref} 分钟 case 每次实际用时折线图">${s}</svg>`;
+  const svg = host.querySelector('svg'), xh = $('#case-xh');
+  const idxAt = e => { const r = svg.getBoundingClientRect(); const px = ((e.clientX - r.left) / r.width) * W; if (px < m.l - 20 || px > W - m.r + 20) return -1; return n === 1 ? 0 : clamp(Math.round(((px - m.l) / iw) * (n - 1)), 0, n - 1); };
+  svg.addEventListener('pointermove', e => {
+    const i = idxAt(e); if (i < 0) { xh.classList.remove('on'); hideTip(); return; }
+    const p = pts[i], v = Math.round(ys[i]);
+    xh.setAttribute('x1', x(i)); xh.setAttribute('x2', x(i)); xh.classList.add('on');
+    const d = p.target ? v - p.target : null;
+    showTip(`<b>第 ${i + 1} 次 · ${md(dayKey(p.start))}</b>${p.title ? `<div>${esc(p.title)}</div>` : ''}<div class="r"><i style="--c:${cvar(p.courseId)}"></i>${esc(courseName(p.courseId))}</div><div class="tot"><span>实际 ${v} 分</span><span>${p.target ? `目标 ${p.target} 分` : '没有目标'}</span></div>${d != null ? `<div>${d > 0 ? `超出目标 ${d} 分钟` : `比目标快 ${-d} 分钟`}</div>` : ''}<div style="opacity:.7">点击可以编辑这条记录</div>`, e.clientX, e.clientY);
+  });
+  svg.addEventListener('pointerleave', () => { xh.classList.remove('on'); hideTip(); });
+  svg.addEventListener('click', e => { const i = idxAt(e); if (i >= 0) { hideTip(); editSession(pts[i].id); } });
+}
+
+function drawHeatmap() {
+  const host = $('#heatmap'); if (!host) return;
+  const W = host.clientWidth || 600, cs = W < 480 ? 11 : 13, gap = 3, left = 22, top = 18;
+  const weeks = clamp(Math.floor((W - left) / (cs + gap)), 8, 53);
+  const end = todayKey(), start = addDays(mondayOf(end), -(weeks - 1) * 7);
+  const dm = dayMap(), goal = S.settings.dailyGoal * 60;
+  let s = '', lastM = -1, lastW = -9;
+  for (let w = 0; w < weeks; w++) {
+    const wk = addDays(start, w * 7), mo = keyDate(addDays(wk, 6)).getMonth();
+    if (mo !== lastM) { if (w - lastW >= 3) { s += `<text class="ax" x="${left + w * (cs + gap)}" y="11">${mo + 1}月</text>`; lastW = w; } lastM = mo; }
+    for (let d = 0; d < 7; d++) {
+      const k = addDays(wk, d); if (k > end) continue;
+      const v = dm.get(k)?.total || 0, lv = v <= 0 ? 0 : v < goal * 0.25 ? 1 : v < goal * 0.5 ? 2 : v < goal ? 3 : 4;
+      s += `<rect class="hc lv${lv}" x="${left + w * (cs + gap)}" y="${top + d * (cs + gap)}" width="${cs}" height="${cs}" rx="2.5" data-k="${k}"/>`;
+    }
+  }
+  [[0, '一'], [2, '三'], [4, '五']].forEach(([d, l]) => { s += `<text class="ax" x="0" y="${top + d * (cs + gap) + cs - 2}">${l}</text>`; });
+  const SW = left + weeks * (cs + gap), SH = top + 7 * (cs + gap);
+  host.innerHTML = `<svg viewBox="0 0 ${SW} ${SH}" width="${SW}" height="${SH}" role="img" aria-label="最近 ${weeks} 周学习热力图">${s}</svg>`;
+  const svg = host.querySelector('svg');
+  svg.addEventListener('pointermove', e => {
+    const c = e.target.closest('.hc'); if (!c) { hideTip(); return; }
+    const k = c.dataset.k, v = dm.get(k)?.total || 0;
+    showTip(`<b>${mdw(k)}</b><div>${v ? `学习 ${hm(v)}` : '没有记录'}${checkedDay(k) ? ' · 已打卡' : ''}</div>`, e.clientX, e.clientY);
+  });
+  svg.addEventListener('pointerleave', hideTip);
+  svg.addEventListener('click', e => { const c = e.target.closest('.hc'); if (c) { hideTip(); dayModal(c.dataset.k); } });
+}
+function mountView() {
+  if (UI.view === 'stats') { drawBars(); drawCase(); }
+  if (UI.view === 'checkin') drawHeatmap();
+}
+let roW = 0;
+const ro = new ResizeObserver(entries => {
+  const w = Math.round(entries[0].contentRect.width);
+  if (Math.abs(w - roW) < 8) return;
+  roW = w;
+  requestAnimationFrame(mountView);
+});
+
+/* =================== 提示条 =================== */
+function toast(msg, { action, fn, ms = 4500, kind = '' } = {}) {
+  const host = $('#toasts'); if (!host) return;
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind ? ' ' + kind : '');
+  el.setAttribute('role', 'status');
+  el.innerHTML = `<span class="tx">${esc(msg)}</span>${action ? `<button class="t-act">${esc(action)}</button>` : ''}<button class="t-x" aria-label="关闭提示">${icon('x')}</button>`;
+  host.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('in'));
+  const kill = () => { el.classList.remove('in'); setTimeout(() => el.remove(), 220); };
+  const tm = setTimeout(kill, action ? Math.max(ms, 8000) : ms);
+  el.querySelector('.t-act')?.addEventListener('click', () => { clearTimeout(tm); kill(); if (fn) fn(); });
+  el.querySelector('.t-x').addEventListener('click', () => { clearTimeout(tm); kill(); });
+  while (host.children.length > 3) host.firstElementChild.remove();
+}
+
+/* =================== 弹窗 =================== */
+const Modal = {
+  stack: [],
+  open(cfg) {
+    const wrap = document.createElement('div');
+    const n = Date.now().toString(36);
+    wrap.className = 'modal-wrap';
+    wrap.innerHTML = `<div class="scrim" data-close></div><div class="modal${cfg.wide ? ' wide' : ''}" role="dialog" aria-modal="true" aria-labelledby="mt-${n}" tabindex="-1"><header><h3 id="mt-${n}">${esc(cfg.title)}</h3><button class="btn icon ghost" data-close aria-label="关闭">${icon('x')}</button></header><div class="m-body">${cfg.body}</div>${cfg.foot ? `<footer>${cfg.foot}</footer>` : ''}</div>`;
+    document.body.appendChild(wrap);
+    const entry = { wrap, cfg, prev: document.activeElement };
+    this.stack.push(entry);
+    wrap.addEventListener('click', e => { if (e.target.closest('[data-close]')) { e.preventDefault(); this.close(entry); } });
+    if (cfg.onMount) cfg.onMount(wrap, entry);
+    const af = wrap.querySelector('[autofocus]');
+    setTimeout(() => (af || wrap.querySelector('.modal')).focus(), 20);
+    document.body.classList.add('modal-open');
+    return entry;
+  },
+  close(entry) {
+    const i = entry ? this.stack.indexOf(entry) : this.stack.length - 1;
+    if (i < 0) return;
+    const [m] = this.stack.splice(i, 1);
+    m.wrap.remove();
+    if (m.cfg.onClose) m.cfg.onClose();
+    if (!this.stack.length) document.body.classList.remove('modal-open');
+    try { if (m.prev && document.contains(m.prev)) m.prev.focus(); } catch (e) {}
+  },
+  refresh() { for (const m of this.stack) if (m.cfg.refresh) m.cfg.refresh(m.wrap); }
+};
+function confirmModal({ title, text, ok = '确定', danger = false, typeWord = null }) {
+  return new Promise(res => {
+    let done = false;
+    const ent = Modal.open({
+      title,
+      body: `<p>${text}</p>${typeWord ? `<label class="f"><span>输入“${typeWord}”以确认</span><input id="cf-in" class="input" autocomplete="off" autofocus></label>` : ''}`,
+      foot: `<button class="btn" data-close>取消</button><button class="btn ${danger ? 'danger-solid' : 'primary'}" id="cf-ok" ${typeWord ? 'disabled' : ''}>${ok}</button>`,
+      onMount(w) {
+        const okb = w.querySelector('#cf-ok'), inp = w.querySelector('#cf-in');
+        if (inp) inp.addEventListener('input', () => { okb.disabled = inp.value.trim() !== typeWord; });
+        okb.addEventListener('click', () => { done = true; Modal.close(ent); res(true); });
+      },
+      onClose() { if (!done) res(false); }
+    });
+  });
+}
+
+/* ---------- 记录表单（补录 / 编辑 / 结束计时） ---------- */
+function caseTypeOptions(cur) { return [...new Set([...S.caseTypes, ...(cur ? [cur] : [])])].sort((a, b) => a - b); }
+function sessionModal(rec, opt) {
+  const kind = opt.kind, isCase = rec.mode === 'down';
+  const totM = Math.round(rec.dur / 60), H = Math.floor(totM / 60), M = totM % 60;
+  const cs = S.courses.filter(c => !c.archived || c.id === rec.courseId);
+  const title = kind === 'finish' ? '结束本次学习' : kind === 'new' ? '补录一条学习记录' : '编辑学习记录';
+  const over = isCase && rec.target ? Math.round(rec.dur / 60) - rec.target : null;
+  const body = `
+    ${kind === 'finish' ? `<div class="finish-hero"><div><div class="eyebrow">本次学习</div><div class="fh-t num">${hms(rec.dur)}</div></div>${over != null ? `<div class="fh-side">目标 ${rec.target} 分钟<br>${over > 0 ? `<span class="delta over">超时 ${over} 分</span>` : `<span class="delta ok">提前 ${-over} 分完成</span>`}</div>` : ''}</div>` : ''}
+    ${opt.short ? `<div class="note warn">${icon('bell')}<span>这次只计了 ${hms(rec.dur)}，可能是误触开始的。不需要的话点“不保存”。</span></div>` : ''}
+    ${kind === 'finish' ? `<p class="muted sm">下面的时长、开始时间都可以改，比如忘了暂停时把时长改小。</p>` : ''}
+    <form class="form" id="sf" autocomplete="off">
+      <div class="grid2">
+        <label class="f"><span>课程</span><select id="sf-course" class="input">${cs.map(c => `<option value="${c.id}" ${c.id === rec.courseId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}${courseById(rec.courseId) ? '' : `<option value="${esc(rec.courseId)}" selected>（已删除的课程）</option>`}</select></label>
+        <label class="f"><span>类型</span><select id="sf-mode" class="input"><option value="up" ${!isCase ? 'selected' : ''}>自由学习</option><option value="down" ${isCase ? 'selected' : ''}>Case 练习</option></select></label>
+      </div>
+      <div class="grid2" id="sf-casebox" ${isCase ? '' : 'hidden'}>
+        <label class="f"><span>Case 类型</span><select id="sf-case" class="input"><option value="">不归类</option>${caseTypeOptions(rec.caseType).map(mm => `<option value="${mm}" ${mm === rec.caseType ? 'selected' : ''}>${mm} 分钟</option>`).join('')}</select></label>
+        <label class="f"><span>目标（分钟）</span><input id="sf-target" class="input num" type="number" min="1" max="1440" value="${rec.target ?? ''}"></label>
+      </div>
+      <label class="f"><span>名称 / 内容 <em>选填</em></span><input id="sf-title" class="input" maxlength="80" value="${esc(rec.title)}"></label>
+      <div class="grid3">
+        <label class="f"><span>学习日</span><input id="sf-date" class="input" type="date" value="${dayKey(rec.start)}"></label>
+        <label class="f"><span>开始时间</span><input id="sf-time" class="input" type="time" value="${hhmm(rec.start)}"></label>
+        <div class="f"><span>学习时长</span><div class="dur-in"><input id="sf-h" class="input" type="number" min="0" max="23" value="${H}" aria-label="小时"><b>时</b><input id="sf-m" class="input" type="number" min="0" max="59" value="${M}" aria-label="分钟"><b>分</b></div></div>
+      </div>
+      <label class="f"><span>备注 <em>选填</em></span><textarea id="sf-note" class="input" rows="2" maxlength="500">${esc(rec.note)}</textarea></label>
+      <p class="err" id="sf-err" hidden></p>
+    </form>`;
+  const foot = kind === 'finish'
+    ? `<button class="btn danger left" data-m="discard">不保存</button><button class="btn" data-m="close">继续计时</button><button class="btn primary" data-m="save">保存记录</button>`
+    : kind === 'edit'
+      ? `<button class="btn danger left" data-m="delete">${icon('trash')}删除</button><button class="btn" data-m="close">取消</button><button class="btn primary" data-m="save">保存修改</button>`
+      : `<button class="btn" data-m="close">取消</button><button class="btn primary" data-m="save">添加记录</button>`;
+  const ent = Modal.open({
+    title, body, foot,
+    onMount(w) {
+      const q = id => w.querySelector('#' + id);
+      q('sf-mode').addEventListener('change', e => { q('sf-casebox').hidden = e.target.value !== 'down'; });
+      q('sf-case').addEventListener('change', e => { if (e.target.value && !q('sf-target').value) q('sf-target').value = e.target.value; });
+      w.querySelector('footer').addEventListener('click', ev => {
+        const b = ev.target.closest('[data-m]'); if (!b) return;
+        const act = b.dataset.m;
+        if (act === 'close') { Modal.close(ent); return; }
+        if (act === 'discard') { Modal.close(ent); discardTimer('放弃本次计时'); return; }
+        if (act === 'delete') { Modal.close(ent); deleteSession(rec.id); return; }
+        const out = readSessionForm(w, rec);
+        if (out.err) { const e = q('sf-err'); e.textContent = out.err; e.hidden = false; return; }
+        Modal.close(ent); saveSession(out.rec, kind, opt);
+      });
+      q('sf').addEventListener('submit', e => { e.preventDefault(); w.querySelector('[data-m="save"]').click(); });
+    }
+  });
+}
+function readSessionForm(w, rec) {
+  const v = id => w.querySelector('#' + id).value;
+  const courseId = v('sf-course'), mode = v('sf-mode') === 'down' ? 'down' : 'up';
+  const caseType = mode === 'down' && v('sf-case') ? +v('sf-case') : null;
+  let target = mode === 'down' ? Math.round(+v('sf-target')) || null : null;
+  if (mode === 'down' && !target && caseType) target = caseType;
+  const h = Math.max(0, Math.floor(+v('sf-h') || 0)), mm = Math.max(0, Math.floor(+v('sf-m') || 0));
+  let dur = (h * 60 + mm) * 60;
+  if (h * 60 + mm === Math.round(rec.dur / 60) && rec.dur > 0) dur = rec.dur;
+  if (dur <= 0) return { err: '学习时长要大于 0' };
+  if (dur > 24 * 3600) return { err: '单条记录不能超过 24 小时，可以拆成两条' };
+  const date = v('sf-date'), time = v('sf-time');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}/.test(time)) return { err: '请填写学习日和开始时间' };
+  const same = date === dayKey(rec.start) && time === hhmm(rec.start);
+  const start = same ? rec.start : composeStart(date, time.slice(0, 5));
+  if (start > Date.now() + 60000) return { err: '开始时间在未来，请检查日期' };
+  const pause = Math.max(0, ((rec.end || rec.start) - rec.start) / 1000 - rec.dur) || 0;
+  const end = same && dur === rec.dur && rec.end ? rec.end : Math.round(start + (dur + pause) * 1000);
+  return { rec: { ...rec, courseId, mode, caseType, target, title: v('sf-title').trim(), note: v('sf-note').trim(), start, end, dur } };
+}
+function saveSession(r, kind, opt) {
+  const wasDone = streaks().todayDone, now = Date.now();
+  let e;
+  if (kind === 'finish') {
+    if (!S.active || S.active.id !== r.id) { toast('这次计时已经在别处结束了'); return; }
+    const rec = { ...r, src: 'timer', created: now, updated: now }; delete rec.del;
+    e = commit('保存学习记录', s => { s.sessions[rec.id] = rec; s.active = null; }, {
+      timer: true,
+      patchSnap: snap => { const a = snap.active; if (a && a.segs.length && a.segs[a.segs.length - 1][1] == null) a.segs[a.segs.length - 1][1] = opt.finishAt; }
+    });
+    Wake.off(); UI.draft.title = ''; saveUI();
+    toast(`已记录 ${hmText(rec.dur)} · ${courseName(rec.courseId)}`, { action: '撤销', fn: () => undoEntry(e) });
+  } else if (kind === 'new') {
+    const rec = { ...r, id: uid('s'), src: 'manual', created: now, updated: now };
+    e = commit('补录记录', s => { s.sessions[rec.id] = rec; });
+    toast(`已补录 ${hmText(rec.dur)} · ${courseName(rec.courseId)}`, { action: '撤销', fn: () => undoEntry(e) });
+  } else {
+    e = commit('编辑记录', s => { s.sessions[r.id] = { ...r, updated: now }; });
+    toast('已保存修改', { action: '撤销', fn: () => undoEntry(e) });
+  }
+  const st = streaks();
+  if (!wasDone && st.todayDone) { UI.stampAnim = true; toast(`今日打卡完成 · 已连续 ${st.cur} 天`, { kind: 'stamp-t', ms: 6000 }); }
+}
+function editSession(id) { const s = S.sessions[id]; if (s) sessionModal(clone(s), { kind: 'edit' }); }
+function addSession(day) {
+  const tk = todayKey(), k = day || tk, now = Date.now();
+  let start = composeStart(k, '09:00');
+  if (k === tk) start = Math.min(now - 3600e3, Math.max(start, now - 3600e3));
+  start = Math.floor(start / 60000) * 60000;
+  const d = UI.draft;
+  sessionModal({ id: '', courseId: activeCourses().some(c => c.id === d.courseId) ? d.courseId : activeCourses()[0]?.id, mode: 'up', caseType: null, target: null, title: '', note: '', start, end: start + 3600e3, dur: 3600 }, { kind: 'new' });
+}
+function deleteSession(id) {
+  const s0 = S.sessions[id]; if (!s0) return;
+  const e = commit('删除记录', s => { s.sessions[id] = { ...s.sessions[id], del: Date.now() }; });
+  toast(`已删除 ${hmText(s0.dur)} · ${courseName(s0.courseId)}，可在回收站恢复`, { action: '撤销', fn: () => undoEntry(e) });
+}
+
+/* ---------- 计时中的弹窗 ---------- */
+function editActiveModal() {
+  const a = S.active; if (!a) return;
+  const cs = activeCourses();
+  const ent = Modal.open({
+    title: '修改本次计时',
+    body: `<p class="muted sm">选错了课程或 case 类型可以在这里改，已计的时间不受影响。</p>
+      <div class="grid2">
+        <label class="f"><span>课程</span><select id="ea-course" class="input">${cs.map(c => `<option value="${c.id}" ${c.id === a.courseId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
+        <label class="f"><span>方式</span><select id="ea-mode" class="input"><option value="up" ${a.mode !== 'down' ? 'selected' : ''}>自由学习 · 正计时</option><option value="down" ${a.mode === 'down' ? 'selected' : ''}>Case 练习 · 倒计时</option></select></label>
+      </div>
+      <div class="grid2" id="ea-casebox" ${a.mode === 'down' ? '' : 'hidden'}>
+        <label class="f"><span>Case 类型</span><select id="ea-case" class="input"><option value="">不归类</option>${caseTypeOptions(a.caseType).map(m => `<option value="${m}" ${m === a.caseType ? 'selected' : ''}>${m} 分钟</option>`).join('')}</select></label>
+        <label class="f"><span>目标（分钟）</span><input id="ea-target" class="input num" type="number" min="1" max="1440" value="${a.target || a.caseType || 60}"></label>
+      </div>
+      <label class="f"><span>名称 / 内容</span><input id="ea-title" class="input" maxlength="80" value="${esc(a.title || '')}"></label>`,
+    foot: `<button class="btn" data-close>取消</button><button class="btn primary" id="ea-ok">保存</button>`,
+    onMount(w) {
+      const q = id => w.querySelector('#' + id);
+      q('ea-mode').addEventListener('change', e => { q('ea-casebox').hidden = e.target.value !== 'down'; });
+      q('ea-ok').addEventListener('click', () => {
+        const mode = q('ea-mode').value === 'down' ? 'down' : 'up';
+        const caseType = mode === 'down' && q('ea-case').value ? +q('ea-case').value : null;
+        const target = mode === 'down' ? clamp(Math.round(+q('ea-target').value) || caseType || 60, 1, 1440) : null;
+        Modal.close(ent);
+        if (!S.active) return;
+        const e = commit('修改本次计时', s => { Object.assign(s.active, { courseId: q('ea-course').value, mode, caseType, target, title: q('ea-title').value.trim() }); resetAlerts(s.active); }, { timer: true });
+        toast('已修改本次计时', { action: '撤销', fn: () => undoEntry(e) });
+      });
+    }
+  });
+}
+function adjustModal() {
+  const a = S.active; if (!a) return;
+  const el = elapsed(a), tm = Math.round(el / 60);
+  const ent = Modal.open({
+    title: '校正本次时长',
+    body: `<p>现在已计 <b class="num">${hms(el)}</b>（暂停的时间不算）。两种改法任选一种：</p>
+      <div class="f"><span>直接改成</span><div class="dur-in"><input id="aj-h" class="input" type="number" min="0" max="23" value="${Math.floor(tm / 60)}" aria-label="小时"><b>时</b><input id="aj-m" class="input" type="number" min="0" max="59" value="${tm % 60}" aria-label="分钟"><b>分</b></div></div>
+      <label class="f"><span>或者：其实我是从这个时间开始学的</span><input id="aj-from" class="input" type="time" style="max-width:160px"></label>
+      <p class="muted sm">例如忘了按开始、14:00 就坐下了，就填 14:00，时长会按“现在 − 14:00”计算。</p>`,
+    foot: `<button class="btn" data-close>取消</button><button class="btn primary" id="aj-ok">应用</button>`,
+    onMount(w) {
+      const q = id => w.querySelector('#' + id);
+      q('aj-ok').addEventListener('click', () => {
+        if (!S.active) { Modal.close(ent); return; }
+        let want;
+        const from = q('aj-from').value;
+        if (from) {
+          const [hh, mm] = from.split(':').map(Number), d = new Date(); d.setHours(hh, mm, 0, 0);
+          let ms = Date.now() - d.getTime(); if (ms < 0) ms += DAYMS;
+          want = ms / 1000;
+        } else want = ((+q('aj-h').value || 0) * 60 + (+q('aj-m').value || 0)) * 60;
+        want = clamp(want, 0, 24 * 3600);
+        Modal.close(ent);
+        const e = commit('校正时长', s => { s.active.adj = (s.active.adj || 0) + (want - elapsed(s.active)); resetAlerts(s.active); }, { timer: true });
+        toast(`已把本次时长校正为 ${hms(want)}`, { action: '撤销', fn: () => undoEntry(e) });
+      });
+    }
+  });
+}
+function customCaseModal() {
+  const ent = Modal.open({
+    title: '自定义 case 时长',
+    body: `<label class="f"><span>这类 case 的建议时长（分钟）</span><input id="cc-v" class="input num" type="number" min="1" max="1440" placeholder="例如 90" autofocus></label><p class="muted sm">会加入 case 类型列表，统计时单独成一组。</p>`,
+    foot: `<button class="btn" data-close>取消</button><button class="btn primary" id="cc-ok">添加并选中</button>`,
+    onMount(w) {
+      const go2 = () => {
+        const v = Math.round(+w.querySelector('#cc-v').value);
+        if (!(v > 0 && v <= 1440)) { w.querySelector('#cc-v').focus(); return; }
+        Modal.close(ent);
+        UI.draft.caseType = v; UI.draft.target = UI.draft.targets[v] ?? v; saveUI();
+        if (!S.caseTypes.includes(v)) commit(`添加 ${v} 分钟 case 类型`, s => { s.caseTypes = [...s.caseTypes, v].sort((x, y) => x - y); });
+        else render();
+      };
+      w.querySelector('#cc-ok').addEventListener('click', go2);
+      w.querySelector('#cc-v').addEventListener('keydown', e => { if (e.key === 'Enter') go2(); });
+    }
+  });
+}
+function quickCourseModal() {
+  const ent = Modal.open({
+    title: '添加课程',
+    body: `<label class="f"><span>课程名称</span><input id="qc-v" class="input" maxlength="30" placeholder="例如：FR" autofocus></label>`,
+    foot: `<button class="btn" data-close>取消</button><button class="btn primary" id="qc-ok">添加</button>`,
+    onMount(w) {
+      const go2 = () => { const v = w.querySelector('#qc-v').value.trim(); if (!v) return; Modal.close(ent); const id = addCourse(v); UI.draft.courseId = id; saveUI(); render(); };
+      w.querySelector('#qc-ok').addEventListener('click', go2);
+      w.querySelector('#qc-v').addEventListener('keydown', e => { if (e.key === 'Enter') go2(); });
+    }
+  });
+}
+function addCourse(name) {
+  const used = S.courses.map(c => c.color);
+  let color = 0; for (let i = 0; i < 8; i++) if (!used.includes(i)) { color = i; break; } else color = S.courses.length % 8;
+  const id = uid('c');
+  const e = commit(`添加课程「${name}」`, s => { s.courses.push({ id, name, color, archived: false }); });
+  toast(`已添加课程「${name}」`, { action: '撤销', fn: () => undoEntry(e) });
+  return id;
+}
+
+/* ---------- 倒计日弹窗 ---------- */
+function cdModal(c, presetTitle) {
+  const isNew = !c;
+  c = c ? clone(c) : { id: uid('d'), title: presetTitle || '', date: '', color: S.countdowns.length % 8, note: '', created: Date.now() };
+  const pinned = S.pinned === c.id || (isNew && !S.countdowns.length);
+  const ent = Modal.open({
+    title: isNew ? '新建倒计日' : '编辑倒计日',
+    body: `<label class="f"><span>名称</span><input id="cd-t" class="input" maxlength="40" value="${esc(c.title)}" placeholder="例如：Core 1 考试" ${isNew && !presetTitle ? 'autofocus' : ''}></label>
+      <label class="f"><span>日期</span><input id="cd-d" class="input" type="date" value="${c.date}" style="max-width:220px" ${presetTitle ? 'autofocus' : ''}></label>
+      <div class="f"><span>颜色</span><div class="swatches" id="cd-c">${[0, 1, 2, 3, 4, 5, 6, 7].map(i => `<button type="button" class="sw" style="--c:var(--s${i + 1})" aria-pressed="${i === c.color}" data-i="${i}" aria-label="颜色 ${i + 1}"></button>`).join('')}</div></div>
+      <label class="f"><span>备注 <em>选填</em></span><input id="cd-n" class="input" maxlength="120" value="${esc(c.note)}" placeholder="例如：考场、时间、要带的东西"></label>
+      <label class="radio"><input type="checkbox" id="cd-p" ${pinned ? 'checked' : ''}> 置顶：显示在每一页的顶部</label>
+      <p class="err" id="cd-err" hidden></p>`,
+    foot: `${isNew ? '' : `<button class="btn danger left" id="cd-del">${icon('trash')}删除</button>`}<button class="btn" data-close>取消</button><button class="btn primary" id="cd-ok">保存</button>`,
+    onMount(w) {
+      const q = id => w.querySelector('#' + id);
+      q('cd-c').addEventListener('click', e => { const b = e.target.closest('.sw'); if (!b) return; c.color = +b.dataset.i; for (const x of q('cd-c').children) x.setAttribute('aria-pressed', x === b); });
+      q('cd-ok').addEventListener('click', () => {
+        const title = q('cd-t').value.trim(), date = q('cd-d').value;
+        if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date)) { const er = q('cd-err'); er.textContent = '请填写名称和日期'; er.hidden = false; return; }
+        const pin = q('cd-p').checked;
+        Modal.close(ent);
+        const v = { ...c, title, date, note: q('cd-n').value.trim() };
+        const e = commit(isNew ? `新建倒计日「${title}」` : `编辑倒计日「${title}」`, s => {
+          const i = s.countdowns.findIndex(x => x.id === v.id);
+          if (i < 0) s.countdowns.push(v); else s.countdowns[i] = v;
+          if (pin) s.pinned = v.id; else if (s.pinned === v.id) s.pinned = null;
+        });
+        toast(isNew ? `已添加「${title}」` : '已保存', { action: '撤销', fn: () => undoEntry(e) });
+      });
+      if (!isNew) q('cd-del').addEventListener('click', () => {
+        Modal.close(ent);
+        const e = commit(`删除倒计日「${c.title}」`, s => { s.countdowns = s.countdowns.filter(x => x.id !== c.id); if (s.pinned === c.id) s.pinned = null; });
+        toast(`已删除「${c.title}」`, { action: '撤销', fn: () => undoEntry(e) });
+      });
+    }
+  });
+}
+
+/* ---------- 某一天 / 回收站 / 同步说明 ---------- */
+function dayBody(k) {
+  const list = sessionsLive().filter(s => dayKey(s.start) === k);
+  const tot = list.reduce((a, s) => a + s.dur, 0);
+  return `<div class="day-tot"><div><div class="eyebrow">当天合计</div><b class="num">${hm(tot)}</b></div><div>${checkedDay(k) ? '<span class="ok-txt">已打卡</span>' : `<span class="muted sm">打卡门槛 ${hmText(S.settings.checkinMin * 60)}</span>`}</div></div>
+    ${list.length ? `<ul class="day-list">${list.map(s => `<li><span class="t">${hhmm(s.start)}</span><span class="nm"><i class="dot" style="--c:${cvar(s.courseId)}"></i> ${esc(courseName(s.courseId))}${s.mode === 'down' ? ` <span class="ktag case">Case${s.caseType ? ' ' + s.caseType : ''}</span>` : ''} ${s.title ? `<span class="muted sm">${esc(s.title)}</span>` : ''}</span><span class="num">${hm(s.dur)}</span><span><button class="btn icon sm ghost" data-act="edit-session" data-id="${s.id}" aria-label="编辑">${icon('edit')}</button><button class="btn icon sm ghost" data-act="del-session" data-id="${s.id}" aria-label="删除">${icon('trash')}</button></span></li>`).join('')}</ul>` : '<p class="muted">这一天没有记录。</p>'}
+    <label class="f"><span>这一天的小结</span><textarea class="input day-note" rows="3" maxlength="1000" placeholder="写点什么">${esc(S.notes[k] || '')}</textarea></label>`;
+}
+function bindNote(el, k) {
+  const ta = el.querySelector('.day-note'); if (!ta) return;
+  let tm;
+  ta.addEventListener('input', () => { clearTimeout(tm); tm = setTimeout(() => saveNote(k, ta.value), 600); });
+  ta.addEventListener('blur', () => { clearTimeout(tm); saveNote(k, ta.value); });
+}
+function saveNote(k, val) {
+  val = val.trim();
+  if ((S.notes[k] || '') === val) return;
+  commit('', s => { if (val) s.notes[k] = val; else delete s.notes[k]; }, { undoable: false, render: false });
+}
+function dayModal(k) {
+  Modal.open({
+    title: ymd(k), body: dayBody(k),
+    foot: `<button class="btn left" data-act="add-session" data-day="${k}">${icon('plus')}补录这一天</button><button class="btn primary" data-close>完成</button>`,
+    onMount: w => bindNote(w, k),
+    refresh: w => { const ta = w.querySelector('.day-note'); if (ta && document.activeElement === ta) return; w.querySelector('.m-body').innerHTML = dayBody(k); bindNote(w, k); }
+  });
+}
+function trashBody() {
+  const list = sessionsTrash();
+  if (!list.length) return '<p class="muted">回收站是空的。</p>';
+  return `<p class="muted sm">删除的记录不计入统计。恢复后会回到原来的日期。</p><ul class="day-list">${list.map(s => `<li><span class="t">${md(dayKey(s.start))}</span><span class="nm"><i class="dot" style="--c:${cvar(s.courseId)}"></i> ${esc(courseName(s.courseId))} ${s.mode === 'down' ? `<span class="ktag case">Case${s.caseType ? ' ' + s.caseType : ''}</span>` : ''}</span><span class="num">${hm(s.dur)}</span><span><button class="btn sm" data-act="trash-restore" data-id="${s.id}">${icon('restore')}恢复</button><button class="btn icon sm ghost" data-act="trash-purge" data-id="${s.id}" aria-label="彻底删除" title="彻底删除">${icon('x')}</button></span></li>`).join('')}</ul>`;
+}
+function trashModal() {
+  Modal.open({
+    title: '回收站', body: trashBody(), wide: true,
+    foot: `<button class="btn danger left" data-act="trash-empty">清空回收站</button><button class="btn primary" data-close>完成</button>`,
+    refresh: w => { w.querySelector('.m-body').innerHTML = trashBody(); }
+  });
+}
+function syncInfo() {
+  const cloud = Store.mode === 'cloud';
+  const body = cloud
+    ? `<p><b>数据保存在云端。</b>手机和电脑打开同一个链接会自动同步，正在进行的计时也会同步。</p><p class="muted sm">建议仍然每隔一段时间在“设置 › 数据与备份”导出一份备份。</p>`
+    : `<p><b>数据只保存在这个浏览器里</b>（localStorage）。同一台电脑、同一个浏览器再打开会接着用。</p>
+       <p>换浏览器、换设备、清除浏览器数据或用无痕模式，都看不到这些记录。所以请定期在“设置 › 数据与备份”导出 JSON 备份，换设备时导入即可。</p>
+       ${syncState === 'readonly' ? '<p class="muted sm">这个页面可以连云端，但当前账号没有写入权限，所以先存在本机。</p>' : ''}`;
+  Modal.open({ title: cloud ? '云端同步' : '本机保存', body, foot: `<button class="btn" data-act="go" data-v="settings" data-anchor="set-data" data-closeall="1">去备份</button><button class="btn primary" data-close>知道了</button>` });
+}
+
+/* ---------- 导入导出 ---------- */
+let dlCap;
+async function getDownloads() {
+  if (dlCap !== undefined) return dlCap;
+  try { dlCap = window.claude && typeof window.claude.use === 'function' ? await window.claude.use('downloads') : null; } catch (e) { dlCap = null; }
+  return dlCap;
+}
+async function saveFile(name, text, mime) {
+  const dl = await getDownloads();
+  if (dl) {
+    try { await dl.save({ filename: name, data: text }); toast('已保存 ' + name); return true; }
+    catch (e) { if (e && e.code === 'declined') { toast('已取消保存'); return false; } }
+  }
+  if (!window.claude) {
+    try {
+      const url = URL.createObjectURL(new Blob([text], { type: mime }));
+      const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+      toast('已下载 ' + name); return true;
+    } catch (e) {}
+  }
+  const ent = Modal.open({
+    title: '复制备份内容', wide: true,
+    body: `<p class="muted sm">当前环境不能直接下载文件。请复制下面的全部内容，保存成文本文件“${esc(name)}”。</p><textarea id="cp-t" class="input mono" rows="12" readonly>${esc(text)}</textarea>`,
+    foot: `<button class="btn" data-close>关闭</button><button class="btn primary" id="cp-ok">${icon('copy')}复制全部</button>`,
+    onMount(w) {
+      w.querySelector('#cp-ok').addEventListener('click', async () => {
+        const ta = w.querySelector('#cp-t');
+        try { await navigator.clipboard.writeText(text); toast('已复制，粘贴到文本文件里保存即可'); }
+        catch (e) { ta.focus(); ta.select(); toast('已选中全部内容，请按 Ctrl+C 复制'); }
+      });
+    }
+  });
+  return false;
+}
+async function exportJSON() {
+  const T = realState();
+  const data = { app: 'cpa-study-ledger', schema: 1, exportedAt: new Date().toISOString(), data: { ...clone(T), active: null } };
+  const ok = await saveFile(`CPA计时簿备份-${calToday()}.json`, JSON.stringify(data, null, 1), 'application/json');
+  if (ok && !UI.demo) commit('', s => { s.settings.lastBackup = Date.now(); }, { undoable: false });
+}
+async function exportCSV() {
+  const q = v => { const t = String(v ?? ''); return /[",\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  const rows = [['学习日', '开始', '结束', '课程', '类型', 'Case 建议时长(分钟)', '目标(分钟)', '实际(分钟)', '实际(小时)', '名称', '备注', '来源']];
+  for (const s of sessionsLive()) rows.push([dayKey(s.start), hhmm(s.start), hhmm(s.end), courseName(s.courseId), s.mode === 'down' ? 'Case 练习' : '自由学习', s.caseType ?? '', s.target ?? '', mins(s.dur), (s.dur / 3600).toFixed(2), s.title, s.note, s.src === 'manual' ? '补录' : '计时']);
+  await saveFile(`CPA学习记录-${calToday()}.csv`, '﻿' + rows.map(r => r.map(q).join(',')).join('\r\n'), 'text/csv');
+}
+function parseBackup(txt) {
+  let j;
+  try { j = JSON.parse(txt); } catch (e) { return { err: '内容不是有效的 JSON，请确认复制完整' }; }
+  const d = j && j.data ? j.data : j;
+  if (!d || typeof d !== 'object' || (!d.sessions && !d.courses)) return { err: '没有找到计时簿数据（缺少 sessions / courses）' };
+  return { data: migrate({ ...d, active: null }) };
+}
+function applyImport(m, mode) {
+  let added = 0;
+  const e = commit(mode === 'replace' ? '导入备份（替换）' : '导入备份（合并）', s => {
+    if (mode === 'replace') {
+      const keep = s.active;
+      Object.assign(s, clone(m)); s.active = keep;
+      added = Object.keys(m.sessions).length;
+    } else {
+      for (const c of m.courses) if (!s.courses.some(x => x.id === c.id)) s.courses.push(c);
+      for (const [id, x] of Object.entries(m.sessions)) if (!s.sessions[id]) { s.sessions[id] = x; added++; }
+      for (const c of m.countdowns) if (!s.countdowns.some(x => x.id === c.id)) s.countdowns.push(c);
+      s.caseTypes = [...new Set([...s.caseTypes, ...m.caseTypes])].sort((a, b) => a - b);
+      for (const [k, v] of Object.entries(m.notes)) if (!s.notes[k]) s.notes[k] = v;
+    }
+  }, { timer: false });
+  applyTheme();
+  toast(mode === 'replace' ? `已用备份替换，共 ${added} 条记录` : `已合并，新增 ${added} 条记录`, { action: '撤销', fn: () => undoEntry(e) });
+}
+function importModal() {
+  if (UI.demo) { toast('示例模式下不能导入，请先退出示例'); return; }
+  const ent = Modal.open({
+    title: '导入备份',
+    body: `<p class="muted sm">选择之前导出的 .json 备份文件，或者把备份内容粘贴到下面。</p>
+      <label class="f"><span>备份文件</span><input id="im-file" type="file" accept=".json,application/json,text/plain" class="input" style="padding:7px 10px;height:auto"></label>
+      <label class="f"><span>或者粘贴内容</span><textarea id="im-text" class="input mono" rows="5" placeholder='{"app":"cpa-study-ledger", ...}'></textarea></label>
+      <div class="f"><span>导入方式</span>
+        <label class="radio"><input type="radio" name="im-mode" value="merge" checked><span><b>合并</b>：保留现有记录，只加入备份里没有的记录</span></label>
+        <label class="radio"><input type="radio" name="im-mode" value="replace"><span><b>替换</b>：用备份覆盖现有数据（之后仍可撤销）</span></label></div>
+      <p class="err" id="im-err" hidden></p>`,
+    foot: `<button class="btn" data-close>取消</button><button class="btn primary" id="im-ok">导入</button>`,
+    onMount(w) {
+      const q = id => w.querySelector('#' + id);
+      q('im-file').addEventListener('change', async e => { const f = e.target.files[0]; if (f) q('im-text').value = await f.text(); });
+      q('im-ok').addEventListener('click', () => {
+        const r = parseBackup(q('im-text').value.trim());
+        if (r.err) { q('im-err').textContent = r.err; q('im-err').hidden = false; return; }
+        const mode = w.querySelector('input[name="im-mode"]:checked').value;
+        Modal.close(ent); applyImport(r.data, mode);
+      });
+    }
+  });
+}
+
+/* ---------- 示例数据 ---------- */
+function makeDemo() {
+  let seed = 20261022;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const d = DEFAULT(); d.settings = { ...S.settings };
+  d.courses = [{ id: 'x1', name: 'FR（示例）', color: 0, archived: false }, { id: 'x2', name: 'MA（示例）', color: 1, archived: false }, { id: 'x3', name: 'Tax（示例）', color: 2, archived: false }];
+  const tk = todayKey(), now = Date.now();
+  const add = (k, hh, min, cid, extra = {}) => {
+    const start = composeStart(k, `${pad(hh)}:${pad(Math.floor(rnd() * 50))}`); if (start + min * 60000 > now) return;
+    const id = 'x' + Math.floor(rnd() * 1e9).toString(36) + Object.keys(d.sessions).length;
+    d.sessions[id] = { id, courseId: cid, start, end: start + min * 60000, dur: min * 60, mode: 'up', caseType: null, target: null, title: '', note: '', src: 'timer', created: start, updated: start, ...extra };
+  };
+  for (let i = 44; i >= 0; i--) {
+    const k = addDays(tk, -i);
+    if (rnd() < 0.12) continue;
+    let hh = 8 + Math.floor(rnd() * 2);
+    const n = 1 + Math.floor(rnd() * 3);
+    for (let j = 0; j < n; j++) { const min = 40 + Math.floor(rnd() * 120); add(k, hh, min, ['x1', 'x2', 'x3'][Math.floor(rnd() * 3)]); hh += 2 + Math.floor(min / 60); }
+  }
+  [196, 171, 160, 141, 130, 118, 106, 97, 93, 84, 79, 74].forEach((m, i) => add(addDays(tk, -42 + i * 3 + 2), 20, m, i % 2 ? 'x1' : 'x2', { mode: 'down', caseType: 60, target: i < 4 ? 90 : 75, title: `Case ${i + 1}` }));
+  [262, 238, 205, 191, 168, 152].forEach((m, i) => add(addDays(tk, -38 + i * 6 + 3), 19, m, 'x1', { mode: 'down', caseType: 120, target: 150, title: `综合 Case ${i + 1}` }));
+  d.countdowns = [{ id: 'xd1', title: '模块考试（示例）', date: addDays(calToday(), 38), color: 0, note: '', created: now - 30 * DAYMS }, { id: 'xd2', title: '报名截止（示例）', date: addDays(calToday(), 9), color: 1, note: '', created: now - 10 * DAYMS }];
+  d.pinned = 'xd1';
+  return d;
+}
+function demoOn() {
+  if (UI.demo) return;
+  if (S.active) { toast('正在计时，先结束这次计时再看示例'); return; }
+  Store.realS = S; Store.realHist = Hist;
+  S = makeDemo(); Hist = { undo: [], redo: [] }; UI.demo = true; DV++;
+  render(); window.scrollTo(0, 0);
+}
+function demoOff() {
+  if (!UI.demo) return;
+  S = Store.realS; Hist = Store.realHist || { undo: [], redo: [] }; Store.realS = null; Store.realHist = null; UI.demo = false; DV++;
+  render(); toast('已退出示例，回到你自己的数据');
+}
+
+/* =================== 交互绑定 =================== */
+function applyTheme() {
+  const r = document.documentElement, t = S.settings.theme;
+  if (t === 'light' || t === 'dark') { r.setAttribute('data-theme', t); UI.themeByApp = true; }
+  else if (UI.themeByApp) { r.removeAttribute('data-theme'); UI.themeByApp = false; }
+  r.setAttribute('data-accent', S.settings.accent || 'ledger');
+}
+const ACT = {
+  go: t => { if (t.dataset.closeall) while (Modal.stack.length) Modal.close(); go(t.dataset.v, t.dataset.anchor); },
+  'set-mode': t => { readDraftInputs(); UI.draft.mode = t.dataset.v; saveUI(); render(); },
+  'pick-course': t => { readDraftInputs(); UI.draft.courseId = t.dataset.v; saveUI(); render(); },
+  'pick-case': t => { readDraftInputs(); const v = t.dataset.v === '' ? null : +t.dataset.v; UI.draft.caseType = v; if (v) UI.draft.target = UI.draft.targets[v] ?? v; saveUI(); render(); },
+  'custom-case': () => { readDraftInputs(); customCaseModal(); },
+  'quick-course': () => { readDraftInputs(); quickCourseModal(); },
+  tgt: t => { readDraftInputs(); setTarget(UI.draft.target + +t.dataset.v); },
+  'tgt-set': t => { readDraftInputs(); setTarget(+t.dataset.v); },
+  start: () => startTimer(),
+  pause: () => pauseTimer(),
+  resume: () => resumeTimer(),
+  finish: () => openFinish(),
+  adj: t => adjustBy(+t.dataset.v),
+  adjust: () => adjustModal(),
+  'edit-active': () => editActiveModal(),
+  'undo-start': () => discardTimer('撤销开始'),
+  discard: (t, e) => {
+    if (t.dataset.fired) { delete t.dataset.fired; return; }
+    if (e.detail === 0) confirmModal({ title: '放弃本次计时？', text: `这次已计 ${hms(elapsed())}，放弃后不会记录（之后仍可撤销）。`, ok: '放弃', danger: true }).then(ok => { if (ok) discardTimer('放弃本次计时'); });
+    else toast('防止误触：请按住按钮约 1 秒');
+  },
+  undo: () => undo(), redo: () => redo(),
+  'hide-onboard': () => { UI.onboardHidden = true; saveUI(); render(); },
+  'backup-snooze': () => { UI.backupSnooze = Date.now() + 3 * DAYMS; saveUI(); render(); },
+  'edit-session': t => editSession(t.dataset.id),
+  'del-session': t => deleteSession(t.dataset.id),
+  'add-session': t => addSession(t.dataset.day),
+  'open-trash': () => trashModal(),
+  'trash-restore': t => { const id = t.dataset.id; const e = commit('恢复记录', s => { if (s.sessions[id]) { const x = { ...s.sessions[id] }; delete x.del; s.sessions[id] = x; } }); toast('已恢复', { action: '撤销', fn: () => undoEntry(e) }); },
+  'trash-purge': t => { const id = t.dataset.id; const e = commit('彻底删除记录', s => { delete s.sessions[id]; }); toast('已彻底删除', { action: '撤销', fn: () => undoEntry(e) }); },
+  'trash-empty': async () => { const n = sessionsTrash().length; if (!n) return; if (await confirmModal({ title: '清空回收站？', text: `会彻底删除回收站里的 ${n} 条记录。在关闭页面之前，仍可以用撤销找回。`, ok: '清空', danger: true })) { const e = commit('清空回收站', s => { for (const [id, x] of Object.entries(s.sessions)) if (x.del) delete s.sessions[id]; }); toast(`已清空 ${n} 条`, { action: '撤销', fn: () => undoEntry(e) }); } },
+  'rec-more': () => { UI.recDays += 30; render(); },
+  'stats-range': t => { UI.statsRange = +t.dataset.v; saveUI(); render(); },
+  'case-sel': t => { UI.caseSel = +t.dataset.v; saveUI(); render(); },
+  'cal-move': t => { const v = +t.dataset.v, tk = todayKey(); if (!v) UI.calMonth = null; else { const [y, m] = (UI.calMonth || tk.slice(0, 7)).split('-').map(Number); const d = new Date(y, m - 1 + v, 1); UI.calMonth = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; } render(); },
+  day: t => dayModal(t.dataset.k),
+  'cd-new': t => cdModal(null, t.dataset.title),
+  'cd-edit': t => cdModal(S.countdowns.find(c => c.id === t.dataset.id)),
+  'cd-pin': t => { const id = t.dataset.id; commit(S.pinned === id ? '取消置顶' : '置顶倒计日', s => { s.pinned = s.pinned === id ? null : id; }); },
+  'course-add': () => { const inp = $('#new-course'), v = inp.value.trim(); if (!v) { inp.focus(); return; } addCourse(v); },
+  'course-move': t => { const id = t.dataset.id, dir = +t.dataset.v; commit('调整课程顺序', s => { const i = s.courses.findIndex(c => c.id === id), j = i + dir; if (i < 0 || j < 0 || j >= s.courses.length) return; [s.courses[i], s.courses[j]] = [s.courses[j], s.courses[i]]; }); },
+  'course-archive': t => { const id = t.dataset.id, c = courseById(id); if (!c) return; if (!c.archived && activeCourses().length <= 1) { toast('至少保留一门未归档的课程'); return; } const e = commit(c.archived ? `取消归档「${c.name}」` : `归档「${c.name}」`, s => { const x = s.courses.find(y => y.id === id); x.archived = !x.archived; }); toast(c.archived ? '已取消归档' : '已归档，累计时长保留', { action: '撤销', fn: () => undoEntry(e) }); },
+  'course-del': async t => {
+    const id = t.dataset.id, c = courseById(id); if (!c) return;
+    if (S.courses.length <= 1) { toast('至少保留一门课程'); return; }
+    const n = sessionsLive().filter(s => s.courseId === id).length;
+    const ok = await confirmModal({ title: `删除课程「${c.name}」？`, text: n ? `这门课有 ${n} 条记录（${hmText(courseTotals()[id] || 0)}）。删除后这些记录仍会保留并计入总时长，但会显示为“已删除的课程”。<b>一般建议用“归档”。</b>` : '这门课还没有记录。', ok: '删除', danger: true });
+    if (!ok) return;
+    const e = commit(`删除课程「${c.name}」`, s => { s.courses = s.courses.filter(x => x.id !== id); });
+    toast(`已删除课程「${c.name}」`, { action: '撤销', fn: () => undoEntry(e) });
+  },
+  'course-color': t => {
+    const id = t.dataset.id, c = courseById(id); if (!c) return;
+    const ent = Modal.open({
+      title: `「${c.name}」的颜色`,
+      body: `<div class="swatches">${[0, 1, 2, 3, 4, 5, 6, 7].map(i => `<button class="sw" style="--c:var(--s${i + 1})" aria-pressed="${i === c.color}" data-i="${i}" aria-label="颜色 ${i + 1}"></button>`).join('')}</div><p class="muted sm">这组颜色在深浅主题下都容易区分，也照顾了色弱。</p>`,
+      onMount(w) { w.querySelector('.swatches').addEventListener('click', e => { const b = e.target.closest('.sw'); if (!b) return; Modal.close(ent); commit('修改课程颜色', s => { const x = s.courses.find(y => y.id === id); if (x) x.color = +b.dataset.i; }); }); }
+    });
+  },
+  'case-add': () => { const inp = $('#new-case'), v = Math.round(+inp.value); if (!(v > 0 && v <= 1440)) { inp.focus(); return; } if (S.caseTypes.includes(v)) { toast(`${v} 分钟已经在列表里了`); return; } commit(`添加 ${v} 分钟 case 类型`, s => { s.caseTypes = [...s.caseTypes, v].sort((a, b) => a - b); }); },
+  'case-del': t => { const v = +t.dataset.v; const e = commit(`删除 ${v} 分钟 case 类型`, s => { s.caseTypes = s.caseTypes.filter(x => x !== v); }); toast(`已从列表移除 ${v} 分钟（已有记录不受影响）`, { action: '撤销', fn: () => undoEntry(e) }); },
+  'set-theme': t => { commit('', s => { s.settings.theme = t.dataset.v; }, { undoable: false }); applyTheme(); render(); },
+  'set-accent': t => { commit('', s => { s.settings.accent = t.dataset.v; }, { undoable: false }); applyTheme(); },
+  'test-sound': () => { ensureAudio(); const was = S.settings.sound; S.settings.sound = true; chime(); S.settings.sound = was; },
+  'export-json': () => exportJSON(),
+  'export-csv': () => exportCSV(),
+  import: () => importModal(),
+  'local-backup-merge': () => { let raw = null; try { raw = localStorage.getItem(LSKEY + '-local-backup'); } catch (e) {} const r = raw && parseBackup(raw); if (!r || r.err) { toast('没有找到本机旧数据'); return; } applyImport(r.data, 'merge'); },
+  'clear-all': async () => {
+    if (UI.demo) { toast('示例模式下不能清空'); return; }
+    const ok = await confirmModal({ title: '清空全部记录？', text: '会删除所有学习记录、倒计日、小结和正在进行的计时，课程和设置保留。关闭页面之前仍可以撤销。建议先导出备份。', ok: '清空', danger: true, typeWord: '清空' });
+    if (!ok) return;
+    const e = commit('清空全部记录', s => { s.sessions = {}; s.countdowns = []; s.pinned = null; s.active = null; }, { timer: true });
+    S.notes = {}; persist(); Wake.off();
+    toast('已清空', { action: '撤销', fn: () => undoEntry(e) });
+  },
+  'sync-info': () => syncInfo(),
+  'demo-on': () => demoOn(),
+  'demo-off': () => demoOff()
+};
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]');
+  if (!t || t.disabled) return;
+  const f = ACT[t.dataset.act];
+  if (f) { e.preventDefault(); f(t, e); }
+});
+document.addEventListener('pointerdown', e => {
+  const b = e.target.closest('.hold');
+  if (!b || b.disabled || e.button > 0) return;
+  b.classList.add('holding');
+  const tm = setTimeout(() => { b.classList.remove('holding'); b.dataset.fired = '1'; if (b.dataset.hold === 'discard') discardTimer('放弃本次计时'); }, 900);
+  const end = () => { clearTimeout(tm); b.classList.remove('holding'); window.removeEventListener('pointerup', end); window.removeEventListener('pointercancel', end); };
+  window.addEventListener('pointerup', end); window.addEventListener('pointercancel', end);
+});
+document.addEventListener('contextmenu', e => { if (e.target.closest('.hold')) e.preventDefault(); });
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'tgt') { const v = Math.round(+t.value); if (v > 0) { UI.draft.target = clamp(v, 1, 1440); if (UI.draft.caseType) UI.draft.targets[UI.draft.caseType] = UI.draft.target; saveUI(); tick(); } }
+  else if (t.id === 'case-title') { UI.draft.title = t.value; saveUI(); }
+  else if (t.id === 'today-note') { clearTimeout(t._tm); t._tm = setTimeout(() => saveNote(todayKey(), t.value), 600); }
+  else if (t.dataset.set === 'volume') { S.settings.volume = +t.value; }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'tgt') { setTarget(+t.value || UI.draft.caseType || 60); return; }
+  if (t.id === 'today-note') { saveNote(todayKey(), t.value); return; }
+  if (t.dataset.ui) {
+    const [a, b] = t.dataset.ui.split('.');
+    if (b) UI[a][b] = t.value; else UI[a] = t.value;
+    if (a === 'rec') UI.recDays = 30;
+    saveUI(); render(); return;
+  }
+  if (t.dataset.courseName) {
+    const id = t.dataset.courseName, name = t.value.trim(), c = courseById(id);
+    if (!c) return;
+    if (!name) { t.value = c.name; return; }
+    if (name !== c.name) commit(`重命名课程「${c.name}」`, s => { const x = s.courses.find(y => y.id === id); if (x) x.name = name; });
+    return;
+  }
+  if (t.dataset.set) {
+    let k = t.dataset.set, v = t.type === 'checkbox' ? t.checked : t.value;
+    if (t.dataset.type === 'num') v = Number(v);
+    if (k === 'dailyGoalH') { k = 'dailyGoal'; v = Math.round(clamp(v || 6, 0.5, 20) * 60); }
+    if (k === 'checkinMin') v = clamp(Math.round(v) || 60, 1, 1440);
+    if (k === 'title') v = String(v).trim().slice(0, 24) || 'CPA 备考计时簿';
+    commit('', s => { s.settings[k] = v; }, { undoable: false });
+    if (k === 'notify' && v) askNotify();
+    if (k === 'wakeLock') syncWake();
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && Modal.stack.length) { Modal.close(); return; }
+  const tag = e.target.tagName, typing = /^(INPUT|TEXTAREA|SELECT)$/.test(tag) || e.target.isContentEditable;
+  if ((e.ctrlKey || e.metaKey) && !typing && !Modal.stack.length) {
+    const k = e.key.toLowerCase();
+    if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+    else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); }
+    return;
+  }
+  if (e.code === 'Space' && !typing && tag !== 'BUTTON' && !Modal.stack.length && UI.view === 'timer' && !e.repeat) {
+    e.preventDefault();
+    const a = S.active;
+    if (!a) startTimer(); else if (isRunning(a)) pauseTimer(); else resumeTimer();
+  }
+});
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { syncWake(); tick(); } });
+window.addEventListener('storage', e => {
+  if (e.key !== LSKEY || Store.mode !== 'local' || UI.demo || !e.newValue) return;
+  try { S = migrate(JSON.parse(e.newValue)); DV++; applyTheme(); render(); syncWake(); } catch (err) {}
+});
+window.addEventListener('scroll', hideTip, { passive: true });
+
+/* =================== 启动 =================== */
+function boot() {
+  loadUI();
+  const local = Store.load();
+  if (local) S = local;
+  if (!VIEWS[UI.view]) UI.view = 'timer';
+  applyTheme();
+  buildChrome();
+  render();
+  ro.observe($('#view'));
+  setInterval(tick, 250);
+  syncWake();
+  // 请浏览器把本站数据标为“持久”，减少被自动清理的可能
+  try { navigator.storage?.persisted?.().then(p => { if (!p) return navigator.storage.persist(); }).catch(() => {}); } catch (e) {}
+  Cloud.init();
+}
+boot();
+})();
+</script>
+</body>
+</html>
