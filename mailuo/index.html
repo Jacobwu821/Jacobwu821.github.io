@@ -300,6 +300,7 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
     <div class="menu" id="menu" hidden>
       <button data-act="export"><i data-ic="down" data-s="16"></i>导出备份 (JSON)</button>
       <button data-act="import"><i data-ic="up" data-s="16"></i>导入备份</button>
+      <button data-act="bib"><i data-ic="up" data-s="16"></i>导入 BibTeX (.bib)</button>
       <hr>
       <button data-act="demo"><i data-ic="spark" data-s="16"></i>载入示例数据</button>
       <button data-act="keys"><i data-ic="key" data-s="16"></i>快捷键</button>
@@ -307,6 +308,7 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
       <button data-act="clear" class="danger"><i data-ic="trash" data-s="16"></i>清空全部</button>
     </div>
     <input type="file" id="fileIn" accept="application/json,.json" hidden>
+    <input type="file" id="bibIn" hidden>
   </div>
 </header>
 
@@ -480,7 +482,7 @@ function normalize(d){
   for(const n of (Array.isArray(d.nodes)?d.nodes:[])){
     if(!n||!n.id||!TYPES[n.type])continue;
     out.nodes.push({id:String(n.id),type:n.type,title:String(n.title||'未命名'),authors:String(n.authors||''),year:Number.isFinite(+n.year)&&+n.year?+n.year:null,
-      venue:String(n.venue||''),doi:String(n.doi||''),url:String(n.url||''),core:String(n.core||''),notes:String(n.notes||''),
+      venue:String(n.venue||''),doi:String(n.doi||''),url:String(n.url||''),key:String(n.key||''),core:String(n.core||''),notes:String(n.notes||''),
       tags:Array.isArray(n.tags)?n.tags.map(String).filter(Boolean):[],status:STATUS[n.status]?n.status:'todo',star:!!n.star,created:n.created||today(),
       x:Number.isFinite(n.x)?n.x:undefined,y:Number.isFinite(n.y)?n.y:undefined,pin:!!n.pin&&Number.isFinite(n.px)&&Number.isFinite(n.py),px:n.px,py:n.py});
   }
@@ -514,7 +516,7 @@ function passes(n){
 }
 function matches(n,q){
   if(!q)return true;
-  const hay=[n.title,n.authors,n.core,n.venue,n.year||'',n.tags.join(' '),TYPES[n.type].label].join(' ').toLowerCase();
+  const hay=[n.title,n.authors,n.core,n.venue,n.year||'',n.key||'',n.tags.join(' '),TYPES[n.type].label].join(' ').toLowerCase();
   return q.toLowerCase().split(/\s+/).filter(Boolean).every(w=>hay.includes(w));
 }
 function search(q,pool){
@@ -885,7 +887,7 @@ function renderDetail(){
       <button class="icon-btn" data-a="close" aria-label="关闭">${ic('x')}</button></div>
     <div class="p-body">
       <div><h2 class="p-title">${esc(n.title)}</h2>
-      ${n.type==='paper'&&(n.authors||n.year||n.venue)?`<p class="p-meta" style="margin-top:8px">${esc(n.authors)}${n.authors?'<br>':''}<span class="mono">${n.year||''}</span>${n.year&&n.venue?' · ':''}<i>${esc(n.venue)}</i></p>`:''}</div>
+      ${n.type==='paper'&&(n.authors||n.year||n.venue)?`<p class="p-meta" style="margin-top:8px">${esc(n.authors)}${n.authors?'<br>':''}<span class="mono">${n.year||''}</span>${n.year&&n.venue?' · ':''}<i>${esc(n.venue)}</i></p>`:''}${n.key?`<p class="mono muted" style="margin-top:4px">\\cite{${esc(n.key)}}</p>`:''}</div>
       ${n.core?`<div class="callout"><small>${TYPES[n.type].call}</small><div class="math">${esc(n.core)}</div></div>`:`<p class="muted">还没写${TYPES[n.type].call}。</p>`}
       ${n.type==='paper'?`<div class="seg" data-seg="status" style="align-self:flex-start">${Object.keys(STATUS).map(s=>`<button data-st="${s}" aria-pressed="${n.status===s}">${STATUS[s]}</button>`).join('')}</div>`:''}
       ${n.notes?`<div class="p-sec"><h5>笔记</h5><div class="notes math">${esc(n.notes)}</div></div>`:''}
@@ -1100,6 +1102,7 @@ $('#menu').addEventListener('click',async e=>{
   const a=e.target.closest('button')?.dataset.act;if(!a)return;$('#menu').hidden=true;
   if(a==='export')exportJson();
   if(a==='import')$('#fileIn').click();
+  if(a==='bib')$('#bibIn').click();
   if(a==='demo')loadDemo();
   if(a==='keys')showKeys();
   if(a==='clear'){if(!db.nodes.length)return toast('已经是空的');
@@ -1122,6 +1125,62 @@ $('#fileIn').addEventListener('change',async e=>{
     const eh=new Set(db.edges.map(x=>x.source+'>'+x.target+'>'+x.rel));for(const x of d.edges)if(!eh.has(x.source+'>'+x.target+'>'+x.rel))db.edges.push(x)}
   resetFilters();changed(1);setTimeout(()=>fit(),RM?30:900);toast('导入完成',{action:{label:'撤销',fn:undo}});
 });
+/* ---------- BibTeX import ---------- */
+function parseBib(text){
+  const out=[],n=text.length,mac={};let i=0;
+  const close=(s,p)=>{let d=1;while(p<s.length&&d>0){const c=s[p];if(c==='\\'){p+=2;continue}if(c==='{')d++;else if(c==='}')d--;p++}return p};
+  while(i<n){
+    const at=text.indexOf('@',i);if(at<0)break;
+    const m=/^@\s*([a-zA-Z]+)\s*\{/.exec(text.slice(at,at+40));if(!m){i=at+1;continue}
+    const type=m[1].toLowerCase(),j=at+m[0].length,k=close(text,j),body=text.slice(j,k-1);i=k;
+    if(type==='string'){const sm=/^\s*([\w-]+)\s*=\s*["{]([\s\S]*)["}]\s*$/.exec(body);if(sm)mac[sm[1].toLowerCase()]=sm[2];continue}
+    if(type==='comment'||type==='preamble')continue;
+    const comma=body.indexOf(',');if(comma<0)continue;
+    const key=body.slice(0,comma).trim(),f={};let p=comma+1;if(!key||/\s/.test(key))continue;
+    while(p<body.length){
+      const fm=/\s*([a-zA-Z_][\w-]*)\s*=\s*/y;fm.lastIndex=p;const r=fm.exec(body);
+      if(!r){const nc=body.indexOf(',',p);if(nc<0)break;p=nc+1;continue}
+      p=fm.lastIndex;let val='';
+      if(body[p]==='{'){const q=close(body,p+1);val=body.slice(p+1,q-1);p=q}
+      else if(body[p]==='"'){let q=p+1,d=0;while(q<body.length&&(body[q]!=='"'||d>0)){const c=body[q];if(c==='\\'){q+=2;continue}if(c==='{')d++;else if(c==='}')d--;q++}val=body.slice(p+1,q);p=q+1}
+      else{const q=body.slice(p).search(/[,\n]/),e=q<0?body.length:p+q;val=body.slice(p,e).trim();val=mac[val.toLowerCase()]??val;p=e}
+      f[r[1].toLowerCase()]=val;const sk=/\s*,?/y;sk.lastIndex=p;sk.exec(body);p=sk.lastIndex;
+    }
+    out.push({type,key,f});
+  }
+  return out;
+}
+function detex(s){
+  const acc={'"':'̈',"'":'́','`':'̀','^':'̂','~':'̃','=':'̄','.':'̇',c:'̧',v:'̌',u:'̆',H:'̋',k:'̨',r:'̊'};
+  s=String(s||'').replace(/\\(ss|ae|AE|aa|AA|[oOlLij])(?![a-zA-Z])\s*/g,(m,c)=>({o:'ø',O:'Ø',l:'ł',L:'Ł',ss:'ß',ae:'æ',AE:'Æ',aa:'å',AA:'Å',i:'ı',j:'ȷ'}[c]));
+  s=s.replace(/\\(["'`^~=.])\s*\{?\s*([a-zA-Zıȷ])\s*\}?/g,(m,a,ch)=>((ch==='ı'?'i':ch==='ȷ'?'j':ch)+acc[a]).normalize('NFC'));
+  s=s.replace(/\\([cvuHkr])\s*\{\s*([a-zA-Z])\s*\}/g,(m,a,ch)=>(ch+acc[a]).normalize('NFC'));
+  s=s.replace(/\\(?:text(?:it|bf|rm|sc|sf|tt)|emph|mathrm|mbox)\s*\{([^{}]*)\}/g,'$1');
+  s=s.replace(/---/g,'—').replace(/--/g,'–').replace(/~/g,' ').replace(/\\-/g,'').replace(/\\([&%_#])/g,'$1').replace(/\\ /g,' ');
+  let out='',math=false;for(const ch of s){if(ch==='$')math=!math;if(!math&&(ch==='{'||ch==='}'))continue;out+=ch}
+  return out.replace(/\s+/g,' ').trim();
+}
+function bibAuthors(a){
+  const names=[];let etal=false;
+  for(const p of detex(a).split(/\s+and\s+/i).map(x=>x.trim()).filter(Boolean)){
+    if(/^others$/i.test(p)){etal=true;continue}const c=p.split(',');names.push(c.length>1?(c.slice(1).join(' ').trim()+' '+c[0].trim()).trim():p)}
+  return names.length>8?names.slice(0,3).join(', ')+' et al.':names.join(', ')+(etal?' et al.':'');
+}
+function importBib(text){
+  const es=parseBib(text);if(!es.length)return toast('没有在文件里找到 BibTeX 条目',{bad:true});
+  checkpoint();let add=0,upd=0;
+  for(const e of es){
+    const f=e.f,id='bib-'+e.key,doi=String(f.doi||'').replace(/^https?:\/\/(dx\.)?doi\.org\//i,'').trim();
+    const data={title:detex(f.title)||e.key,authors:bibAuthors(f.author||f.editor||''),year:parseInt(((f.year||f.date||'').match(/\d{4}/)||[])[0],10)||null,
+      venue:detex(f.journal||f.journaltitle||f.booktitle||f.publisher||f.school||f.institution||(f.eprint?'arXiv':'')),doi,
+      url:String(f.url||(f.eprint&&!doi?'https://arxiv.org/abs/'+f.eprint:'')).trim(),key:e.key};
+    const n=byId.get(id)||(doi&&db.nodes.find(x=>x.type==='paper'&&x.doi&&x.doi.toLowerCase()===doi.toLowerCase()));
+    if(n){Object.assign(n,data);upd++}
+    else{const m={id,type:'paper',core:'',notes:'',tags:['论文引用'],status:'todo',star:false,created:today(),...data};db.nodes.push(m);byId.set(id,m);add++}
+  }
+  resetFilters();changed(1);setTimeout(()=>fit(),RM?30:900);toast(`BibTeX：新增 ${add} 篇，更新 ${upd} 篇`,{action:{label:'撤销',fn:undo}});
+}
+$('#bibIn').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{importBib(await f.text())}catch(_){toast('读取文件失败',{bad:true})}});
 function loadDemo(){
   const d=demoData(),have=new Set(db.nodes.map(n=>n.id));if(d.nodes.every(n=>have.has(n.id)))return toast('示例数据已经在图里了');
   checkpoint();const was=db.nodes.length;for(const n of d.nodes)if(!have.has(n.id))db.nodes.push(n);
@@ -1193,7 +1252,7 @@ fit(false);G.alpha=unplaced?.05:0;renderList();renderDetail();
 new ResizeObserver(()=>{const had=G.w;resize();if(!had&&G.w)fit(false)}).observe($('#stage'));
 if(document.fonts?.ready)document.fonts.ready.then(()=>{G.dirty=true});
 window.addEventListener('beforeunload',()=>{try{clearTimeout(saveT);if(byId.size||localStorage.getItem(LS_DB))localStorage.setItem(LS_DB,JSON.stringify(db))}catch(e){}});
-window.__mailuo={get db(){return db},G,ui,fit};
+window.__mailuo={get db(){return db},G,ui,fit,parseBib,detex};
 requestAnimationFrame(frame);
 })();
 </script>
