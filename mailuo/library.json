@@ -1,0 +1,85 @@
+{
+ "version": 1,
+ "nodes": [
+  {
+   "id": "lib-yu-luk-1984",
+   "type": "paper",
+   "rev": "2026-11-17",
+   "title": "Field Patterns and Resonant Frequencies of High-Order Modes in an Open Resonator",
+   "authors": "P. K. Yu, K. M. Luk",
+   "year": 1984,
+   "venue": "IEEE Transactions on Microwave Theory and Techniques 32(6), 641–645",
+   "doi": "10.1109/TMTT.1984.1132746",
+   "url": "",
+   "core": "用电磁微扰理论说明：传统方法给出的线偏振 $\\mathrm{TEM}_{pl}$ 模（$l>0$）并不是开放谐振腔的谐振模；提出另外两个系列的高阶模，给出更准确的谐振频率。"
+  },
+  {
+   "id": "lib-zeppenfeld-pinkse-2010",
+   "type": "paper",
+   "rev": "2026-11-17",
+   "title": "Calculating the fine structure of a Fabry–Perot resonator using spheroidal wave functions",
+   "authors": "M. Zeppenfeld, P. W. H. Pinkse",
+   "year": 2010,
+   "venue": "Optics Express 18(9), 9580–9591",
+   "doi": "",
+   "url": "https://arxiv.org/abs/1003.4168",
+   "core": "用椭球坐标（spheroidal coordinates）下的解，算出理想导体镜 Fabry–Pérot 腔的本征模和本征频率在短波长极限下的完整一阶修正。"
+  },
+  {
+   "id": "lib-van-exter-2022",
+   "type": "paper",
+   "rev": "2026-11-17",
+   "title": "Fine structure in Fabry-Perot microcavity spectra",
+   "authors": "M. P. van Exter, M. Wubs, E. Hissink, C. Koks",
+   "year": 2022,
+   "venue": "Physical Review A 106, 013501",
+   "doi": "10.1103/PhysRevA.106.013501",
+   "url": "",
+   "core": "傍轴标量理论下同一阶的横模频率简并；非傍轴矢量理论解除这一简并，每一阶出现谱的精细结构。文章对带边界条件的 Maxwell 方程做微扰，算出微腔的精细结构，说明它来自多种非傍轴效应，并由镜面像差共同决定。"
+  },
+  {
+   "id": "lib-picot-2026",
+   "type": "paper",
+   "rev": "2026-11-17",
+   "title": "Extended Single-Atom Tweezer Arrays in High-Cooperativity Cavity-QED",
+   "authors": "Thomas Picot, Clément Raphin, Marcel Kern, Pierre-Antoine Bourdel, Théo Ahamdach, Jakob Reichel, Romain Long",
+   "year": 2026,
+   "venue": "arXiv:2607.21515",
+   "doi": "",
+   "url": "https://arxiv.org/abs/2607.21515",
+   "core": "在光纤 Fabry–Pérot 微腔内实现 $^{87}\\mathrm{Rb}$ 单原子光镊阵列，单原子 cooperativity $C\\sim 90$。对扩展阵列做无背景的逐点荧光成像，同时在平均原子数至 $\\bar N\\simeq 36$ 的阵列上实现与同一腔模的集体耦合。"
+  },
+  {
+   "id": "lib-roschinski-2026",
+   "type": "paper",
+   "rev": "2026-11-17",
+   "title": "Programmable cavity QED with a fiber-integrated atomic array",
+   "authors": "Stephan Roschinski, Johannes Schabbauer, Franz von Silva-Tarouca, Marvin Holten, Damien Bloch, Julian Léonard",
+   "year": 2026,
+   "venue": "arXiv:2608.20291",
+   "doi": "",
+   "url": "https://arxiv.org/abs/2608.20291",
+   "core": "把 12 个位点的 $^{87}\\mathrm{Rb}$ 光镊阵列放进高 cooperativity 的光纤 Fabry–Pérot 微腔模式内。以亚波长精度移动各位点穿过驻波场，连续调节单原子耦合强度；对最多 5 个与腔耦合的原子测到集体增强的 vacuum Rabi splitting，并用腔对耦合原子数做非破坏读出。"
+  }
+ ],
+ "edges": [
+  {
+   "id": "lib-e-vanexter-yuluk",
+   "source": "lib-van-exter-2022",
+   "target": "lib-yu-luk-1984",
+   "rel": "based"
+  },
+  {
+   "id": "lib-e-vanexter-zeppenfeld",
+   "source": "lib-van-exter-2022",
+   "target": "lib-zeppenfeld-pinkse-2010",
+   "rel": "related"
+  },
+  {
+   "id": "lib-e-roschinski-picot",
+   "source": "lib-roschinski-2026",
+   "target": "lib-picot-2026",
+   "rel": "related"
+  }
+ ]
+}

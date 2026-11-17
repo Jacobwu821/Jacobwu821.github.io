@@ -10,9 +10,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&display=swap">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<script defer src="vendor/katex/katex.min.js"></script>
+<script defer src="vendor/katex/contrib/auto-render.min.js"></script>
 <style>
 /* Layout idea: a one-screen instrument. Quiet chrome (top bar, filter rail, detail sheet) around one loud thing,
    the graph, drawn like a star chart on a graticule. Paper titles are set in a journal serif. */
@@ -187,11 +187,11 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
 .t-paper{color:var(--c-paper)} .t-concept{color:var(--c-concept)} .t-method{color:var(--c-method)} .t-question{color:var(--c-question)}
 
 /* ---------- detail panel ---------- */
-.panel{position:absolute;top:12px;right:12px;bottom:12px;width:376px;background:var(--raise);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);transform:translateX(calc(100% + 28px));transition:transform .28s cubic-bezier(.2,.8,.2,1);z-index:20;display:flex;flex-direction:column;overflow:hidden}
-.panel.open{transform:none}
-.p-head{display:flex;align-items:center;gap:8px;padding:12px 12px 0 18px}
-.p-body{padding:10px 18px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px}
-.p-title{font:500 23px/1.25 var(--font-display);text-wrap:balance}
+.panel{position:absolute;left:0;top:0;width:330px;max-height:min(74%,460px);background:var(--raise);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);opacity:0;transform:scale(.97);transform-origin:top left;pointer-events:none;transition:opacity .16s,transform .16s;z-index:20;display:flex;flex-direction:column;overflow:hidden}
+.panel.open{opacity:1;transform:none;pointer-events:auto}
+.p-head{display:flex;align-items:center;gap:8px;padding:8px 8px 0 16px}
+.p-body{padding:4px 16px 14px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px}
+.p-title{font:500 18px/1.3 var(--font-display);text-wrap:balance}
 .p-meta{color:var(--ink-2);font-size:13px}
 .p-meta .mono{color:var(--ink)}
 .callout{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:10px 13px}
@@ -203,7 +203,7 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
 .rel-i{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;border:1px solid var(--line-2);text-align:left;width:100%}
 .rel-i:hover{border-color:var(--ink-3)}
 .rel-i span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.p-foot{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line-2);flex-wrap:wrap}
+.p-foot{display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--line-2);flex-wrap:wrap}
 .star-on{color:var(--accent)}
 .star-on svg{fill:currentColor}
 
@@ -259,7 +259,7 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
   .rail.open{transform:none}
   .rail-scrim{display:block;position:absolute;inset:0;background:rgba(8,12,22,.5);z-index:49;opacity:0;pointer-events:none;transition:opacity .25s}
   .rail-scrim.open{opacity:1;pointer-events:auto}
-  .panel{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:64%;transform:translateY(calc(100% + 20px))}
+  .panel{left:8px!important;right:8px;top:auto!important;bottom:8px;width:auto;max-height:56%;transform:translateY(14px);transform-origin:bottom center}
   .stage.has-panel .float.br{right:14px}
   .stage.has-panel #viewList{padding-right:12px}
   #viewList{padding:12px 12px 40px}
@@ -302,7 +302,6 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
       <button data-act="import"><i data-ic="up" data-s="16"></i>导入备份</button>
       <button data-act="bib"><i data-ic="up" data-s="16"></i>导入 BibTeX (.bib)</button>
       <hr>
-      <button data-act="demo"><i data-ic="spark" data-s="16"></i>载入示例数据</button>
       <button data-act="keys"><i data-ic="key" data-s="16"></i>快捷键</button>
       <hr>
       <button data-act="clear" class="danger"><i data-ic="trash" data-s="16"></i>清空全部</button>
@@ -337,7 +336,6 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
         </div>
       </div>
       <div class="hint" id="hint">拖动节点可固定它的位置 · Shift+拖动连线 · 双击空白处新建</div>
-      <div class="banner" id="demoBanner" hidden><span><span class="lbl-d">当前是</span>示例数据</span><button class="btn sm primary" id="demoClear"><span>清空<span class="lbl-d">，开始记录</span></span></button><button class="btn sm" id="demoKeep">保留</button></div>
       <div class="tip" id="tip" hidden></div>
       <div class="relpop" id="relPop" hidden></div>
       <div class="empty" id="empty" hidden></div>
@@ -362,7 +360,7 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
         <div class="field"><label for="f_year">年份</label><input id="f_year" inputmode="numeric" placeholder="2024" autocomplete="off"></div>
         <div class="field"><label for="f_venue">期刊</label><input id="f_venue" placeholder="Nature" autocomplete="off"></div>
       </div>
-      <div class="field"><label for="f_core" id="l_core">核心结论（一句话）</label><textarea id="f_core" rows="2"></textarea></div>
+      <div class="field"><label for="f_core" id="l_core">核心内容</label><textarea id="f_core" rows="2"></textarea></div>
       <div class="field"><label for="f_notes">笔记</label><textarea id="f_notes" rows="4" placeholder="方法、关键数据、疑问。支持 $LaTeX$ 公式"></textarea></div>
       <div class="grid2 paper-only">
         <div class="field"><span class="lbl">阅读状态</span><div class="seg" id="edStatus" role="radiogroup" aria-label="阅读状态" style="align-self:flex-start"></div></div>
@@ -424,7 +422,7 @@ function shapeSvg(t,s=14,hollow=false){
 
 /* ---------- vocabulary ---------- */
 const TYPES={
-  paper:{label:'文献',core:'核心结论（一句话）',call:'核心结论'},
+  paper:{label:'文献',core:'核心内容',call:'核心内容'},
   concept:{label:'概念',core:'定义（一句话）',call:'定义'},
   method:{label:'方法',core:'目的（一句话）',call:'目的'},
   question:{label:'问题',core:'问题描述',call:'问题'}};
@@ -446,45 +444,20 @@ function defaultLink(a,b){
 }
 
 /* ---------- data ---------- */
-let db={version:1,nodes:[],edges:[],demo:false};
+let db={version:1,nodes:[],edges:[],demo:false,gone:[],libEdges:[]},libReady=false;
 let byId=new Map(), adj=new Map();
 const ui={view:'graph',layout:'force',theme:null,labels:true,q:'',sel:null,linkMode:false,sort:{key:'year',dir:-1},
   f:{types:new Set(Object.keys(TYPES)),status:new Set(Object.keys(STATUS)),tags:new Set(),y0:null,y1:null}};
 const undoStack=[];
 
-function demoData(){
-  const P=(id,title,authors,year,venue,doi,core,status,tags,star)=>({id,type:'paper',title,authors,year,venue,doi,url:'',core,notes:'',tags,status,star:!!star,created:today()});
-  const N=(id,type,title,core,tags=[])=>({id,type,title,authors:'',year:null,venue:'',doi:'',url:'',core,notes:'',tags,status:'todo',star:false,created:today()});
-  const nodes=[
-    P('d-purcell','Spontaneous emission probabilities at radio frequencies','E. M. Purcell',1946,'Physical Review','10.1103/PhysRev.69.674','把发射体放进共振腔，可以增强它的自发辐射速率。','read',['腔 QED'],true),
-    P('d-jc','Comparison of quantum and semiclassical radiation theories with application to the beam maser','E. T. Jaynes, F. W. Cummings',1963,'Proceedings of the IEEE','10.1109/PROC.1963.1664','给出二能级原子与单模量子化光场相互作用的可解模型。','deep',['腔 QED'],true),
-    P('d-thompson','Observation of normal-mode splitting for an atom in an optical cavity','R. J. Thompson, G. Rempe, H. J. Kimble',1992,'Physical Review Letters','10.1103/PhysRevLett.68.1132','在光学腔里观测到平均约一个原子引起的 normal-mode splitting，光学频段进入强耦合。','read',['腔 QED','实验']),
-    P('d-kimble','The quantum internet','H. J. Kimble',2008,'Nature','10.1038/nature07127','提出量子互联网的图景：量子节点通过光子信道相连。','read',['量子网络']),
-    P('d-reiserer','Cavity-based quantum networks with single atoms and optical photons','A. Reiserer, G. Rempe',2015,'Reviews of Modern Physics','10.1103/RevModPhys.87.1379','综述：光学腔中的单原子作为量子网络节点。','todo',['腔 QED','量子网络','综述'],true),
-    P('d-jaksch','Fast quantum gates for neutral atoms','D. Jaksch, J. I. Cirac, P. Zoller, S. L. Rolston, R. Côté, M. D. Lukin',2000,'Physical Review Letters','10.1103/PhysRevLett.85.2208','提出用 Rydberg 态之间的偶极相互作用实现中性原子的快速两比特门。','read',['中性原子','Rydberg'],true),
-    P('d-saffman','Quantum information with Rydberg atoms','M. Saffman, T. G. Walker, K. Mølmer',2010,'Reviews of Modern Physics','10.1103/RevModPhys.82.2313','综述：用 Rydberg blockade 做量子信息处理。','todo',['中性原子','Rydberg','综述']),
-    P('d-evered','High-fidelity parallel entangling gates on a neutral-atom quantum computer','S. J. Evered et al.',2023,'Nature','10.1038/s41586-023-06481-y','在中性原子阵列上并行实现保真度 99.5% 的两比特纠缠门。','read',['中性原子','实验']),
-    P('d-bluvstein','Logical quantum processor based on reconfigurable atom arrays','D. Bluvstein et al.',2024,'Nature','10.1038/s41586-023-06927-3','在可重构原子阵列上实现最多 48 个逻辑量子比特的逻辑处理器。','todo',['中性原子','实验','纠错']),
-    N('d-c-purcell','concept','Purcell 效应','腔改变了发射体周围的光学态密度，从而改变自发辐射速率。',['腔 QED']),
-    N('d-c-strong','concept','强耦合','原子与腔的相干耦合强度超过原子和腔各自的耗散速率。',['腔 QED']),
-    N('d-c-blockade','concept','Rydberg blockade','一个原子被激发到 Rydberg 态后，相互作用使附近原子无法被同一束光共振激发。',['Rydberg']),
-    N('d-m-shuttle','method','可重构光镊阵列','在计算过程中移动光镊里的原子，改变量子比特之间的连接。',['中性原子']),
-    N('d-q-cavity','question','怎样把光学腔和中性原子阵列结合起来？','腔提供光子接口，阵列提供多比特处理，两者如何放进同一套装置。',['腔 QED','中性原子'])];
-  const E=(s,t,r)=>({id:'e-'+s+'-'+t,source:s,target:t,rel:r});
-  const edges=[E('d-purcell','d-c-purcell','about'),E('d-jc','d-c-strong','about'),E('d-thompson','d-jc','based'),E('d-thompson','d-c-strong','about'),
-    E('d-reiserer','d-kimble','based'),E('d-reiserer','d-c-strong','about'),E('d-reiserer','d-c-purcell','about'),E('d-reiserer','d-q-cavity','answers'),
-    E('d-jaksch','d-c-blockade','about'),E('d-saffman','d-jaksch','based'),E('d-saffman','d-c-blockade','about'),E('d-evered','d-jaksch','based'),
-    E('d-evered','d-c-blockade','about'),E('d-bluvstein','d-evered','based'),E('d-bluvstein','d-m-shuttle','uses'),E('d-bluvstein','d-q-cavity','related')];
-  return{version:1,nodes,edges,demo:true};
-}
 function normalize(d){
-  const out={version:1,nodes:[],edges:[],demo:!!d.demo};
+  const out={version:1,nodes:[],edges:[],demo:false,gone:Array.isArray(d.gone)?d.gone.map(String):[],libEdges:Array.isArray(d.libEdges)?d.libEdges.map(String):[]};
   for(const n of (Array.isArray(d.nodes)?d.nodes:[])){
     if(!n||!n.id||!TYPES[n.type])continue;
     out.nodes.push({id:String(n.id),type:n.type,title:String(n.title||'未命名'),authors:String(n.authors||''),year:Number.isFinite(+n.year)&&+n.year?+n.year:null,
       venue:String(n.venue||''),doi:String(n.doi||''),url:String(n.url||''),key:String(n.key||''),core:String(n.core||''),notes:String(n.notes||''),
       tags:Array.isArray(n.tags)?n.tags.map(String).filter(Boolean):[],status:STATUS[n.status]?n.status:'todo',star:!!n.star,created:n.created||today(),
-      x:Number.isFinite(n.x)?n.x:undefined,y:Number.isFinite(n.y)?n.y:undefined,pin:!!n.pin&&Number.isFinite(n.px)&&Number.isFinite(n.py),px:n.px,py:n.py});
+      x:Number.isFinite(n.x)?n.x:undefined,y:Number.isFinite(n.y)?n.y:undefined,pin:!!n.pin&&Number.isFinite(n.px)&&Number.isFinite(n.py),px:n.px,py:n.py,libRev:n.libRev==null?undefined:String(n.libRev)});
   }
   const ids=new Set(out.nodes.map(n=>n.id));
   for(const e of (Array.isArray(d.edges)?d.edges:[])){
@@ -493,8 +466,30 @@ function normalize(d){
   return out;
 }
 function load(){
-  try{const raw=localStorage.getItem(LS_DB); if(raw){db=normalize(JSON.parse(raw));return;}}catch(e){}
-  db=demoData();
+  try{const raw=localStorage.getItem(LS_DB); if(raw){db=normalize(JSON.parse(raw));
+    const keep=db.nodes.filter(n=>!/^d-/.test(n.id)); // drop the old built-in examples
+    if(keep.length!==db.nodes.length){const ids=new Set(keep.map(n=>n.id));db.nodes=keep;db.edges=db.edges.filter(e=>ids.has(e.source)&&ids.has(e.target))}
+    return;}}catch(e){}
+  db={version:1,nodes:[],edges:[],demo:false,gone:[],libEdges:[]};
+}
+/* ---------- shared library: library.json next to this page is the source of truth for entries stored from chat ---------- */
+async function syncLibrary(){
+  let lib;try{const r=await fetch('library.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw 0;lib=await r.json()}catch(e){libReady=true;renderEmpty();return}
+  const gone=new Set(db.gone||[]),seen=new Set(db.libEdges||[]);let ch=false,added=0;
+  for(const L of (lib.nodes||[])){
+    if(!L||!L.id||!TYPES[L.type]||gone.has(L.id))continue;
+    const f={title:String(L.title||''),authors:String(L.authors||''),year:+L.year||null,venue:String(L.venue||''),doi:String(L.doi||''),url:String(L.url||''),core:String(L.core||'')},rev=String(L.rev||''),n=byId.get(L.id);
+    if(!n){const m=normalize({nodes:[{...f,id:L.id,type:L.type,tags:L.tags||[]}]}).nodes[0];m.libRev=rev;db.nodes.push(m);byId.set(m.id,m);ch=true;added++}
+    else if(n.libRev!==rev){Object.assign(n,f);n.libRev=rev;ch=true} // local edits stay until the library entry itself changes
+  }
+  for(const E of (lib.edges||[])){
+    if(!E||!E.id||seen.has(E.id)||!byId.has(E.source)||!byId.has(E.target)||!RELS[E.rel])continue;
+    seen.add(E.id);ch=true;if(!db.edges.some(x=>x.source===E.source&&x.target===E.target&&x.rel===E.rel))db.edges.push({id:String(E.id),source:E.source,target:E.target,rel:E.rel})}
+  db.libEdges=[...seen];libReady=true;
+  if(!ch)return renderEmpty();
+  reindex();save();renderRail();refreshGraph(1);
+  if(added){for(let i=0;i<320;i++)tick();fit(false);G.alpha=.03}
+  renderList();renderDetail();renderChrome();
 }
 let saveT=0;
 function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(LS_DB,JSON.stringify(db))}catch(e){toast('保存失败：浏览器存储不可用，请先导出备份',{bad:true})}},200)}
@@ -638,7 +633,7 @@ function refreshGraph(heat=0){
       const a=Math.random()*TAU,r=nb?70:140+40*Math.sqrt(i++);
       n.x=(nb?nb.x:0)+Math.cos(a)*r;n.y=(nb?nb.y:0)+Math.sin(a)*r;} }
   const ys=[...new Set(G.vis.filter(n=>n.type==='paper'&&n.year).map(n=>n.year))].sort((a,b)=>a-b);
-  G.yx=new Map();let x=0;ys.forEach((y,j)=>{if(j)x+=clamp((y-ys[j-1])*14,84,190);G.yx.set(y,x)});
+  G.yx=new Map();let x=0;ys.forEach((y,j)=>{if(j)x+=clamp((y-ys[j-1])*14,170,230);G.yx.set(y,x)});
   for(const [y,v] of G.yx)G.yx.set(y,v-x/2);
   if(G.hover&&!G.visSet.has(G.hover.id))G.hover=null;
   if(heat)G.alpha=Math.max(G.alpha,heat);
@@ -651,11 +646,11 @@ function tick(){
     for(let j=i+1;j<n;j++){const B=ns[j];let dx=B.x-A.x,dy=B.y-A.y,d2=dx*dx+dy*dy;
       if(d2<.01){dx=Math.random()-.5;dy=Math.random()-.5;d2=dx*dx+dy*dy}
       if(d2>640000)continue;
-      const f=620*a/d2,vb=V(B);va.vx-=dx*f;va.vy-=dy*f;vb.vx+=dx*f;vb.vy+=dy*f;
-      const min=rad(A)+rad(B)+26; if(d2<min*min){const d=Math.sqrt(d2),p=(min-d)/d*.12;va.vx-=dx*p;va.vy-=dy*p;vb.vx+=dx*p;vb.vy+=dy*p}
+      const f=1000*a/d2,vb=V(B);va.vx-=dx*f;va.vy-=dy*f;vb.vx+=dx*f;vb.vy+=dy*f;
+      const min=rad(A)+rad(B)+80,ex=dx/1.9,e2=ex*ex+dy*dy; if(e2<min*min){const d=Math.sqrt(e2)||1,p=(min-d)/d*.12;va.vx-=dx*p;va.vy-=dy*p;vb.vx+=dx*p;vb.vy+=dy*p} // labels are wider than tall
     }}
   for(const e of G.visEdges){const A=byId.get(e.source),B=byId.get(e.target),dx=B.x-A.x,dy=B.y-A.y,d=Math.hypot(dx,dy)||1;
-    const L=(tl?150:118)+rad(A)+rad(B),f=(d-L)/d*(tl?.05:.16)*a,va=V(A),vb=V(B);va.vx+=dx*f;va.vy+=dy*f;vb.vx-=dx*f;vb.vy-=dy*f}
+    const L=(tl?190:170)+rad(A)+rad(B),f=(d-L)/d*(tl?.05:.16)*a,va=V(A),vb=V(B);va.vx+=dx*f;va.vy+=dy*f;vb.vx-=dx*f;vb.vy-=dy*f}
   for(const A of ns){const v=V(A);
     if(tl){ if(A.type==='paper'&&A.year&&G.yx.has(A.year)){v.vx+=(G.yx.get(A.year)-A.x)*.3*a;v.vy+=(0-A.y)*.1*a}
       else{const band=A.type==='paper'?0:A.type==='concept'?-210:210;v.vy+=(band-A.y)*.16*a;v.vx-=A.x*.004*a} }
@@ -665,6 +660,16 @@ function tick(){
     v.vx*=.62;v.vy*=.62;const sp=Math.hypot(v.vx,v.vy);if(sp>40){v.vx*=40/sp;v.vy*=40/sp}
     A.x+=v.vx;A.y+=v.vy}
   G.alpha*=.978;
+}
+const wrapCache=new Map();
+function titleLines(n,font){ // node label: the title, wrapped to at most three lines
+  const key=font+'|'+n.title;let L=wrapCache.get(key);if(L)return L;
+  ctx.font=font;const maxW=178,toks=n.title.match(/[\u3400-\u9fff\uff00-\uffef]|[^\s\u3400-\u9fff\uff00-\uffef]+\s*|\s+/g)||[n.title];
+  L=[];let cur='';
+  for(const t of toks){const nx=cur+t;if(cur&&ctx.measureText(nx.trimEnd()).width>maxW){L.push(cur.trimEnd());cur=t.trimStart()}else cur=nx}
+  if(cur.trim())L.push(cur.trimEnd());
+  if(L.length>3){L=L.slice(0,3);L[2]=L[2].replace(/\s*\S{0,2}$/,'')+'…'}
+  if(wrapCache.size>3000)wrapCache.clear();wrapCache.set(key,L);return L;
 }
 function shape(t,x,y,r){
   ctx.beginPath();
@@ -690,7 +695,7 @@ function draw(){
       ctx.fillStyle=c.ink2;ctx.fillText(y,sx,72.5)}
   }
   const selN=ui.sel&&G.visSet.has(ui.sel)?byId.get(ui.sel):null, focus=G.hover||selN;
-  const hi=focus?new Set([focus.id,...adj.get(focus.id)]):null, qm=G.qm;
+  const hi=G.hover&&G.hover.id!==ui.sel?new Set([G.hover.id,...adj.get(G.hover.id)]):null, qm=G.qm;
   const dim=n=>(hi&&!hi.has(n.id))||(qm&&!qm.has(n.id));
   const S=n=>[n.x*k+G.x,n.y*k+G.y];
   // edges
@@ -731,19 +736,21 @@ function draw(){
     for(const [n] of order){
       const imp=isImp(n);
       if(!(imp||k>=.58||(n.star&&k>=.34)))continue;
-      if(!imp&&dim(n))continue;
       const [sx,sy]=S(n),r=rad(n)*z; if(sx<-80||sx>G.w+80||sy<-40||sy>G.h+40)continue;
-      ctx.globalAlpha=1;ctx.font=`${imp?600:500} ${imp?12.5:11.5}px ${c.font}`;
-      const t=shortLabel(n),ty=sy+r+(n.type==='concept'?r*.18:0)+6,hw=ctx.measureText(t).width/2+3;
-      if(!imp&&boxes.some(b=>sx-hw<b[1]&&sx+hw>b[0]&&ty<b[3]&&ty+15>b[2]))continue; // skip a label that would sit on another
-      boxes.push([sx-hw,sx+hw,ty,ty+15]);
-      ctx.strokeStyle=c.bg;ctx.lineWidth=4;ctx.strokeText(t,sx,ty);ctx.fillStyle=imp?c.ink:c.ink2;ctx.fillText(t,sx,ty);
+      if(n.id===ui.sel&&wide())continue; // its card carries the title
+      ctx.globalAlpha=1;const font=`${imp?600:500} 11.5px ${c.font}`,L=titleLines(n,font);ctx.font=font;
+      const ty=sy+r+(n.type==='concept'?r*.18:0)+6,hw=Math.max(...L.map(t=>ctx.measureText(t).width))/2+3,bh=L.length*14+1;
+      if(!imp&&boxes.some(b=>sx-hw<b[1]&&sx+hw>b[0]&&ty<b[3]&&ty+bh>b[2]))continue; // skip a label that would sit on another
+      boxes.push([sx-hw,sx+hw,ty,ty+bh]);
+      ctx.strokeStyle=c.bg;ctx.lineWidth=4;ctx.fillStyle=imp?c.ink:c.ink2;if(dim(n))ctx.globalAlpha=.32;
+      L.forEach((t,i)=>{ctx.strokeText(t,sx,ty+i*14);ctx.fillText(t,sx,ty+i*14)});
     }
   }
   // relation tags on the focused node's edges
   ctx.globalAlpha=1;ctx.font=`500 10.5px ${c.font}`;ctx.textAlign='center';ctx.textBaseline='middle';
   for(const [x,y,t,col] of tags){const w=ctx.measureText(t).width+12;ctx.fillStyle=c.raise;ctx.strokeStyle=c.line;ctx.lineWidth=1;ctx.beginPath();rr(x-w/2,y-9,w,18,9);ctx.fill();ctx.stroke();ctx.fillStyle=col===c.ink3?c.ink2:col;ctx.fillText(t,x,y+.5)}
   // link being drawn
+  if(ui.sel)placeCard();
   if(G.linkFrom&&G.linkPos){const [ax,ay]=S(G.linkFrom);let bx=G.linkPos.x,by=G.linkPos.y;if(G.linkTo)[bx,by]=S(G.linkTo);
     ctx.strokeStyle=c.accent;ctx.lineWidth=2;ctx.setLineDash([6,5]);ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();ctx.setLineDash([])}
 }
@@ -768,13 +775,13 @@ const wide=()=>innerWidth>860;
 function fit(animate=true){
   if(!G.vis.length||!G.w)return;
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const n of G.vis){x0=Math.min(x0,n.x);x1=Math.max(x1,n.x);y0=Math.min(y0,n.y);y1=Math.max(y1,n.y)}
-  const side=wide()?96:44,pl=side,pr=(ui.sel&&wide()?400:0)+side,pt=ui.layout==='time'?110:80,pb=(ui.sel&&!wide()?G.h*.6:0)+(db.demo?120:76);
+  const side=wide()?96:44,pl=side,pr=side,pt=ui.layout==='time'?110:80,pb=(ui.sel&&!wide()?G.h*.6:0)+76;
   const w=Math.max(120,G.w-pl-pr),h=Math.max(120,G.h-pt-pb);
   const k=clamp(Math.min(w/Math.max(x1-x0,60),h/Math.max(y1-y0,60)),KMIN,1.35);
   camTo(pl+w/2-(x0+x1)/2*k,pt+h/2-(y0+y1)/2*k,k,animate);
 }
 function focusNode(n){
-  const k=Math.max(G.k,.8),cx=wide()&&ui.sel?(G.w-400)/2:G.w/2,cy=!wide()&&ui.sel?G.h*.2:G.h/2;
+  const k=Math.max(G.k,.8),cx=G.w/2,cy=!wide()&&ui.sel?G.h*.2:G.h/2;
   camTo(cx-n.x*k,cy-n.y*k,k);
 }
 function zoomAt(px,py,nk){nk=clamp(nk,KMIN,KMAX);const wx=(px-G.x)/G.k,wy=(py-G.y)/G.k;G.k=nk;G.x=px-wx*nk;G.y=py-wy*nk;G.anim=null;G.dirty=true}
@@ -827,6 +834,7 @@ cv.addEventListener('pointercancel',e=>{G.ptrs.delete(e.pointerId);G.pinch=null;
 cv.addEventListener('pointerleave',()=>{if(G.hover){G.hover=null;G.dirty=true}hideTip()});
 cv.addEventListener('wheel',e=>{e.preventDefault();const p=ptr(e);zoomAt(p.x,p.y,G.k*Math.exp(-e.deltaY*(e.ctrlKey?.012:.0016)));hideTip()},{passive:false});
 function showTip(n,p){
+  return; // titles are on the graph and details open on click
   const t=$('#tip');
   const meta=n.type==='paper'?[n.authors&&clip(n.authors,60),[n.year,n.venue].filter(Boolean).join(' · ')].filter(Boolean).join('<br>'):'';
   t.innerHTML=`<span class="l-type t-${n.type}">${shapeSvg(n.type,12)}<small>${TYPES[n.type].label}${n.type==='paper'?' · '+STATUS[n.status]:''}</small></span>
@@ -855,15 +863,15 @@ function addEdge(s,t,rel){
   if(db.edges.some(e=>e.rel===rel&&((e.source===s&&e.target===t)||(!RELS[rel].directed&&e.source===t&&e.target===s))))return toast('这条关系已经有了');
   checkpoint();db.edges.push({id:uid(),source:s,target:t,rel});changed(.35);toast('已连线：'+RELS[rel].label,{action:{label:'撤销',fn:undo}});
 }
-function paintHint(){$('#hint').hidden=!db.nodes.length||(db.demo&&$('#stage').clientWidth<1000)}
+function paintHint(){$('#hint').hidden=!db.nodes.length}
 function renderEmpty(){
   const el=$('#empty');
-  if(!db.nodes.length){el.hidden=false;el.innerHTML=`<div><h2>从第一篇文献开始</h2><p>每读一篇，记下作者、标题和一句话核心，再把它连到相关的概念和别的文献上。</p><div class="row"><button class="btn primary" data-a="new">${ic('plus',16)}添加文献</button><button class="btn" data-a="demo">看看示例</button></div></div>`}
+  if(!db.nodes.length){el.hidden=!libReady;el.innerHTML=`<div><h2>从第一篇文献开始</h2><p>每读一篇，记下作者、标题和一句话核心，再把它连到相关的概念和别的文献上。</p><div class="row"><button class="btn primary" data-a="new">${ic('plus',16)}添加文献</button></div></div>`}
   else if(!G.vis.length){el.hidden=false;el.innerHTML=`<div><h2>筛选后没有条目</h2><p>当前的类型、状态、年份或标签筛选把所有条目都排除了。</p><div class="row"><button class="btn" data-a="reset">重置筛选</button></div></div>`}
   else el.hidden=true;
   paintHint();
 }
-$('#empty').addEventListener('click',e=>{const a=e.target.closest('button')?.dataset.a;if(a==='new')openEditor();if(a==='demo')loadDemo();if(a==='reset'){resetFilters();renderRail();refreshGraph(.5);renderList()}});
+$('#empty').addEventListener('click',e=>{const a=e.target.closest('button')?.dataset.a;if(a==='new')openEditor();if(a==='reset'){resetFilters();renderRail();refreshGraph(.5);renderList()}});
 
 /* ---------- selection & detail ---------- */
 function select(id,focus=false){
@@ -871,36 +879,48 @@ function select(id,focus=false){
   $$('#viewList tr.sel').forEach(r=>r.classList.remove('sel'));if(ui.sel)$(`#viewList tr[data-id="${CSS.escape(ui.sel)}"]`)?.classList.add('sel');
   if(ui.sel&&ui.view==='graph'){const n=byId.get(ui.sel);
     if(focus){if(!G.visSet.has(n.id)){resetFilters();renderRail();refreshGraph(.3);renderList()}focusNode(n)}
-    else if(G.visSet.has(n.id)){const sx=n.x*G.k+G.x,sy=n.y*G.k+G.y;if(wide()?sx>G.w-420:sy>G.h*.34)focusNode(n)}}
+    else if(G.visSet.has(n.id)&&!wide()&&n.y*G.k+G.y>G.h*.36)focusNode(n)}
 }
 const safeUrl=u=>{u=String(u||'').trim();if(!u)return'';return /^https?:\/\//i.test(u)?u:'https://'+u.replace(/^\/+/,'')};
 function renderDetail(){
-  const n=byId.get(ui.sel),p=$('#panel');p.classList.toggle('open',!!n);$('#stage').classList.toggle('has-panel',!!n);
+  const n=byId.get(ui.sel),p=$('#panel');p.classList.toggle('open',!!n);
   if(!n){return}
   const groups=new Map(),push=(k,o,e)=>{if(!groups.has(k))groups.set(k,[]);groups.get(k).push([byId.get(o),e])};
   for(const e of db.edges){if(e.source===n.id)push(RELS[e.rel].label,e.target,e);else if(e.target===n.id)push(RELS[e.rel].directed?RELS[e.rel].inv:RELS[e.rel].label,e.source,e)}
   const href=n.doi?'https://doi.org/'+encodeURI(n.doi):safeUrl(n.url);
-  p.innerHTML=`<div class="p-head"><span class="l-type t-${n.type}">${shapeSvg(n.type,13)}<b style="font-weight:600">${TYPES[n.type].label}</b></span>
-      ${n.type==='paper'?`<span class="pill ${n.status}">${STATUS[n.status]}</span>`:''}<span class="grow"></span>
-      ${n.pin?`<button class="icon-btn" data-a="unpin" aria-pressed="true" aria-label="解除固定位置" title="位置已固定，点击解除">${ic('pin')}</button>`:''}
-      ${n.type==='paper'?`<button class="icon-btn ${n.star?'star-on':''}" data-a="star" aria-label="关键文献" title="关键文献" aria-pressed="${n.star}">${ic('star')}</button>`:''}
-      <button class="icon-btn" data-a="close" aria-label="关闭">${ic('x')}</button></div>
+  const meta=[n.year?`<span class="mono">${n.year}</span>`:'',n.venue?`<i>${esc(n.venue)}</i>`:''].filter(Boolean).join(' · ');
+  p.innerHTML=`<div class="p-head"><span class="l-type t-${n.type}">${shapeSvg(n.type,13)}<b style="font-weight:600">${TYPES[n.type].label}</b></span><span class="grow"></span>
+      ${n.pin?`<button class="icon-btn" data-a="unpin" aria-pressed="true" aria-label="解除固定位置" title="位置已固定，点击解除">${ic('pin',16)}</button>`:''}
+      <button class="icon-btn" data-a="close" aria-label="关闭">${ic('x',16)}</button></div>
     <div class="p-body">
-      <div><h2 class="p-title">${esc(n.title)}</h2>
-      ${n.type==='paper'&&(n.authors||n.year||n.venue)?`<p class="p-meta" style="margin-top:8px">${esc(n.authors)}${n.authors?'<br>':''}<span class="mono">${n.year||''}</span>${n.year&&n.venue?' · ':''}<i>${esc(n.venue)}</i></p>`:''}${n.key?`<p class="mono muted" style="margin-top:4px">\\cite{${esc(n.key)}}</p>`:''}</div>
+      <h2 class="p-title">${esc(n.title)}</h2>
+      ${n.authors||meta?`<p class="p-meta">${esc(n.authors)}${n.authors&&meta?'<br>':''}${meta}</p>`:''}
       ${n.core?`<div class="callout"><small>${TYPES[n.type].call}</small><div class="math">${esc(n.core)}</div></div>`:`<p class="muted">还没写${TYPES[n.type].call}。</p>`}
-      ${n.type==='paper'?`<div class="seg" data-seg="status" style="align-self:flex-start">${Object.keys(STATUS).map(s=>`<button data-st="${s}" aria-pressed="${n.status===s}">${STATUS[s]}</button>`).join('')}</div>`:''}
-      ${n.notes?`<div class="p-sec"><h5>笔记</h5><div class="notes math">${esc(n.notes)}</div></div>`:''}
-      ${n.tags.length?`<div class="chips">${n.tags.map(t=>`<button class="chip" data-tag="${esc(t)}">${esc(t)}</button>`).join('')}</div>`:''}
-      <div class="p-sec"><h5>关系 · ${adj.get(n.id).size}</h5>${groups.size?[...groups].map(([k,items])=>`<div class="rel-g"><span>${k}</span>${items.map(([o])=>
-        `<button class="rel-i" data-go="${esc(o.id)}">${shapeSvg(o.type,12,o.type==='paper'&&o.status==='todo')}<span title="${esc(o.title)}">${esc(o.type==='paper'?shortLabel(o)+' · '+o.title:o.title)}</span></button>`).join('')}</div>`).join('')
-        :'<p class="muted">还没有关系。点下面的「编辑」添加，或在图上按住 Shift 从这个节点拖到另一个节点。</p>'}</div>
     </div>
-    <div class="p-foot"><button class="btn sm primary" data-a="edit">${ic('edit',15)}编辑</button>
-      ${href?`<a class="btn sm" href="${esc(href)}" target="_blank" rel="noopener" style="text-decoration:none">${ic('ext',15)}原文</a>`:''}
-      <button class="btn sm" data-a="md" title="复制成 Obsidian 笔记">${ic('copy',15)}Obsidian</button><span class="grow"></span>
+    <div class="p-foot"><button class="btn sm" data-a="edit">${ic('edit',15)}编辑</button>
+      ${href?`<a class="btn sm" href="${esc(href)}" target="_blank" rel="noopener" style="text-decoration:none">${ic('ext',15)}原文</a>`:''}<span class="grow"></span>
       <button class="btn sm danger" data-a="del" aria-label="删除">${ic('trash',15)}</button></div>`;
   if(window.renderMathInElement)$$('.math',p).forEach(el=>{try{renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false})}catch(_){}});
+  placeCard(true);
+}
+// the card sits beside its node and follows it
+function cardRect(side,n,w,h,sw,sh){
+  const sx=n.x*G.k+G.x,sy=n.y*G.k+G.y,r=rad(n)*zf()+14,x=side==='r'?sx+r:side==='l'?sx-r-w:sx-w/2,y=side==='b'?sy+r:side==='t'?sy-r-h:sy-30;
+  return [clamp(x,10,Math.max(10,sw-w-10)),clamp(y,62,Math.max(62,sh-h-10)),sx,sy];
+}
+function placeCard(pick){
+  const p=$('#panel'),n=byId.get(ui.sel);if(!n||!wide())return;
+  const st=$('#stage'),sw=st.clientWidth,sh=st.clientHeight,w=p.offsetWidth,h=p.offsetHeight;let x=sw-w-16,y=16;
+  if(ui.view==='graph'&&G.visSet.has(n.id)){
+    if(pick||!G.cardSide){ // choose the side that hides the fewest other nodes, once per selection
+      let best=null;
+      for(const side of ['r','l','b','t']){const [cx,cy,sx,sy]=cardRect(side,n,w,h,sw,sh);
+        let sc=(sx>cx-6&&sx<cx+w+6&&sy>cy-6&&sy<cy+h+6?100:0)+'rlbt'.indexOf(side)*.1;
+        for(const m of G.vis){if(m===n)continue;const mx=m.x*G.k+G.x,my=m.y*G.k+G.y;if(mx>cx-24&&mx<cx+w+24&&my>cy-50&&my<cy+h+16)sc+=adj.get(n.id).has(m.id)?2:1}
+        if(!best||sc<best[0])best=[sc,side]}
+      G.cardSide=best[1]}
+    [x,y]=cardRect(G.cardSide,n,w,h,sw,sh)}
+  p.style.left=Math.round(x)+'px';p.style.top=Math.round(y)+'px';
 }
 $('#panel').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const n=byId.get(ui.sel);if(!n)return;
@@ -916,7 +936,7 @@ $('#panel').addEventListener('click',e=>{
   if(a==='md')copyText(toMarkdown(n),'已复制，可以直接粘贴进 Obsidian');
 });
 function removeNode(id){
-  const n=byId.get(id);if(!n)return;checkpoint();
+  const n=byId.get(id);if(!n)return;checkpoint();if(n.libRev!==undefined)(db.gone=db.gone||[]).push(id);
   db.nodes=db.nodes.filter(x=>x.id!==id);db.edges=db.edges.filter(e=>e.source!==id&&e.target!==id);
   if(ui.sel===id)ui.sel=null;changed(.3);toast('已删除「'+clip(n.title,18)+'」',{action:{label:'撤销',fn:undo}});
 }
@@ -1080,7 +1100,7 @@ function renderChrome(){
   $('#viewGraph').hidden=ui.view!=='graph';$('#viewList').hidden=ui.view!=='list';
   $('#btnLink').setAttribute('aria-pressed',ui.linkMode);$('#btnLabels').setAttribute('aria-pressed',ui.labels);
   $('#btnTheme').innerHTML=ic(document.documentElement.dataset.theme==='dark'?'sun':'moon');
-  $('#demoBanner').hidden=!db.demo||!db.nodes.length;paintHint();
+  paintHint();
   $('#hint').textContent=ui.linkMode?'连线模式：从一个节点拖到另一个节点':'拖动节点可固定它的位置 · Shift+拖动连线 · 双击空白处新建';
 }
 function setView(v){ui.view=v;saveUi();renderChrome();if(v==='list')renderList();else{resize();G.dirty=true}}
@@ -1103,10 +1123,9 @@ $('#menu').addEventListener('click',async e=>{
   if(a==='export')exportJson();
   if(a==='import')$('#fileIn').click();
   if(a==='bib')$('#bibIn').click();
-  if(a==='demo')loadDemo();
   if(a==='keys')showKeys();
   if(a==='clear'){if(!db.nodes.length)return toast('已经是空的');
-    if(await ask('清空全部条目？',`会删除 ${db.nodes.length} 个条目和 ${db.edges.length} 条关系。可以用 Ctrl+Z 撤销，但建议先导出备份。`,[{label:'取消',value:false},{label:'清空',value:true,kind:'danger'}])){checkpoint();db={version:1,nodes:[],edges:[],demo:false};ui.sel=null;resetFilters();changed(0);toast('已清空',{action:{label:'撤销',fn:undo}})}}
+    if(await ask('清空全部条目？',`会删除 ${db.nodes.length} 个条目和 ${db.edges.length} 条关系。可以用 Ctrl+Z 撤销，但建议先导出备份。`,[{label:'取消',value:false},{label:'清空',value:true,kind:'danger'}])){checkpoint();db={version:1,nodes:[],edges:[],demo:false,gone:[...(db.gone||[]),...db.nodes.filter(n=>n.libRev!==undefined).map(n=>n.id)],libEdges:db.libEdges||[]};ui.sel=null;resetFilters();changed(0);toast('已清空',{action:{label:'撤销',fn:undo}})}}
 });
 function exportJson(){
   const blob=new Blob([JSON.stringify({app:'mailuo',exported:new Date().toISOString(),...db},null,1)],{type:'application/json'}),a=document.createElement('a');
@@ -1181,15 +1200,6 @@ function importBib(text){
   resetFilters();changed(1);setTimeout(()=>fit(),RM?30:900);toast(`BibTeX：新增 ${add} 篇，更新 ${upd} 篇`,{action:{label:'撤销',fn:undo}});
 }
 $('#bibIn').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{importBib(await f.text())}catch(_){toast('读取文件失败',{bad:true})}});
-function loadDemo(){
-  const d=demoData(),have=new Set(db.nodes.map(n=>n.id));if(d.nodes.every(n=>have.has(n.id)))return toast('示例数据已经在图里了');
-  checkpoint();const was=db.nodes.length;for(const n of d.nodes)if(!have.has(n.id))db.nodes.push(n);
-  const eh=new Set(db.edges.map(x=>x.id));for(const x of d.edges)if(!eh.has(x.id))db.edges.push(x);
-  db.demo=!was;resetFilters();changed(1);setTimeout(()=>fit(),RM?30:900);toast('已载入示例数据',{action:{label:'撤销',fn:undo}});
-}
-$('#demoClear').onclick=()=>{checkpoint();const keep=db.nodes.filter(n=>!n.id.startsWith('d-')),ids=new Set(keep.map(n=>n.id));
-  db={version:1,nodes:keep,edges:db.edges.filter(e=>ids.has(e.source)&&ids.has(e.target)),demo:false};if(!ids.has(ui.sel))ui.sel=null;resetFilters();changed(.4);toast('示例已清空',{action:{label:'撤销',fn:undo}})};
-$('#demoKeep').onclick=()=>{db.demo=false;save();renderChrome()};
 function showKeys(){
   $('#askT').textContent='快捷键';
   $('#askB').innerHTML=`<div class="keys">${[['N','新建条目'],['/','搜索'],['F','适应窗口'],['L','连线模式'],['1 / 2','图谱 / 文献表'],['T','力导向 / 时间轴'],['E','编辑选中的条目'],['Delete','删除选中的条目'],['Ctrl+Z','撤销'],['Esc','关闭']].map(([k,v])=>`<kbd>${k}</kbd><span>${v}</span>`).join('')}</div>`;
@@ -1251,6 +1261,7 @@ if(unplaced)for(let i=0;i<260;i++)tick();
 fit(false);G.alpha=unplaced?.05:0;renderList();renderDetail();
 new ResizeObserver(()=>{const had=G.w;resize();if(!had&&G.w)fit(false)}).observe($('#stage'));
 if(document.fonts?.ready)document.fonts.ready.then(()=>{G.dirty=true});
+syncLibrary();
 window.addEventListener('beforeunload',()=>{try{clearTimeout(saveT);if(byId.size||localStorage.getItem(LS_DB))localStorage.setItem(LS_DB,JSON.stringify(db))}catch(e){}});
 window.__mailuo={get db(){return db},G,ui,fit,parseBib,detex};
 requestAnimationFrame(frame);
