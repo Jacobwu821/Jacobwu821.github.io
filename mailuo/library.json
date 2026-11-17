@@ -128,6 +128,36 @@
      "tex": ""
     }
    ]
+  },
+  {
+   "id": "lib-agrawal-pattanayak-1979",
+   "type": "paper",
+   "rev": "2026-11-18",
+   "title": "Gaussian beam propagation beyond the paraxial approximation",
+   "authors": "G. P. Agrawal, D. N. Pattanayak",
+   "year": 1979,
+   "venue": "Journal of the Optical Society of America 69(4), 575–578",
+   "doi": "10.1364/JOSA.69.000575",
+   "url": "",
+   "core": "研究自由空间高斯光束在傍轴近似之外的传播，以 $f=1/(k\\omega_0)$ 为展开参数。结论：$f<0.1$ 时，傍轴场与精确场的差别可以忽略。",
+   "formulas": [
+    {
+     "t": "入射面上的高斯场，式 (3)；这里的 $\\omega_0$ 是 $1/e$ 光强半径",
+     "tex": "E\\propto\\exp\\!\\left[-\\frac{r^2}{2\\omega_0^2}\\right]"
+    },
+    {
+     "t": "展开参数，式 (8)",
+     "tex": "f=\\frac{1}{k\\omega_0}"
+    },
+    {
+     "t": "换算（非原文）：常规束腰 $w_0=\\sqrt2\\,\\omega_0$，所以 $f<0.1$ 相当于",
+     "tex": "kw_0\\gtrsim 10\\sqrt2\\approx 14,\\qquad w_0\\gtrsim 2.25\\,\\lambda"
+    },
+    {
+     "t": "符号：$k$ 是波数，$\\omega_0$ 是原文的束腰参数，$w_0$ 是常规的 $1/e^2$ 光强半径。",
+     "tex": ""
+    }
+   ]
   }
  ],
  "edges": [
