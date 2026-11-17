@@ -210,6 +210,24 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
 .fx-m{overflow-x:auto;overflow-y:hidden;font-size:.9em;font-family:var(--font-mono)}
 .fx-m .katex-display{margin:.5em 0 .3em;text-align:left}
 .fx-m .katex-display>.katex{text-align:left}
+.figs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fig{display:flex;flex-direction:column;gap:3px;align-items:stretch;border:1px solid var(--line-2);border-radius:10px;padding:5px;background:var(--surface);min-width:0}
+.fig:hover{border-color:var(--ink-3)}
+.fig img{width:100%;height:76px;object-fit:contain;background:#fff;border-radius:6px;display:block}
+.fig span{font-size:11.5px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+.fig.add{align-items:center;justify-content:center;border-style:dashed;color:var(--ink-3);min-height:104px}
+.panel.drop{outline:2px dashed var(--accent);outline-offset:-4px}
+#askScrim{z-index:130}
+#lbScrim{display:flex;justify-content:center}
+.lb{flex:0 1 1200px;min-width:0;height:100%;display:flex;flex-direction:column;gap:10px}
+.lb-top{display:flex;align-items:center;gap:8px;color:#fff}
+.lb-top input{background:none;border:0;border-bottom:1px solid transparent;color:#fff;font:600 15px var(--font-body);min-width:0;flex:0 1 420px;outline:none;padding:4px 2px}
+.lb-top input:focus{border-bottom-color:var(--accent)}
+.lb .icon-btn{color:#fff}
+.lb .icon-btn:hover{background:rgba(255,255,255,.14);color:#fff}
+.lb-img{flex:1;min-height:0;min-width:0;display:flex;align-items:center;gap:8px}
+.lb-frame{flex:1;min-width:0;height:100%;display:flex;align-items:center;justify-content:center}
+.lb-frame img{max-width:100%;max-height:100%;background:#fff;border-radius:10px;padding:12px;display:block}
 .star-on{color:var(--accent)}
 .star-on svg{fill:currentColor}
 
@@ -308,12 +326,17 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
       <button data-act="import"><i data-ic="up" data-s="16"></i>导入备份</button>
       <button data-act="bib"><i data-ic="up" data-s="16"></i>导入 BibTeX (.bib)</button>
       <hr>
+      <button data-act="figin"><i data-ic="img" data-s="16"></i>导入图片包</button>
+      <button data-act="figout"><i data-ic="down" data-s="16"></i>导出图片包</button>
+      <hr>
       <button data-act="keys"><i data-ic="key" data-s="16"></i>快捷键</button>
       <hr>
       <button data-act="clear" class="danger"><i data-ic="trash" data-s="16"></i>清空全部</button>
     </div>
     <input type="file" id="fileIn" accept="application/json,.json" hidden>
     <input type="file" id="bibIn" hidden>
+    <input type="file" id="imgIn" accept="image/*" multiple hidden>
+    <input type="file" id="figIn" accept="application/json,.json" hidden>
   </div>
 </header>
 
@@ -386,6 +409,7 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
   </form>
 </div>
 <div class="scrim" id="askScrim" hidden><div class="dialog sm" role="alertdialog" aria-labelledby="askT"><header class="dlg-head"><h2 id="askT"></h2></header><div class="dlg-body" id="askB"></div><footer class="dlg-foot" id="askF"></footer></div></div>
+<div class="scrim" id="lbScrim" hidden><div class="lb"><div class="lb-top"><input id="lbName" aria-label="图片名称" autocomplete="off"><span class="grow"></span><span id="lbPos" class="mono" style="opacity:.7"></span><button class="icon-btn" id="lbDel" aria-label="删除这张图片" title="删除这张图片"><i data-ic="trash"></i></button><button class="icon-btn" id="lbClose" aria-label="关闭"><i data-ic="x"></i></button></div><div class="lb-img"><button class="icon-btn" id="lbPrev" aria-label="上一张"><i data-ic="left" data-s="22"></i></button><div class="lb-frame"><img id="lbImg" alt=""></div><button class="icon-btn" id="lbNext" aria-label="下一张"><i data-ic="right" data-s="22"></i></button></div></div></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <noscript><p style="padding:24px">这个页面需要 JavaScript。</p></noscript>
 
@@ -417,7 +441,7 @@ const I={
  star:'<path d="m12 3 2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 16.9 6.6 19.8l1.1-6.1L3.2 9.4l6.1-.8z"/>',
  swap:'<path d="M7 7h13l-3-3M17 17H4l3 3"/>',key:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M8 14h8"/>',
  spark:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
- label:'<path d="M5 7h14M5 12h9M5 17h12"/>',pin:'<path d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7"/>',relay:'<path d="M20 11a8 8 0 0 0-14.5-4M4 4v4h4M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4"/>',arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>'
+ label:'<path d="M5 7h14M5 12h9M5 17h12"/>',left:'<path d="m14 6-6 6 6 6"/>',right:'<path d="m10 6 6 6-6 6"/>',img:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/>',pin:'<path d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7"/>',relay:'<path d="M20 11a8 8 0 0 0-14.5-4M4 4v4h4M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4"/>',arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>'
 };
 const ic=(n,s=18)=>`<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]}</svg>`;
 $$('[data-ic]').forEach(el=>{el.outerHTML=ic(el.dataset.ic,+el.dataset.s||18)});
@@ -932,13 +956,14 @@ function renderDetail(){
       ${n.authors||meta?`<p class="p-meta">${esc(n.authors)}${n.authors&&meta?'<br>':''}${meta}</p>`:''}
       ${n.core?`<div class="callout"><small>${TYPES[n.type].call}</small><div class="math">${esc(n.core)}</div></div>`:`<p class="muted">还没写${TYPES[n.type].call}。</p>`}
       ${n.formulas.length?`<div class="p-sec"><h5>核心公式</h5>${n.formulas.map(f=>`<div class="fx">${f.t?`<div class="fx-t math">${esc(f.t)}</div>`:''}${f.tex?`<div class="fx-m" data-tex="${esc(f.tex)}">${esc(f.tex)}</div>`:''}</div>`).join('')}</div>`:''}
+      <div class="p-sec"><h5>图片 <span id="figN"></span></h5><div class="figs" id="figBox"></div></div>
     </div>
     <div class="p-foot"><button class="btn sm" data-a="edit">${ic('edit',15)}编辑</button>
       ${href?`<a class="btn sm" href="${esc(href)}" target="_blank" rel="noopener" style="text-decoration:none">${ic('ext',15)}原文</a>`:''}<span class="grow"></span>
       <button class="btn sm danger" data-a="del" aria-label="删除">${ic('trash',15)}</button></div>`;
   if(window.renderMathInElement)$$('.math',p).forEach(el=>{try{renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false})}catch(_){}});
   if(window.katex)$$('.fx-m',p).forEach(el=>{try{katex.render(el.dataset.tex,el,{displayMode:true,throwOnError:false})}catch(_){}});
-  placeCard(true);
+  placeCard(true);paintFigs();
 }
 // the card sits beside its node and follows it
 function cardRect(side,n,w,h,sw,sh){
@@ -961,6 +986,8 @@ function placeCard(pick){
 }
 $('#panel').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const n=byId.get(ui.sel);if(!n)return;
+  if(b.dataset.fig!==undefined)return openLb(+b.dataset.fig);
+  if(b.dataset.a==='addfig')return $('#imgIn').click();
   if(b.dataset.go)return select(b.dataset.go,true);
   if(b.dataset.st){checkpoint();n.status=b.dataset.st;return changed(0)}
   if(b.dataset.tag){ui.f.tags=new Set([b.dataset.tag]);renderRail();refreshGraph(.5);renderList();return}
@@ -1162,6 +1189,8 @@ $('#menu').addEventListener('click',async e=>{
   if(a==='export')exportJson();
   if(a==='import')$('#fileIn').click();
   if(a==='bib')$('#bibIn').click();
+  if(a==='figin')$('#figIn').click();
+  if(a==='figout')exportFigs();
   if(a==='keys')showKeys();
   if(a==='clear'){if(!db.nodes.length)return toast('已经是空的');
     if(await ask('清空全部条目？',`会删除 ${db.nodes.length} 个条目和 ${db.edges.length} 条关系。可以用 Ctrl+Z 撤销，但建议先导出备份。`,[{label:'取消',value:false},{label:'清空',value:true,kind:'danger'}])){checkpoint();db={version:1,nodes:[],edges:[],demo:false,gone:[...(db.gone||[]),...db.nodes.filter(n=>n.libRev!==undefined).map(n=>n.id)],libEdges:db.libEdges||[]};ui.sel=null;resetFilters();changed(0);toast('已清空',{action:{label:'撤销',fn:undo}})}}
@@ -1183,6 +1212,65 @@ $('#fileIn').addEventListener('change',async e=>{
     const eh=new Set(db.edges.map(x=>x.source+'>'+x.target+'>'+x.rel));for(const x of d.edges)if(!eh.has(x.source+'>'+x.target+'>'+x.rel))db.edges.push(x)}
   resetFilters();changed(1);setTimeout(()=>fit(),RM?30:900);toast('导入完成',{action:{label:'撤销',fn:undo}});
 });
+/* ---------- figures: kept only in this browser (IndexedDB), never uploaded ---------- */
+const IMG={db:null,
+  open(){return this.db?Promise.resolve(this.db):new Promise((res,rej)=>{const r=indexedDB.open('mailuo_img',1);
+    r.onupgradeneeded=()=>{r.result.createObjectStore('figs',{keyPath:'id'}).createIndex('node','node')};r.onsuccess=()=>{this.db=r.result;res(this.db)};r.onerror=()=>rej(r.error)})},
+  async run(mode,fn){const d=await this.open();return new Promise((res,rej)=>{const q=fn(d.transaction('figs',mode).objectStore('figs'));q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})},
+  list(node){return this.run('readonly',s=>s.index('node').getAll(node)).then(a=>a.sort((x,y)=>x.ord-y.ord))},
+  all(){return this.run('readonly',s=>s.getAll())},put(rec){return this.run('readwrite',s=>s.put(rec))},del(id){return this.run('readwrite',s=>s.delete(id))}};
+let figList=[],figUrls=[],lbAt=0;
+async function paintFigs(){
+  const id=ui.sel;if(!id||!$('#figBox'))return;let list=[];try{list=await IMG.list(id)}catch(e){}
+  if(ui.sel!==id||!$('#figBox'))return;
+  figUrls.forEach(u=>URL.revokeObjectURL(u));figList=list;figUrls=list.map(f=>URL.createObjectURL(f.blob));
+  $('#figBox').innerHTML=list.map((f,i)=>`<button class="fig" data-fig="${i}" title="${esc(f.name)}"><img src="${figUrls[i]}" alt="${esc(f.name)}"><span>${esc(f.name)}</span></button>`).join('')
+    +`<button class="fig add" data-a="addfig" title="添加图片，也可以直接粘贴或拖进来">${ic('plus',18)}<span>添加</span></button>`;
+  $('#figN').textContent=list.length?'· '+list.length:'';placeCard();
+  if(!$('#lbScrim').hidden){if(!list.length)closeLb();else showLb(Math.min(lbAt,list.length-1))}
+}
+async function addImages(files){
+  const node=ui.sel,imgs=[...files].filter(f=>f.type.startsWith('image/'));if(!node||!imgs.length)return;
+  try{const have=await IMG.list(node);let ord=have.length?Math.max(...have.map(f=>f.ord))+1:0;
+    for(const f of imgs){const nm=String(f.name||'').replace(/\.[a-z0-9]+$/i,'');await IMG.put({id:uid(),node,name:nm&&nm!=='image'?nm:'图 '+(ord+1),ord:ord++,blob:f})}
+    try{navigator.storage?.persist?.()}catch(_){}
+    toast(`已添加 ${imgs.length} 张图片，只存在这个浏览器里`);paintFigs();
+  }catch(e){toast('图片保存失败：浏览器存储不可用',{bad:true})}
+}
+$('#imgIn').addEventListener('change',e=>{addImages(e.target.files);e.target.value=''});
+document.addEventListener('paste',e=>{if(!ui.sel||!$('#edScrim').hidden||/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName))return;
+  const fs=[...(e.clipboardData?.files||[])].filter(f=>f.type.startsWith('image/'));if(fs.length){e.preventDefault();addImages(fs)}});
+const pnl=$('#panel');
+pnl.addEventListener('dragover',e=>{if([...(e.dataTransfer?.types||[])].includes('Files')){e.preventDefault();pnl.classList.add('drop')}});
+pnl.addEventListener('dragleave',()=>pnl.classList.remove('drop'));
+pnl.addEventListener('drop',e=>{e.preventDefault();pnl.classList.remove('drop');addImages(e.dataTransfer.files)});
+function showLb(i){lbAt=i;const f=figList[i];if(!f)return;$('#lbImg').src=figUrls[i];$('#lbImg').alt=f.name;$('#lbName').value=f.name;$('#lbPos').textContent=(i+1)+' / '+figList.length;
+  $('#lbPrev').style.visibility=$('#lbNext').style.visibility=figList.length>1?'visible':'hidden'}
+function openLb(i){$('#lbScrim').hidden=false;showLb(i)}
+function closeLb(){$('#lbScrim').hidden=true;$('#lbImg').removeAttribute('src')}
+function lbGo(d){if(figList.length)showLb((lbAt+d+figList.length)%figList.length)}
+$('#lbPrev').onclick=()=>lbGo(-1);$('#lbNext').onclick=()=>lbGo(1);$('#lbClose').onclick=closeLb;
+$('#lbScrim').addEventListener('pointerdown',e=>{if(e.target===e.currentTarget||e.target.classList.contains('lb-img')||e.target.classList.contains('lb-frame'))closeLb()});
+$('#lbName').addEventListener('change',async e=>{const f=figList[lbAt];if(!f)return;f.name=e.target.value.trim()||f.name;try{await IMG.put(f)}catch(_){}paintFigs()});
+$('#lbDel').onclick=async()=>{const f=figList[lbAt];if(!f)return;if(!await ask('删除这张图片？',`「${f.name}」会从这个浏览器里删除，不能撤销。`,[{label:'取消',value:false},{label:'删除',value:true,kind:'danger'}]))return;
+  try{await IMG.del(f.id)}catch(_){}toast('已删除图片');paintFigs()};
+$('#figIn').addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const d=JSON.parse(await f.text());if(d.app!=='mailuo-figs'||!Array.isArray(d.items))throw 0;let n=0;
+    for(const it of d.items){const bin=atob(it.data),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+      await IMG.put({id:String(it.id||uid()),node:String(it.node),name:String(it.name||''),ord:+it.ord||0,blob:new Blob([u],{type:it.mime||'image/png'})});n++}
+    try{navigator.storage?.persist?.()}catch(_){}
+    toast(`已导入 ${n} 张图片，只存在这个浏览器里`);paintFigs();
+  }catch(_){toast('这不是有效的图片包',{bad:true})}
+});
+async function exportFigs(){
+  let all=[];try{all=await IMG.all()}catch(e){}if(!all.length)return toast('这个浏览器里还没有图片');
+  const items=[];for(const f of all){const u=new Uint8Array(await f.blob.arrayBuffer());let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));
+    items.push({id:f.id,node:f.node,name:f.name,ord:f.ord,mime:f.blob.type||'image/png',data:btoa(s)})}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({app:'mailuo-figs',exported:new Date().toISOString(),items})],{type:'application/json'}));
+  a.download='mailuo-figures-'+today()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast(`已导出 ${items.length} 张图片`);
+}
+
 /* ---------- BibTeX import ---------- */
 function parseBib(text){
   const out=[],n=text.length,mac={};let i=0;
@@ -1269,6 +1357,7 @@ $('#qDrop').addEventListener('click',e=>{const b=e.target.closest('button');if(!
 /* keyboard */
 document.addEventListener('keydown',e=>{
   const typing=/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName);
+  if(!$('#lbScrim').hidden&&$('#askScrim').hidden){if(e.key==='Escape')closeLb();else if(document.activeElement!==$('#lbName')){if(e.key==='ArrowLeft')lbGo(-1);if(e.key==='ArrowRight')lbGo(1)}return}
   if(e.key==='Escape'){
     if(!$('#askScrim').hidden){askCancel&&askCancel();return}
     if(!$('#edScrim').hidden){if(!$('#relDrop').hidden){$('#relDrop').hidden=true;return}closeEditor();return}
