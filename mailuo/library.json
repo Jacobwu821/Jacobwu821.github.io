@@ -4,14 +4,28 @@
   {
    "id": "lib-yu-luk-1984",
    "type": "paper",
-   "rev": "2026-11-17",
+   "rev": "2026-11-18",
    "title": "Field Patterns and Resonant Frequencies of High-Order Modes in an Open Resonator",
    "authors": "P. K. Yu, K. M. Luk",
    "year": 1984,
    "venue": "IEEE Transactions on Microwave Theory and Techniques 32(6), 641–645",
    "doi": "10.1109/TMTT.1984.1132746",
    "url": "",
-   "core": "用电磁微扰理论说明：传统方法给出的线偏振 $\\mathrm{TEM}_{pl}$ 模（$l>0$）并不是开放谐振腔的谐振模；提出另外两个系列的高阶模，给出更准确的谐振频率。"
+   "core": "用电磁微扰理论说明：传统方法给出的线偏振 $\\mathrm{TEM}_{pl}$ 模（$l>0$）并不是开放谐振腔的谐振模；提出另外两个系列的高阶模，给出更准确的谐振频率。",
+   "formulas": [
+    {
+     "t": "传统束波理论的谐振频率，式 (5)",
+     "tex": "f=\\frac{c}{2D}\\left[q+1+\\frac{2p+l+1}{\\pi}\\arccos\\!\\left(1-\\frac{D}{R_1}\\right)\\right]"
+    },
+    {
+     "t": "三项微扰相加后的频率修正，式 (34)；上行是 series A，下行是 series B",
+     "tex": "\\Delta f=\\frac{c}{2D}\\,\\frac{1}{4\\pi kR_1}\\begin{cases}2p^2+2pl-l^2+2p+5l-2\\\\[2pt] 2p^2+2pl-l^2+2p-3l-2\\end{cases}"
+    },
+    {
+     "t": "符号：$D$ 是两镜间距，$R_1$ 是反射镜曲率半径，$p$、$l$、$q$ 是径向、角向、轴向模数，$k$ 是自由空间传播常数。",
+     "tex": ""
+    }
+   ]
   },
   {
    "id": "lib-zeppenfeld-pinkse-2010",
@@ -28,38 +42,92 @@
   {
    "id": "lib-van-exter-2022",
    "type": "paper",
-   "rev": "2026-11-17",
+   "rev": "2026-11-18",
    "title": "Fine structure in Fabry-Perot microcavity spectra",
    "authors": "M. P. van Exter, M. Wubs, E. Hissink, C. Koks",
    "year": 2022,
    "venue": "Physical Review A 106, 013501",
    "doi": "10.1103/PhysRevA.106.013501",
    "url": "",
-   "core": "傍轴标量理论下同一阶的横模频率简并；非傍轴矢量理论解除这一简并，每一阶出现谱的精细结构。文章对带边界条件的 Maxwell 方程做微扰，算出微腔的精细结构，说明它来自多种非傍轴效应，并由镜面像差共同决定。"
+   "core": "傍轴标量理论下同一阶的横模频率简并；非傍轴矢量理论解除这一简并，每一阶出现谱的精细结构。文章对带边界条件的 Maxwell 方程做微扰，算出微腔的精细结构，说明它来自多种非傍轴效应，并由镜面像差共同决定。",
+   "formulas": [
+    {
+     "t": "谐振腔长，式 (6)",
+     "tex": "L_j=\\frac{\\lambda}{2}\\left[q+(N+1)\\frac{\\chi_0}{\\pi}+\\Delta\\tilde\\nu_j\\right]-2L_\\varphi"
+    },
+    {
+     "t": "非傍轴标量修正，式 (26)(27)",
+     "tex": "\\begin{gathered}\\Delta\\tilde\\nu_{\\mathrm{scalar},j}=\\frac{g(p,\\ell)+4}{8\\pi kR_m}\\\\[4pt] g(p,\\ell)+4=\\tfrac12(N+1)^2-\\tfrac32(\\ell^2-1)\\end{gathered}"
+    },
+    {
+     "t": "非傍轴矢量修正（自旋-轨道耦合），式 (33)",
+     "tex": "\\Delta\\tilde\\nu_{\\mathrm{vec},j}=\\frac{-1-\\ell\\cdot s}{2\\pi kR_m}"
+    },
+    {
+     "t": "平凹腔、球面镜的合并结果，式 (34)",
+     "tex": "\\varphi_{\\mathrm{non}}=2\\pi\\Delta\\tilde\\nu=\\frac{1}{kR_m}\\left[\\tfrac18\\left(N^2+2N-4\\right)-\\tfrac38\\ell^2-\\ell s\\right]"
+    },
+    {
+     "t": "符号：$N=2p+|\\ell|$ 是横模阶数，$p$、$\\ell$ 是径向和角向量子数，$s$ 是光子自旋，$q$ 是纵模数，$\\chi_0=\\arcsin\\sqrt{L/R_m}$，$k$ 是波数，$R_m$ 是镜面曲率半径，$L_\\varphi$ 是相位穿透深度。",
+     "tex": ""
+    }
+   ]
   },
   {
    "id": "lib-picot-2026",
    "type": "paper",
-   "rev": "2026-11-17",
+   "rev": "2026-11-18",
    "title": "Extended Single-Atom Tweezer Arrays in High-Cooperativity Cavity-QED",
    "authors": "Thomas Picot, Clément Raphin, Marcel Kern, Pierre-Antoine Bourdel, Théo Ahamdach, Jakob Reichel, Romain Long",
    "year": 2026,
    "venue": "arXiv:2607.21515",
    "doi": "",
    "url": "https://arxiv.org/abs/2607.21515",
-   "core": "在光纤 Fabry–Pérot 微腔内实现 $^{87}\\mathrm{Rb}$ 单原子光镊阵列，单原子 cooperativity $C\\sim 90$。对扩展阵列做无背景的逐点荧光成像，同时在平均原子数至 $\\bar N\\simeq 36$ 的阵列上实现与同一腔模的集体耦合。"
+   "core": "在光纤 Fabry–Pérot 微腔内实现 $^{87}\\mathrm{Rb}$ 单原子光镊阵列，单原子 cooperativity $C\\sim 90$。对扩展阵列做无背景的逐点荧光成像，同时在平均原子数至 $\\bar N\\simeq 36$ 的阵列上实现与同一腔模的集体耦合。",
+   "formulas": [
+    {
+     "t": "单原子 cooperativity",
+     "tex": "C=\\frac{g^2}{\\kappa\\gamma}"
+    },
+    {
+     "t": "由集体 vacuum Rabi splitting 得到平均单原子耦合（两个极化激元峰相距 $2\\Omega$）",
+     "tex": "g=\\frac{\\Omega}{\\sqrt{\\bar N}}"
+    },
+    {
+     "t": "符号：$g$ 是单原子单光子耦合强度，$\\kappa$、$\\gamma$ 是腔和原子的 HWHM 衰减率，$\\bar N$ 是平均原子数。",
+     "tex": ""
+    }
+   ]
   },
   {
    "id": "lib-roschinski-2026",
    "type": "paper",
-   "rev": "2026-11-17",
+   "rev": "2026-11-18",
    "title": "Programmable cavity QED with a fiber-integrated atomic array",
    "authors": "Stephan Roschinski, Johannes Schabbauer, Franz von Silva-Tarouca, Marvin Holten, Damien Bloch, Julian Léonard",
    "year": 2026,
    "venue": "arXiv:2608.20291",
    "doi": "",
    "url": "https://arxiv.org/abs/2608.20291",
-   "core": "把 12 个位点的 $^{87}\\mathrm{Rb}$ 光镊阵列放进高 cooperativity 的光纤 Fabry–Pérot 微腔模式内。以亚波长精度移动各位点穿过驻波场，连续调节单原子耦合强度；对最多 5 个与腔耦合的原子测到集体增强的 vacuum Rabi splitting，并用腔对耦合原子数做非破坏读出。"
+   "core": "把 12 个位点的 $^{87}\\mathrm{Rb}$ 光镊阵列放进高 cooperativity 的光纤 Fabry–Pérot 微腔模式内。以亚波长精度移动各位点穿过驻波场，连续调节单原子耦合强度；对最多 5 个与腔耦合的原子测到集体增强的 vacuum Rabi splitting，并用腔对耦合原子数做非破坏读出。",
+   "formulas": [
+    {
+     "t": "随位置变化的耦合与 cooperativity",
+     "tex": "g(x)=g_0\\cos(kx),\\qquad \\eta(x)=\\frac{g(x)^2}{\\kappa\\gamma}=\\eta_0\\cos^2(kx)"
+    },
+    {
+     "t": "共振探测时相对空腔的归一化透射",
+     "tex": "T(x)=\\left[1+\\eta(x)\\right]^{-2}"
+    },
+    {
+     "t": "集体耦合（Tavis–Cummings），均匀极限下 vacuum Rabi splitting 为 $2g_{\\mathrm{eff}}$",
+     "tex": "g_{\\mathrm{eff}}=\\sqrt{\\textstyle\\sum_i g_i^2}\\;\\longrightarrow\\; g\\sqrt{N}"
+    },
+    {
+     "t": "符号：$x$ 是原子相对腔场波腹的位置，$\\kappa$（$\\gamma$）是腔场（原子相干）衰减率，$g_i$ 是第 $i$ 个原子的局域耦合强度。",
+     "tex": ""
+    }
+   ]
   }
  ],
  "edges": [

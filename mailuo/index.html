@@ -187,7 +187,7 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
 .t-paper{color:var(--c-paper)} .t-concept{color:var(--c-concept)} .t-method{color:var(--c-method)} .t-question{color:var(--c-question)}
 
 /* ---------- detail panel ---------- */
-.panel{position:absolute;left:0;top:0;width:330px;max-height:min(74%,460px);background:var(--raise);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);opacity:0;transform:scale(.97);transform-origin:top left;pointer-events:none;transition:opacity .16s,transform .16s;z-index:20;display:flex;flex-direction:column;overflow:hidden}
+.panel{position:absolute;left:0;top:0;width:400px;max-height:min(88%,700px);background:var(--raise);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);opacity:0;transform:scale(.97);transform-origin:top left;pointer-events:none;transition:opacity .16s,transform .16s;z-index:20;display:flex;flex-direction:column;overflow:hidden}
 .panel.open{opacity:1;transform:none;pointer-events:auto}
 .p-head{display:flex;align-items:center;gap:8px;padding:8px 8px 0 16px}
 .p-body{padding:4px 16px 14px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px}
@@ -204,6 +204,12 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
 .rel-i:hover{border-color:var(--ink-3)}
 .rel-i span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .p-foot{display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--line-2);flex-wrap:wrap}
+.fx{border:1px solid var(--line-2);border-radius:10px;padding:8px 10px;margin-bottom:8px;background:var(--surface)}
+.fx:last-child{margin-bottom:0}
+.fx-t{font-size:12.5px;color:var(--ink-2)}
+.fx-m{overflow-x:auto;overflow-y:hidden;font-size:.9em;font-family:var(--font-mono)}
+.fx-m .katex-display{margin:.5em 0 .3em;text-align:left}
+.fx-m .katex-display>.katex{text-align:left}
 .star-on{color:var(--accent)}
 .star-on svg{fill:currentColor}
 
@@ -259,7 +265,7 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
   .rail.open{transform:none}
   .rail-scrim{display:block;position:absolute;inset:0;background:rgba(8,12,22,.5);z-index:49;opacity:0;pointer-events:none;transition:opacity .25s}
   .rail-scrim.open{opacity:1;pointer-events:auto}
-  .panel{left:8px!important;right:8px;top:auto!important;bottom:8px;width:auto;max-height:56%;transform:translateY(14px);transform-origin:bottom center}
+  .panel{left:8px!important;right:8px;top:auto!important;bottom:8px;width:auto;max-height:72%;transform:translateY(14px);transform-origin:bottom center}
   .stage.has-panel .float.br{right:14px}
   .stage.has-panel #viewList{padding-right:12px}
   #viewList{padding:12px 12px 40px}
@@ -362,6 +368,7 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
         <div class="field"><label for="f_venue">期刊</label><input id="f_venue" placeholder="Nature" autocomplete="off"></div>
       </div>
       <div class="field"><label for="f_core" id="l_core">核心内容</label><textarea id="f_core" rows="2"></textarea></div>
+      <div class="field"><label for="f_fx">核心公式</label><textarea id="f_fx" rows="3" placeholder="每行一条，格式：说明 :: LaTeX。例如：单原子 cooperativity :: C=\frac{g^2}{\kappa\gamma}"></textarea></div>
       <div class="field"><label for="f_notes">笔记</label><textarea id="f_notes" rows="4" placeholder="方法、关键数据、疑问。支持 $LaTeX$ 公式"></textarea></div>
       <div class="grid2 paper-only">
         <div class="field"><span class="lbl">阅读状态</span><div class="seg" id="edStatus" role="radiogroup" aria-label="阅读状态" style="align-self:flex-start"></div></div>
@@ -457,6 +464,7 @@ function normalize(d){
     if(!n||!n.id||!TYPES[n.type])continue;
     out.nodes.push({id:String(n.id),type:n.type,title:String(n.title||'未命名'),authors:String(n.authors||''),year:Number.isFinite(+n.year)&&+n.year?+n.year:null,
       venue:String(n.venue||''),doi:String(n.doi||''),url:String(n.url||''),key:String(n.key||''),core:String(n.core||''),notes:String(n.notes||''),
+      formulas:Array.isArray(n.formulas)?n.formulas.filter(f=>f&&(f.t||f.tex)).map(f=>({t:String(f.t||''),tex:String(f.tex||'')})):[],
       tags:Array.isArray(n.tags)?n.tags.map(String).filter(Boolean):[],status:STATUS[n.status]?n.status:'todo',star:!!n.star,created:n.created||today(),
       x:Number.isFinite(n.x)?n.x:undefined,y:Number.isFinite(n.y)?n.y:undefined,pin:!!n.pin&&Number.isFinite(n.px)&&Number.isFinite(n.py),px:n.px,py:n.py,libRev:n.libRev==null?undefined:String(n.libRev)});
   }
@@ -479,7 +487,7 @@ async function syncLibrary(){
   const gone=new Set(db.gone||[]),seen=new Set(db.libEdges||[]);let ch=false,added=0;
   for(const L of (lib.nodes||[])){
     if(!L||!L.id||!TYPES[L.type]||gone.has(L.id))continue;
-    const f={title:String(L.title||''),authors:String(L.authors||''),year:+L.year||null,venue:String(L.venue||''),doi:String(L.doi||''),url:String(L.url||''),core:String(L.core||'')},rev=String(L.rev||''),n=byId.get(L.id);
+    const f={title:String(L.title||''),authors:String(L.authors||''),year:+L.year||null,venue:String(L.venue||''),doi:String(L.doi||''),url:String(L.url||''),core:String(L.core||''),formulas:Array.isArray(L.formulas)?L.formulas.map(f=>({t:String(f.t||''),tex:String(f.tex||'')})):[]},rev=String(L.rev||''),n=byId.get(L.id);
     if(!n){const m=normalize({nodes:[{...f,id:L.id,type:L.type,tags:L.tags||[]}]}).nodes[0];m.libRev=rev;db.nodes.push(m);byId.set(m.id,m);ch=true;added++}
     else if(n.libRev!==rev){Object.assign(n,f);n.libRev=rev;ch=true} // local edits stay until the library entry itself changes
   }
@@ -923,11 +931,13 @@ function renderDetail(){
       <h2 class="p-title">${esc(n.title)}</h2>
       ${n.authors||meta?`<p class="p-meta">${esc(n.authors)}${n.authors&&meta?'<br>':''}${meta}</p>`:''}
       ${n.core?`<div class="callout"><small>${TYPES[n.type].call}</small><div class="math">${esc(n.core)}</div></div>`:`<p class="muted">还没写${TYPES[n.type].call}。</p>`}
+      ${n.formulas.length?`<div class="p-sec"><h5>核心公式</h5>${n.formulas.map(f=>`<div class="fx">${f.t?`<div class="fx-t math">${esc(f.t)}</div>`:''}${f.tex?`<div class="fx-m" data-tex="${esc(f.tex)}">${esc(f.tex)}</div>`:''}</div>`).join('')}</div>`:''}
     </div>
     <div class="p-foot"><button class="btn sm" data-a="edit">${ic('edit',15)}编辑</button>
       ${href?`<a class="btn sm" href="${esc(href)}" target="_blank" rel="noopener" style="text-decoration:none">${ic('ext',15)}原文</a>`:''}<span class="grow"></span>
       <button class="btn sm danger" data-a="del" aria-label="删除">${ic('trash',15)}</button></div>`;
   if(window.renderMathInElement)$$('.math',p).forEach(el=>{try{renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false})}catch(_){}});
+  if(window.katex)$$('.fx-m',p).forEach(el=>{try{katex.render(el.dataset.tex,el,{displayMode:true,throwOnError:false})}catch(_){}});
   placeCard(true);
 }
 // the card sits beside its node and follows it
@@ -980,6 +990,7 @@ function toMarkdown(n){
   L.push('created: '+(n.created||today()));const src=n.doi?'https://doi.org/'+n.doi:n.url;if(src)L.push('source: '+src);L.push('---','');
   const head={paper:'[!abstract] 核心',concept:'[!definition]',method:'[!abstract] 目的',question:'[!question]'}[n.type];
   if(n.core)L.push('> '+head,...n.core.split('\n').map(s=>'> '+s),'');
+  if(n.formulas&&n.formulas.length){L.push('## 核心公式','');for(const f of n.formulas){if(f.t)L.push(f.t);if(f.tex)L.push('$$',f.tex,'$$');L.push('')}}
   if(n.notes)L.push('## 笔记','',n.notes,'');
   const g=new Map();for(const e of db.edges){let k,o;if(e.source===n.id){k=RELS[e.rel].label;o=e.target}else if(e.target===n.id){k=RELS[e.rel].directed?RELS[e.rel].inv:RELS[e.rel].label;o=e.source}else continue;
     if(!g.has(k))g.set(k,[]);g.get(k).push(link(byId.get(o)))}
@@ -1014,7 +1025,7 @@ function openEditor(id,opts={}){
   ed={id:n?n.id:null,type:n?n.type:(opts.type||'paper'),pos:opts.pos||null,tags:n?[...n.tags]:[],status:n?n.status:'todo',rels:[]};
   if(n)for(const e of db.edges){if(e.source===n.id)ed.rels.push({other:e.target,rel:e.rel,dir:'out'});else if(e.target===n.id)ed.rels.push({other:e.source,rel:e.rel,dir:'in'})}
   const set=(k,v)=>{$('#f_'+k).value=v??''};
-  set('doi',n?.doi);set('title',n?.title);set('authors',n?.authors);set('year',n?.year);set('venue',n?.venue);set('core',n?.core);set('notes',n?.notes);set('url',n?.url);set('tagIn','');set('rel','');
+  set('doi',n?.doi);set('title',n?.title);set('authors',n?.authors);set('year',n?.year);set('venue',n?.venue);set('core',n?.core);set('notes',n?.notes);set('fx',(n?.formulas||[]).map(f=>f.tex?(f.t?f.t+' :: ':'')+f.tex:f.t).join('\n'));set('url',n?.url);set('tagIn','');set('rel','');
   $('#f_star').checked=!!n?.star;$('#edTitle').textContent=n?'编辑条目':'新建条目';$('#edDelete').hidden=!n;$('#relDrop').hidden=true;
   paintEdType();paintEdTags();paintEdRels();$('#edScrim').hidden=false;
   setTimeout(()=>$(n||ed.type!=='paper'?'#f_title':'#f_doi').focus(),30);
@@ -1079,7 +1090,8 @@ $('#edForm').addEventListener('submit',e=>{
   checkpoint();const isP=ed.type==='paper',yr=parseInt(g('year'),10);
   let n=ed.id?byId.get(ed.id):null;
   const data={type:ed.type,title,authors:isP?g('authors'):'',year:isP&&yr>0?yr:null,venue:isP?g('venue'):'',doi:isP?g('doi').replace(/^https?:\/\/(dx\.)?doi\.org\//i,''):'',url:isP?g('url'):'',
-    core:g('core'),notes:$('#f_notes').value.replace(/\s+$/,''),tags:[...ed.tags],status:isP?ed.status:'todo',star:isP&&$('#f_star').checked};
+    core:g('core'),notes:$('#f_notes').value.replace(/\s+$/,''),
+    formulas:$('#f_fx').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const i=l.indexOf('::');return i<0?(/\\|[_^=]/.test(l)?{t:'',tex:l}:{t:l,tex:''}):{t:l.slice(0,i).trim(),tex:l.slice(i+2).trim()}}),tags:[...ed.tags],status:isP?ed.status:'todo',star:isP&&$('#f_star').checked};
   if(n)Object.assign(n,data);
   else{n={id:uid(),created:today(),...data};
     if(ed.pos){n.x=ed.pos.x;n.y=ed.pos.y;if(ui.layout==='force'){n.pin=true;n.px=n.x;n.py=n.y}}
