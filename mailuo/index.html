@@ -319,7 +319,8 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
       <canvas id="cv" aria-label="文献关系图"></canvas>
       <div class="float tl">
         <div class="tool"><div class="seg" id="layoutSeg" role="group" aria-label="布局">
-          <button data-layout="force" aria-pressed="true">力导向</button>
+          <button data-layout="tidy" aria-pressed="true">整齐</button>
+          <button data-layout="force" aria-pressed="false">力导向</button>
           <button data-layout="time" aria-pressed="false">时间轴</button>
         </div></div>
         <div class="tool">
@@ -446,7 +447,7 @@ function defaultLink(a,b){
 /* ---------- data ---------- */
 let db={version:1,nodes:[],edges:[],demo:false,gone:[],libEdges:[]},libReady=false;
 let byId=new Map(), adj=new Map();
-const ui={view:'graph',layout:'force',theme:null,labels:true,q:'',sel:null,linkMode:false,sort:{key:'year',dir:-1},
+const ui={view:'graph',layout:'tidy',theme:null,labels:true,q:'',sel:null,linkMode:false,sort:{key:'year',dir:-1},
   f:{types:new Set(Object.keys(TYPES)),status:new Set(Object.keys(STATUS)),tags:new Set(),y0:null,y1:null}};
 const undoStack=[];
 
@@ -493,7 +494,7 @@ async function syncLibrary(){
 }
 let saveT=0;
 function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(LS_DB,JSON.stringify(db))}catch(e){toast('保存失败：浏览器存储不可用，请先导出备份',{bad:true})}},200)}
-function saveUi(){try{localStorage.setItem(LS_UI,JSON.stringify({view:ui.view,layout:ui.layout,theme:ui.theme,labels:ui.labels}))}catch(e){}}
+function saveUi(){try{localStorage.setItem(LS_UI,JSON.stringify({view:ui.view,layout2:ui.layout,theme:ui.theme,labels:ui.labels}))}catch(e){}}
 function checkpoint(){undoStack.push(JSON.stringify(db));if(undoStack.length>40)undoStack.shift()}
 function undo(){const s=undoStack.pop();if(!s)return toast('没有可以撤销的操作');db=JSON.parse(s);if(!db.nodes.some(n=>n.id===ui.sel))ui.sel=null;changed();toast('已撤销')}
 function reindex(){
@@ -605,7 +606,7 @@ $('#rail').addEventListener('change',e=>{if(e.target.id==='y0'||e.target.id==='y
 
 /* ---------- graph ---------- */
 const cv=$('#cv'),ctx=cv.getContext('2d');
-const G={x:0,y:0,k:1,w:0,h:0,dpr:1,alpha:1,vis:[],visSet:new Set(),visEdges:[],qm:null,yx:new Map(),vel:new Map(),hover:null,down:null,ptrs:new Map(),pinch:null,
+const G={x:0,y:0,k:1,w:0,h:0,dpr:1,alpha:1,vis:[],visSet:new Set(),visEdges:[],qm:null,yx:new Map(),vel:new Map(),tgt:new Map(),lbox:new Map(),hover:null,down:null,ptrs:new Map(),pinch:null,
   dragNode:null,linkFrom:null,linkTo:null,linkPos:null,anim:null,dirty:true,cols:{},needSave:false,lastTap:null,lastBg:null,pending:null};
 const KMIN=.18,KMAX=3.2;
 const V=n=>{let v=G.vel.get(n.id);if(!v){v={vx:0,vy:0};G.vel.set(n.id,v)}return v};
@@ -624,11 +625,25 @@ function resize(){
   cv.width=Math.round(G.w*G.dpr);cv.height=Math.round(G.h*G.dpr);cv.style.width=G.w+'px';cv.style.height=G.h+'px';
   if(first){G.x=G.w/2;G.y=G.h/2} G.dirty=true;
 }
+// 整齐 layout: each connected thread is one column, oldest paper on top; unlinked entries fill extra columns
+function tidyLayout(){
+  G.tgt=new Map();const seen=new Set(),comps=[],single=[],yr=n=>n.year||9999,ord=(a,b)=>yr(a)-yr(b)||a.title.localeCompare(b.title);
+  const nb=new Map(G.vis.map(n=>[n.id,[]]));for(const e of G.visEdges){nb.get(e.source).push(e.target);nb.get(e.target).push(e.source)}
+  for(const n of G.vis){if(seen.has(n.id))continue;const q=[n.id],c=[];seen.add(n.id);
+    while(q.length){const id=q.pop();c.push(byId.get(id));for(const o of nb.get(id))if(!seen.has(o)){seen.add(o);q.push(o)}}
+    c.length>1?comps.push(c.sort(ord)):single.push(c[0])}
+  comps.sort((a,b)=>yr(a[0])-yr(b[0])||b.length-a.length);single.sort(ord);
+  const ROW=74,COL=370,cols=[...comps];for(let i=0;i<single.length;i+=8)cols.push(single.slice(i,i+8));
+  if(G.w&&G.w<700){let y=0;for(const c of cols){for(const n of c){G.tgt.set(n.id,[0,y]);y+=ROW}y+=30}} // phone: stack the threads
+  else cols.forEach((c,ci)=>c.forEach((n,ri)=>G.tgt.set(n.id,[ci*COL,ri*ROW])));
+}
 function refreshGraph(heat=0){
   G.vis=db.nodes.filter(passes);G.visSet=new Set(G.vis.map(n=>n.id));
   G.visEdges=db.edges.filter(e=>G.visSet.has(e.source)&&G.visSet.has(e.target));
   const q=ui.q.trim();G.qm=q?new Set(G.vis.filter(n=>matches(n,q)).map(n=>n.id)):null;
+  if(ui.layout==='tidy')tidyLayout();
   let i=0;for(const n of G.vis){ if(n.x===undefined||n.y===undefined){ // place near a neighbour, else on a loose ring
+      const t=ui.layout==='tidy'&&G.tgt.get(n.id);if(t){n.x=t[0];n.y=t[1];continue}
       const nb=[...(adj.get(n.id)||[])].map(id=>byId.get(id)).find(m=>m&&m.x!==undefined);
       const a=Math.random()*TAU,r=nb?70:140+40*Math.sqrt(i++);
       n.x=(nb?nb.x:0)+Math.cos(a)*r;n.y=(nb?nb.y:0)+Math.sin(a)*r;} }
@@ -641,6 +656,7 @@ function refreshGraph(heat=0){
 }
 function tick(){
   const ns=G.vis,n=ns.length,a=G.alpha,tl=ui.layout==='time'; if(!n)return;
+  if(ui.layout==='tidy'){for(const A of ns){const t=G.tgt.get(A.id);if(!t||A===G.dragNode)continue;A.x+=(t[0]-A.x)*.2;A.y+=(t[1]-A.y)*.2}G.alpha*=.94;return}
   const tall=G.h>G.w*1.15,gx=tall?.07:.035,gy=tall?.026:.045;
   for(let i=0;i<n;i++){const A=ns[i],va=V(A);
     for(let j=i+1;j<n;j++){const B=ns[j];let dx=B.x-A.x,dy=B.y-A.y,d2=dx*dx+dy*dy;
@@ -662,9 +678,9 @@ function tick(){
   G.alpha*=.978;
 }
 const wrapCache=new Map();
-function titleLines(n,font){ // node label: the title, wrapped to at most three lines
-  const key=font+'|'+n.title;let L=wrapCache.get(key);if(L)return L;
-  ctx.font=font;const maxW=178,toks=n.title.match(/[\u3400-\u9fff\uff00-\uffef]|[^\s\u3400-\u9fff\uff00-\uffef]+\s*|\s+/g)||[n.title];
+function titleLines(n,font,maxW=178){ // node label: the title, wrapped to at most three lines
+  const key=maxW+font+'|'+n.title;let L=wrapCache.get(key);if(L)return L;
+  ctx.font=font;const toks=n.title.match(/[\u3400-\u9fff\uff00-\uffef]|[^\s\u3400-\u9fff\uff00-\uffef]+\s*|\s+/g)||[n.title];
   L=[];let cur='';
   for(const t of toks){const nx=cur+t;if(cur&&ctx.measureText(nx.trimEnd()).width>maxW){L.push(cur.trimEnd());cur=t.trimStart()}else cur=nx}
   if(cur.trim())L.push(cur.trimEnd());
@@ -699,7 +715,7 @@ function draw(){
   const dim=n=>(hi&&!hi.has(n.id))||(qm&&!qm.has(n.id));
   const S=n=>[n.x*k+G.x,n.y*k+G.y];
   // edges
-  const tags=[];
+  const tags=[],tidy=ui.layout==='tidy';
   for(const e of G.visEdges){
     const A=byId.get(e.source),B=byId.get(e.target),[ax,ay]=S(A),[bx,by]=S(B),ra=rad(A)*z,rb=rad(B)*z;
     const dx=bx-ax,dy=by-ay,d=Math.hypot(dx,dy); if(d<ra+rb+6)continue;
@@ -708,6 +724,12 @@ function draw(){
     const faded=(hi&&!on)||(qm&&!(qm.has(A.id)&&qm.has(B.id)));
     ctx.globalAlpha=faded?.1:on?1:.62;ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=on?1.9:1.15;
     ctx.setLineDash(e.rel==='refutes'?[5,4]:e.rel==='related'?[2,4]:[]);
+    if(tidy){
+      const p1=ax-ra-3,p2=bx-rb-4,cx=Math.min(p1,p2)-(16+Math.min(Math.abs(by-ay)*.24,110)),cy=(ay+by)/2;
+      ctx.beginPath();ctx.moveTo(p1,ay);ctx.quadraticCurveTo(cx,cy,p2,by);ctx.stroke();ctx.setLineDash([]);
+      if(hd){const tx=p2-cx,ty=by-cy,tn=Math.hypot(tx,ty)||1,vx=tx/tn,vy=ty/tn;ctx.beginPath();ctx.moveTo(p2,by);ctx.lineTo(p2-vx*hd-vy*hd*.5,by-vy*hd+vx*hd*.5);ctx.lineTo(p2-vx*hd+vy*hd*.5,by-vy*hd-vx*hd*.5);ctx.closePath();ctx.fill()}
+      if(on&&k>.45)tags.push([.25*p1+.5*cx+.25*p2,.25*ay+.5*cy+.25*by,R.label,col]);
+      continue}
     ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2-ux*hd*.7,y2-uy*hd*.7);ctx.stroke();ctx.setLineDash([]);
     if(hd){ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-ux*hd-uy*hd*.5,y2-uy*hd+ux*hd*.5);ctx.lineTo(x2-ux*hd+uy*hd*.5,y2-uy*hd-ux*hd*.5);ctx.closePath();ctx.fill()}
     if(on&&k>.45)tags.push([(x1+x2)/2,(y1+y2)/2,R.label,col]);
@@ -730,20 +752,20 @@ function draw(){
   }
   // labels
   if(ui.labels){
-    ctx.textAlign='center';ctx.textBaseline='top';ctx.lineJoin='round';
+    ctx.textBaseline='top';ctx.lineJoin='round';ctx.textAlign=tidy?'left':'center';G.lbox=new Map();
     const isImp=n=>n.id===ui.sel||n===G.hover||(hi&&hi.has(n.id)),boxes=[];
     const order=G.vis.map(n=>[n,isImp(n)?1e4:(n.star?100:0)+adj.get(n.id).size]).sort((a,b)=>b[1]-a[1]);
     for(const [n] of order){
       const imp=isImp(n);
       if(!(imp||k>=.58||(n.star&&k>=.34)))continue;
       const [sx,sy]=S(n),r=rad(n)*z; if(sx<-80||sx>G.w+80||sy<-40||sy>G.h+40)continue;
-      if(n.id===ui.sel&&wide())continue; // its card carries the title
-      ctx.globalAlpha=1;const font=`${imp?600:500} 11.5px ${c.font}`,L=titleLines(n,font);ctx.font=font;
-      const ty=sy+r+(n.type==='concept'?r*.18:0)+6,hw=Math.max(...L.map(t=>ctx.measureText(t).width))/2+3,bh=L.length*14+1;
-      if(!imp&&boxes.some(b=>sx-hw<b[1]&&sx+hw>b[0]&&ty<b[3]&&ty+bh>b[2]))continue; // skip a label that would sit on another
-      boxes.push([sx-hw,sx+hw,ty,ty+bh]);
+      if(n.id===ui.sel&&wide()&&!tidy)continue; // its card carries the title
+      ctx.globalAlpha=1;const font=`${imp?600:500} ${tidy?12.5:11.5}px ${c.font}`,lh=tidy?16:14,L=titleLines(n,font,tidy?250:178);ctx.font=font;
+      const lw=Math.max(...L.map(t=>ctx.measureText(t).width)),bh=L.length*lh+1,lx=tidy?sx+r+10:sx,ty=tidy?sy-bh/2+1:sy+r+(n.type==='concept'?r*.18:0)+6,b0=tidy?lx-3:sx-lw/2-3,b1=tidy?lx+lw+3:sx+lw/2+3;
+      if(!imp&&boxes.some(b=>b0<b[1]&&b1>b[0]&&ty<b[3]&&ty+bh>b[2]))continue; // skip a label that would sit on another
+      boxes.push([b0,b1,ty,ty+bh]);G.lbox.set(n.id,[b0,b1,ty,ty+bh]);
       ctx.strokeStyle=c.bg;ctx.lineWidth=4;ctx.fillStyle=imp?c.ink:c.ink2;if(dim(n))ctx.globalAlpha=.32;
-      L.forEach((t,i)=>{ctx.strokeText(t,sx,ty+i*14);ctx.fillText(t,sx,ty+i*14)});
+      L.forEach((t,i)=>{ctx.strokeText(t,lx,ty+i*lh);ctx.fillText(t,lx,ty+i*lh)});
     }
   }
   // relation tags on the focused node's edges
@@ -774,11 +796,15 @@ function stepAnim(){const a=G.anim;let t=(performance.now()-a.t0)/a.d;if(t>=1){t
 const wide=()=>innerWidth>860;
 function fit(animate=true){
   if(!G.vis.length||!G.w)return;
-  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const n of G.vis){x0=Math.min(x0,n.x);x1=Math.max(x1,n.x);y0=Math.min(y0,n.y);y1=Math.max(y1,n.y)}
-  const side=wide()?96:44,pl=side,pr=side,pt=ui.layout==='time'?110:80,pb=(ui.sel&&!wide()?G.h*.6:0)+76;
+  const tidy=ui.layout==='tidy',P=n=>tidy&&G.tgt.get(n.id)||[n.x,n.y];
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const n of G.vis){const [x,y]=P(n);x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)}
+  if(tidy){x0-=70;x1+=270;y0-=20;y1+=20}
+  const side=wide()?96:44,pl=tidy?(wide()?70:16):side,pr=tidy?16:side,pt=ui.layout==='time'?110:80,pb=(ui.sel&&!wide()?G.h*.6:0)+(tidy?40:76);
   const w=Math.max(120,G.w-pl-pr),h=Math.max(120,G.h-pt-pb);
-  const k=clamp(Math.min(w/Math.max(x1-x0,60),h/Math.max(y1-y0,60)),KMIN,1.35);
-  camTo(pl+w/2-(x0+x1)/2*k,pt+h/2-(y0+y1)/2*k,k,animate);
+  const k=clamp(Math.min(w/Math.max(x1-x0,60),h/Math.max(y1-y0,60)),tidy?.72:KMIN,tidy?1.15:1.35);
+  // a list that does not fit starts at the top left instead of being centred
+  const tx=tidy&&(x1-x0)*k>w?pl-x0*k:pl+w/2-(x0+x1)/2*k,ty=tidy&&(y1-y0)*k>h?pt-y0*k:pt+h/2-(y0+y1)/2*k;
+  camTo(tx,ty,k,animate);
 }
 function focusNode(n){
   const k=Math.max(G.k,.8),cx=G.w/2,cy=!wide()&&ui.sel?G.h*.2:G.h/2;
@@ -787,6 +813,7 @@ function focusNode(n){
 function zoomAt(px,py,nk){nk=clamp(nk,KMIN,KMAX);const wx=(px-G.x)/G.k,wy=(py-G.y)/G.k;G.k=nk;G.x=px-wx*nk;G.y=py-wy*nk;G.anim=null;G.dirty=true}
 function hit(px,py,slop=5){
   const z=zf();for(let i=G.vis.length-1;i>=0;i--){const n=G.vis[i],dx=n.x*G.k+G.x-px,dy=n.y*G.k+G.y-py,r=rad(n)*z+slop;if(dx*dx+dy*dy<=r*r)return n}
+  for(const n of G.vis){const b=G.lbox.get(n.id);if(b&&px>=b[0]&&px<=b[1]&&py>=b[2]&&py<=b[3])return n}
   return null;
 }
 const ptr=e=>{const r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
@@ -905,7 +932,7 @@ function renderDetail(){
 }
 // the card sits beside its node and follows it
 function cardRect(side,n,w,h,sw,sh){
-  const sx=n.x*G.k+G.x,sy=n.y*G.k+G.y,r=rad(n)*zf()+14,x=side==='r'?sx+r:side==='l'?sx-r-w:sx-w/2,y=side==='b'?sy+r:side==='t'?sy-r-h:sy-30;
+  const sx=n.x*G.k+G.x,sy=n.y*G.k+G.y,r=rad(n)*zf()+14,lb=ui.layout==='tidy'&&G.lbox.get(n.id),x=side==='r'?(lb?lb[1]+12:sx+r):side==='l'?sx-r-w-(lb?40:0):sx-w/2,y=side==='b'?sy+r:side==='t'?sy-r-h:sy-30;
   return [clamp(x,10,Math.max(10,sw-w-10)),clamp(y,62,Math.max(62,sh-h-10)),sx,sy];
 }
 function placeCard(pick){
@@ -1101,10 +1128,10 @@ function renderChrome(){
   $('#btnLink').setAttribute('aria-pressed',ui.linkMode);$('#btnLabels').setAttribute('aria-pressed',ui.labels);
   $('#btnTheme').innerHTML=ic(document.documentElement.dataset.theme==='dark'?'sun':'moon');
   paintHint();
-  $('#hint').textContent=ui.linkMode?'连线模式：从一个节点拖到另一个节点':'拖动节点可固定它的位置 · Shift+拖动连线 · 双击空白处新建';
+  $('#hint').textContent=ui.linkMode?'连线模式：从一个节点拖到另一个节点':ui.layout==='force'?'拖动节点可固定它的位置 · Shift+拖动连线 · 双击空白处新建':'点标题看详情 · Shift+拖动连线 · 双击空白处新建';
 }
 function setView(v){ui.view=v;saveUi();renderChrome();if(v==='list')renderList();else{resize();G.dirty=true}}
-function setLayout(l){if(ui.layout===l)return;ui.layout=l;saveUi();renderChrome();G.alpha=1;G.dirty=true;setTimeout(()=>fit(),RM?30:900)}
+function setLayout(l){if(ui.layout===l)return;ui.layout=l;saveUi();renderChrome();refreshGraph(1);G.alpha=1;G.dirty=true;setTimeout(()=>fit(),RM||l==='tidy'?30:900)}
 function setTheme(t){ui.theme=t;document.documentElement.dataset.theme=t;$('meta[name=theme-color]').content=t==='dark'?'#090e1a':'#f8fafd';readCols();renderChrome();saveUi()}
 $('#viewTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.view)});
 $('#layoutSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setLayout(b.dataset.layout)});
@@ -1245,20 +1272,20 @@ document.addEventListener('keydown',e=>{
   else if(k==='n'){e.preventDefault();openEditor()}
   else if(k==='f')fit();
   else if(k==='l'){ui.linkMode=!ui.linkMode;renderChrome()}
-  else if(k==='t')setLayout(ui.layout==='force'?'time':'force');
+  else if(k==='t')setLayout({tidy:'force',force:'time',time:'tidy'}[ui.layout]);
   else if(k==='1')setView('graph'); else if(k==='2')setView('list');
   else if(k==='e'&&ui.sel)openEditor(ui.sel);
   else if((k==='delete'||k==='backspace')&&ui.sel)removeNode(ui.sel);
 });
 
 /* ---------- boot ---------- */
-try{const s=JSON.parse(localStorage.getItem(LS_UI)||'{}');if(s.view==='list'||s.view==='graph')ui.view=s.view;if(s.layout==='time')ui.layout='time';if(s.theme)ui.theme=s.theme;if(s.labels===false)ui.labels=false}catch(e){}
+try{const s=JSON.parse(localStorage.getItem(LS_UI)||'{}');if(s.view==='list'||s.view==='graph')ui.view=s.view;if(['tidy','force','time'].includes(s.layout2))ui.layout=s.layout2;if(s.theme)ui.theme=s.theme;if(s.labels===false)ui.labels=false}catch(e){}
 document.documentElement.dataset.theme=ui.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
 $('meta[name=theme-color]').content=document.documentElement.dataset.theme==='dark'?'#090e1a':'#f8fafd';
 load();reindex();readCols();renderRail();renderChrome();resize();
 const unplaced=db.nodes.some(n=>n.x===undefined);refreshGraph(unplaced?1:0);
 if(unplaced)for(let i=0;i<260;i++)tick();
-fit(false);G.alpha=unplaced?.05:0;renderList();renderDetail();
+fit(false);G.alpha=unplaced?.05:ui.layout==='tidy'?1:0;renderList();renderDetail();
 new ResizeObserver(()=>{const had=G.w;resize();if(!had&&G.w)fit(false)}).observe($('#stage'));
 if(document.fonts?.ready)document.fonts.ready.then(()=>{G.dirty=true});
 syncLibrary();
