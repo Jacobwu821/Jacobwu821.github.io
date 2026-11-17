@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>脉络 文献图谱</title>
+<meta name="description" content="把读过的文献连成一张图：文献、概念、方法、问题，以及它们之间的关系。">
+<meta name="theme-color" content="#090e1a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090e1a'/%3E%3Cpath d='M9 22 16 9l8 9-15 4z' fill='none' stroke='%236fa5ff' stroke-width='1.6'/%3E%3Ccircle cx='9' cy='22' r='3' fill='%233fd3bd'/%3E%3Ccircle cx='16' cy='9' r='3.4' fill='%23ffc247'/%3E%3Ccircle cx='24' cy='18' r='3' fill='%236fa5ff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<style>
+/* Layout idea: a one-screen instrument. Quiet chrome (top bar, filter rail, detail sheet) around one loud thing,
+   the graph, drawn like a star chart on a graticule. Paper titles are set in a journal serif. */
+:root{
+  --bg:#eef1f6; --surface:#f8fafd; --raise:#ffffff; --sunk:#e4e9f1;
+  --ink:#131c2b; --ink-2:#465369; --ink-3:#7c889b; --line:#d3dae5; --line-2:#e4e9f1;
+  --grid:rgba(19,28,43,.16); --glow:rgba(37,99,217,.07);
+  --accent:#eaa300; --accent-ink:#241900; --accent-text:#8f5d00; --accent-soft:rgba(234,163,0,.16);
+  --c-paper:#2563d9; --c-concept:#0c8f7f; --c-method:#7a4fe0; --c-question:#cf3d72;
+  --good:#1a8f55; --bad:#d23b3b;
+  --shadow:0 1px 2px rgba(19,28,43,.06),0 10px 28px rgba(19,28,43,.10);
+  --font-display:"Newsreader","Songti SC","Noto Serif SC",Georgia,serif;
+  --font-body:"IBM Plex Sans","PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#090e1a; --surface:#0e1525; --raise:#151e33; --sunk:#0a101d;
+  --ink:#e9eef8; --ink-2:#a8b4c8; --ink-3:#6c7a92; --line:#243049; --line-2:#1a2439;
+  --grid:rgba(160,185,230,.17); --glow:rgba(111,165,255,.09);
+  --accent:#ffc247; --accent-ink:#241900; --accent-text:#ffc247; --accent-soft:rgba(255,194,71,.16);
+  --c-paper:#6fa5ff; --c-concept:#3fd3bd; --c-method:#ab92ff; --c-question:#ff7daa;
+  --good:#4cd08b; --bad:#ff6b6b;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 36px rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.55 var(--font-body);display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+h1,h2,h3,p{margin:0}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.ic{flex:none;display:block}
+.grow{flex:1}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:center;gap:14px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line);flex:none;position:relative;z-index:30}
+.brand{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
+.brand svg{align-self:center}
+.brand-name{font:600 21px/1 var(--font-display);letter-spacing:.04em}
+.brand-sub{font:italic 400 14px/1 var(--font-display);color:var(--ink-3)}
+.seg{display:inline-flex;background:var(--sunk);border-radius:10px;padding:3px;gap:2px}
+.seg button{padding:5px 12px;border-radius:8px;color:var(--ink-2);font-weight:500;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.seg button[aria-pressed="true"],.seg button[aria-checked="true"]{background:var(--raise);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.search{position:relative;flex:1;max-width:440px;min-width:120px}
+.search .ic{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-3);pointer-events:none}
+.search input{width:100%;height:36px;border-radius:10px;border:1px solid transparent;background:var(--sunk);padding:0 38px 0 36px;outline:none}
+.search input:focus{border-color:var(--accent);background:var(--raise)}
+.search kbd{position:absolute;right:9px;top:50%;transform:translateY(-50%);font:500 11px var(--font-mono);color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;background:var(--surface)}
+.drop{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--raise);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:5px;z-index:60;max-height:320px;overflow:auto}
+.drop button{display:flex;width:100%;gap:9px;align-items:center;text-align:left;padding:7px 9px;border-radius:8px}
+.drop button:hover,.drop button.act{background:var(--sunk)}
+.drop .d-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.drop .d-m{color:var(--ink-3);font-size:12px;white-space:nowrap}
+.drop .d-new{color:var(--accent-text);font-weight:500}
+.top-actions{display:flex;align-items:center;gap:8px;margin-left:auto;position:relative}
+.btn{height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--raise);font-weight:500;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;transition:transform .12s,background .12s,border-color .12s}
+.btn:hover{border-color:var(--ink-3)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.danger{color:var(--bad)}
+.btn.sm{height:30px;padding:0 10px;border-radius:8px;font-size:13px}
+.btn[disabled]{opacity:.55;cursor:default}
+.icon-btn{width:36px;height:36px;border-radius:10px;display:inline-grid;place-items:center;color:var(--ink-2);flex:none}
+.icon-btn:hover{background:var(--sunk);color:var(--ink)}
+.icon-btn[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent-text)}
+.menu{position:absolute;right:0;top:calc(100% + 8px);width:220px;background:var(--raise);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:5px;z-index:60}
+.menu button{display:flex;width:100%;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;text-align:left}
+.menu button:hover{background:var(--sunk)}
+.menu hr{border:0;border-top:1px solid var(--line-2);margin:5px 4px}
+.menu .danger{color:var(--bad)}
+.only-m{display:none}
+
+/* ---------- shell ---------- */
+.shell{flex:1;display:flex;min-height:0;position:relative}
+.rail{width:272px;flex:none;background:var(--surface);border-right:1px solid var(--line);overflow-y:auto;padding:18px 16px 28px;display:flex;flex-direction:column;gap:22px}
+.rail h3{font:600 11px/1 var(--font-body);letter-spacing:.1em;color:var(--ink-3);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.rail h3 button{margin-left:auto;font:500 12px var(--font-body);letter-spacing:0;color:var(--accent-text)}
+.stat{display:flex;align-items:flex-end;gap:12px}
+.stat-n{font:500 46px/.9 var(--font-display);font-variant-numeric:tabular-nums}
+.stat-l{color:var(--ink-2);font-size:13px;padding-bottom:3px}
+.bar{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;margin-top:12px;display:flex}
+.bar i{display:block;height:100%}
+.stat-row{display:flex;justify-content:space-between;color:var(--ink-2);font-size:12.5px;margin-top:8px}
+.stat-row b{color:var(--ink);font-weight:600}
+.tog{display:flex;flex-direction:column;gap:2px}
+.tog button{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:8px;width:100%;text-align:left}
+.tog button:hover{background:var(--sunk)}
+.tog button[aria-pressed="false"]{color:var(--ink-3)}
+.tog button[aria-pressed="false"] svg{opacity:.35}
+.tog .cnt{margin-left:auto;font:400 12px var(--font-mono);color:var(--ink-3)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:3px 10px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;color:var(--ink-2);background:var(--raise);display:inline-flex;align-items:center;gap:5px}
+button.chip:hover{border-color:var(--ink-3)}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text)}
+.chip .cnt{font:400 11px var(--font-mono);color:var(--ink-3)}
+.hist{display:flex;align-items:flex-end;gap:2px;height:44px}
+.hist i{flex:1;background:var(--line);border-radius:2px 2px 0 0;min-height:3px}
+.hist i.in{background:var(--c-paper)}
+.dual{position:relative;height:22px;margin-top:2px}
+.dual input{position:absolute;inset:0;width:100%;margin:0;background:none;pointer-events:none;-webkit-appearance:none;appearance:none;height:22px}
+.dual input::-webkit-slider-runnable-track{height:2px;background:var(--line)}
+.dual input::-moz-range-track{height:2px;background:var(--line)}
+.dual input::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:auto;width:16px;height:16px;border-radius:50%;background:var(--raise);border:2px solid var(--c-paper);margin-top:-7px;cursor:grab}
+.dual input::-moz-range-thumb{pointer-events:auto;width:12px;height:12px;border-radius:50%;background:var(--raise);border:2px solid var(--c-paper);cursor:grab}
+.yr{display:flex;justify-content:space-between;font:400 12px var(--font-mono);color:var(--ink-2)}
+.legend{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:12.5px;color:var(--ink-2)}
+.legend svg{display:block}
+.muted{color:var(--ink-3);font-size:12.5px}
+
+/* ---------- stage ---------- */
+.stage{flex:1;min-width:0;position:relative;overflow:hidden;background:radial-gradient(900px 600px at 55% 40%,var(--glow),transparent 70%),var(--bg)}
+.view{position:absolute;inset:0}
+#cv{position:absolute;inset:0;touch-action:none;cursor:grab;display:block}
+#cv.grabbing{cursor:grabbing}
+.float{position:absolute;display:flex;gap:8px;z-index:5}
+.float.tl{top:14px;left:14px;flex-wrap:wrap;right:14px;pointer-events:none}
+.float.tl>*{pointer-events:auto}
+.float.br{right:14px;bottom:14px;flex-direction:column;transition:right .28s}
+.stage.has-panel .float.br{right:400px}
+.tool{background:var(--raise);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:3px;display:flex;gap:2px}
+.tool.col{flex-direction:column}
+.tool .seg{background:none;padding:0}
+.tool .icon-btn{width:32px;height:32px;border-radius:9px}
+.tool-btn{height:32px;padding:0 10px;border-radius:9px;display:flex;align-items:center;gap:6px;color:var(--ink-2);font-weight:500;white-space:nowrap}
+.tool-btn:hover{background:var(--sunk);color:var(--ink)}
+.tool-btn[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent-text)}
+.hint{position:absolute;left:16px;bottom:14px;color:var(--ink-3);font-size:12px;pointer-events:none;z-index:4}
+.banner{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);background:var(--raise);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;box-shadow:var(--shadow);padding:9px 10px 9px 14px;display:flex;align-items:center;gap:10px;z-index:6;max-width:calc(100% - 28px);flex-wrap:wrap}
+.banner>span{color:var(--ink-2)}
+.stage.has-panel .banner{left:calc(50% - 200px)}
+.stage.has-panel .hint{display:none}
+.tip{position:absolute;z-index:8;pointer-events:none;width:300px;background:var(--raise);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:11px 13px}
+.tip h4{margin:6px 0 2px;font:500 16px/1.3 var(--font-display);text-wrap:balance}
+.tip .meta{color:var(--ink-3);font-size:12px}
+.tip p{margin-top:7px;color:var(--ink-2);font-size:13px}
+.relpop{position:absolute;z-index:9;width:250px;background:var(--raise);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:11px}
+.rp-head{display:flex;align-items:center;gap:6px;font-size:12.5px;margin-bottom:9px}
+.rp-head b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.rp-head b:last-of-type{text-align:right}
+.rp-opts{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.rp-opts button{padding:6px 8px;border-radius:8px;border:1px solid var(--line);text-align:left;display:flex;align-items:center;gap:7px;font-size:13px}
+.rp-opts button:hover{border-color:var(--ink-3)}
+.rp-opts button.def{border-color:var(--accent);background:var(--accent-soft)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;background:currentColor}
+.empty{position:absolute;inset:0;display:grid;place-items:center;z-index:3;pointer-events:none}
+.empty>div{pointer-events:auto;text-align:center;max-width:360px;padding:24px}
+.empty h2{font:500 26px/1.2 var(--font-display);margin-bottom:8px}
+.empty p{color:var(--ink-2);margin-bottom:16px}
+.empty .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+/* ---------- list ---------- */
+#viewList{overflow:auto;padding:18px 20px 40px;background:var(--bg)}
+.stage.has-panel #viewList{padding-right:400px}
+table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(--raise);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.list th{position:sticky;top:0;text-align:left;font:600 11px var(--font-body);letter-spacing:.08em;color:var(--ink-3);padding:11px 12px;background:var(--surface);border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+.list th.sorted{color:var(--ink)}
+.list td{padding:11px 12px;border-bottom:1px solid var(--line-2);vertical-align:top}
+.list tr:last-child td{border-bottom:0}
+.list tbody tr{cursor:pointer}
+.list tbody tr:hover td{background:var(--surface)}
+.list tbody tr.sel td{background:var(--accent-soft)}
+.l-title{font:500 16px/1.3 var(--font-display)}
+.l-core{color:var(--ink-2);font-size:12.5px;margin-top:2px;max-width:60ch}
+.l-type{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:500;border:1px solid currentColor;white-space:nowrap}
+.pill.todo{color:var(--ink-3)} .pill.read{color:var(--c-paper)} .pill.deep{color:var(--good)}
+.t-paper{color:var(--c-paper)} .t-concept{color:var(--c-concept)} .t-method{color:var(--c-method)} .t-question{color:var(--c-question)}
+
+/* ---------- detail panel ---------- */
+.panel{position:absolute;top:12px;right:12px;bottom:12px;width:376px;background:var(--raise);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);transform:translateX(calc(100% + 28px));transition:transform .28s cubic-bezier(.2,.8,.2,1);z-index:20;display:flex;flex-direction:column;overflow:hidden}
+.panel.open{transform:none}
+.p-head{display:flex;align-items:center;gap:8px;padding:12px 12px 0 18px}
+.p-body{padding:10px 18px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px}
+.p-title{font:500 23px/1.25 var(--font-display);text-wrap:balance}
+.p-meta{color:var(--ink-2);font-size:13px}
+.p-meta .mono{color:var(--ink)}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:10px 13px}
+.callout small{display:block;font:600 11px var(--font-body);letter-spacing:.08em;color:var(--accent-text);margin-bottom:3px}
+.notes{white-space:pre-wrap;color:var(--ink-2);overflow-wrap:anywhere}
+.p-sec h5{margin:0 0 7px;font:600 11px var(--font-body);letter-spacing:.1em;color:var(--ink-3)}
+.rel-g{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.rel-g>span{font-size:12px;color:var(--ink-2);font-weight:500}
+.rel-i{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;border:1px solid var(--line-2);text-align:left;width:100%}
+.rel-i:hover{border-color:var(--ink-3)}
+.rel-i span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-foot{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line-2);flex-wrap:wrap}
+.star-on{color:var(--accent)}
+.star-on svg{fill:currentColor}
+
+/* ---------- dialogs ---------- */
+.scrim{position:fixed;inset:0;background:rgba(8,12,22,.55);backdrop-filter:blur(3px);z-index:100;display:grid;place-items:center;padding:14px}
+.dialog{width:min(680px,100%);max-height:100%;background:var(--raise);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden;animation:pop .2s ease-out}
+.dialog.sm{width:min(430px,100%)}
+@keyframes pop{from{transform:translateY(8px) scale(.985);opacity:.6}}
+.dlg-head{display:flex;align-items:center;padding:14px 14px 6px 22px}
+.dlg-head h2{font:500 22px var(--font-display);flex:1}
+.dlg-body{padding:10px 22px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.dlg-foot{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--line-2);background:var(--surface)}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field label,.lbl{font-size:12.5px;color:var(--ink-2);font-weight:500}
+.field input,.field textarea,.field select,.rel-row select{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:8px 11px;outline:none;width:100%;min-width:0}
+.field textarea{resize:vertical;line-height:1.5}
+.field input:focus,.field textarea:focus,.chips-in:focus-within{border-color:var(--accent);background:var(--raise)}
+.field .row{display:flex;gap:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid2 .wide{grid-column:1/-1}
+.chips-in{display:flex;flex-wrap:wrap;gap:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:6px 8px}
+.chips-in input{border:0;background:none;padding:2px 4px;flex:1;min-width:90px;width:auto}
+.chips-in .chip button{color:var(--ink-3);line-height:1;font-size:15px}
+.tag-sug{display:flex;flex-wrap:wrap;gap:5px}
+.tag-sug button{font-size:12px;color:var(--ink-3);padding:1px 8px;border:1px dashed var(--line);border-radius:999px}
+.tag-sug button:hover{color:var(--ink);border-color:var(--ink-3)}
+.rel-list{display:flex;flex-direction:column;gap:6px}
+.rel-row{display:flex;align-items:center;gap:7px;padding:6px 8px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface)}
+.rel-row .who{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.rel-row .me{color:var(--ink-3);flex:none;font-size:12.5px}
+.rel-row select{width:auto;padding:4px 6px;border-radius:8px;font-size:13px;flex:none}
+.rel-row .icon-btn{width:28px;height:28px}
+.rel-add{position:relative}
+.check{display:flex;align-items:center;gap:9px;height:38px;cursor:pointer}
+.check input{width:16px;height:16px;accent-color:var(--accent)}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:9px 16px;align-items:center}
+.keys kbd{font:500 12px var(--font-mono);border:1px solid var(--line);border-radius:6px;padding:2px 8px;background:var(--surface);justify-self:start}
+.toasts{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast{pointer-events:auto;background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:11px;box-shadow:var(--shadow);display:flex;gap:12px;align-items:center;font-weight:500;animation:pop .2s ease-out;max-width:90vw}
+.toast button{color:var(--accent);font-weight:600}
+.toast.bad{background:var(--bad);color:#fff}
+.rail-scrim{display:none}
+
+/* ---------- phone ---------- */
+@media (max-width:860px){
+  .only-m{display:inline-grid}
+  .top{flex-wrap:wrap;gap:8px 8px;padding:8px 12px}
+  .brand-sub,.search kbd,.hint,.lbl-d{display:none}
+  .search{order:5;flex:1 1 calc(100% - 160px);max-width:none}
+  .top .seg{order:6}
+  .top .seg button{padding:5px 10px}
+  .rail{position:absolute;inset:0 auto 0 0;z-index:50;transform:translateX(-102%);transition:transform .25s;width:min(300px,86vw);box-shadow:var(--shadow)}
+  .rail.open{transform:none}
+  .rail-scrim{display:block;position:absolute;inset:0;background:rgba(8,12,22,.5);z-index:49;opacity:0;pointer-events:none;transition:opacity .25s}
+  .rail-scrim.open{opacity:1;pointer-events:auto}
+  .panel{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:64%;transform:translateY(calc(100% + 20px))}
+  .stage.has-panel .float.br{right:14px}
+  .stage.has-panel #viewList{padding-right:12px}
+  #viewList{padding:12px 12px 40px}
+  .list thead{display:none}
+  .list,.list tbody,.list tr,.list td{display:block;width:100%}
+  .list td{border:0;padding:2px 14px}
+  .list tr{padding:10px 0;border-bottom:1px solid var(--line-2)}
+  .list td.c-hide{display:none}
+  .grid2{grid-template-columns:1fr}
+  .banner{bottom:12px;flex-wrap:nowrap;white-space:nowrap}
+  .stage.has-panel .banner{display:none}
+  .rel-row{flex-wrap:wrap}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <button class="icon-btn only-m" id="btnRail" aria-label="筛选"><i data-ic="filter"></i></button>
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><path d="M8 23 16 8l9 10-17 5z" fill="none" stroke="var(--c-paper)" stroke-width="1.6"/><circle cx="8" cy="23" r="3.2" fill="var(--c-concept)"/><circle cx="16" cy="8" r="3.8" fill="var(--accent)"/><circle cx="25" cy="18" r="3.2" fill="var(--c-paper)"/></svg>
+    <h1 class="brand-name">脉络</h1><span class="brand-sub">Mailuo</span>
+  </div>
+  <div class="seg" id="viewTabs" role="group" aria-label="视图">
+    <button data-view="graph" aria-pressed="true">图谱</button>
+    <button data-view="list" aria-pressed="false">文献表</button>
+  </div>
+  <div class="search">
+    <i data-ic="search" data-s="16"></i>
+    <input id="q" type="search" placeholder="搜索标题、作者、标签" autocomplete="off" aria-label="搜索">
+    <kbd>/</kbd>
+    <div class="drop" id="qDrop" hidden></div>
+  </div>
+  <div class="top-actions">
+    <button class="btn primary" id="btnNew"><i data-ic="plus" data-s="16"></i><span class="lbl-d">新建</span></button>
+    <button class="icon-btn" id="btnTheme" aria-label="切换明暗主题"></button>
+    <button class="icon-btn" id="btnMenu" aria-label="更多" aria-haspopup="true"><i data-ic="more"></i></button>
+    <div class="menu" id="menu" hidden>
+      <button data-act="export"><i data-ic="down" data-s="16"></i>导出备份 (JSON)</button>
+      <button data-act="import"><i data-ic="up" data-s="16"></i>导入备份</button>
+      <hr>
+      <button data-act="demo"><i data-ic="spark" data-s="16"></i>载入示例数据</button>
+      <button data-act="keys"><i data-ic="key" data-s="16"></i>快捷键</button>
+      <hr>
+      <button data-act="clear" class="danger"><i data-ic="trash" data-s="16"></i>清空全部</button>
+    </div>
+    <input type="file" id="fileIn" accept="application/json,.json" hidden>
+  </div>
+</header>
+
+<main class="shell">
+  <aside class="rail" id="rail" aria-label="筛选与统计"></aside>
+  <div class="rail-scrim" id="railScrim"></div>
+  <section class="stage" id="stage">
+    <div class="view" id="viewGraph">
+      <canvas id="cv" aria-label="文献关系图"></canvas>
+      <div class="float tl">
+        <div class="tool"><div class="seg" id="layoutSeg" role="group" aria-label="布局">
+          <button data-layout="force" aria-pressed="true">力导向</button>
+          <button data-layout="time" aria-pressed="false">时间轴</button>
+        </div></div>
+        <div class="tool">
+          <button class="tool-btn" id="btnLink" aria-pressed="false" title="连线模式 (L)"><i data-ic="link" data-s="16"></i>连线</button>
+          <button class="tool-btn" id="btnLabels" aria-pressed="true" title="显示或隐藏标签" aria-label="标签"><i data-ic="label" data-s="16"></i><span class="lbl-d">标签</span></button>
+          <button class="tool-btn" id="btnRelay" title="解除所有固定位置并重新排布" aria-label="重排"><i data-ic="relay" data-s="16"></i><span class="lbl-d">重排</span></button>
+        </div>
+      </div>
+      <div class="float br">
+        <div class="tool col">
+          <button class="icon-btn" id="zIn" aria-label="放大"><i data-ic="zin" data-s="16"></i></button>
+          <button class="icon-btn" id="zOut" aria-label="缩小"><i data-ic="zout" data-s="16"></i></button>
+          <button class="icon-btn" id="zFit" aria-label="适应窗口 (F)" title="适应窗口 (F)"><i data-ic="fit" data-s="16"></i></button>
+        </div>
+      </div>
+      <div class="hint" id="hint">拖动节点可固定它的位置 · Shift+拖动连线 · 双击空白处新建</div>
+      <div class="banner" id="demoBanner" hidden><span><span class="lbl-d">当前是</span>示例数据</span><button class="btn sm primary" id="demoClear"><span>清空<span class="lbl-d">，开始记录</span></span></button><button class="btn sm" id="demoKeep">保留</button></div>
+      <div class="tip" id="tip" hidden></div>
+      <div class="relpop" id="relPop" hidden></div>
+      <div class="empty" id="empty" hidden></div>
+    </div>
+    <div class="view" id="viewList" hidden></div>
+    <aside class="panel" id="panel" aria-label="条目详情"></aside>
+  </section>
+</main>
+
+<div class="scrim" id="edScrim" hidden>
+  <form class="dialog" id="edForm" novalidate>
+    <header class="dlg-head"><h2 id="edTitle">新建条目</h2><button type="button" class="icon-btn" data-close aria-label="关闭"><i data-ic="x"></i></button></header>
+    <div class="dlg-body">
+      <div class="seg" id="edType" role="radiogroup" aria-label="类型" style="align-self:flex-start"></div>
+      <div class="field paper-only">
+        <label for="f_doi">DOI 或 arXiv 编号</label>
+        <div class="row"><input id="f_doi" placeholder="10.1038/… 或 2312.03982" autocomplete="off"><button type="button" class="btn" id="btnFill">自动填充</button></div>
+      </div>
+      <div class="field"><label for="f_title">标题</label><input id="f_title" autocomplete="off"></div>
+      <div class="grid2 paper-only">
+        <div class="field wide"><label for="f_authors">作者</label><input id="f_authors" placeholder="用逗号分隔" autocomplete="off"></div>
+        <div class="field"><label for="f_year">年份</label><input id="f_year" inputmode="numeric" placeholder="2024" autocomplete="off"></div>
+        <div class="field"><label for="f_venue">期刊</label><input id="f_venue" placeholder="Nature" autocomplete="off"></div>
+      </div>
+      <div class="field"><label for="f_core" id="l_core">核心结论（一句话）</label><textarea id="f_core" rows="2"></textarea></div>
+      <div class="field"><label for="f_notes">笔记</label><textarea id="f_notes" rows="4" placeholder="方法、关键数据、疑问。支持 $LaTeX$ 公式"></textarea></div>
+      <div class="grid2 paper-only">
+        <div class="field"><span class="lbl">阅读状态</span><div class="seg" id="edStatus" role="radiogroup" aria-label="阅读状态" style="align-self:flex-start"></div></div>
+        <div class="field"><span class="lbl">标记</span><label class="check"><input type="checkbox" id="f_star">关键文献</label></div>
+      </div>
+      <div class="field"><label for="f_tagIn">标签</label><div class="chips-in" id="edTags"><input id="f_tagIn" placeholder="输入后回车" autocomplete="off"></div><div class="tag-sug" id="tagSug"></div></div>
+      <div class="field">
+        <label for="f_rel">关联</label>
+        <div class="rel-list" id="edRels"></div>
+        <div class="rel-add"><input id="f_rel" placeholder="搜索已有条目，或输入名称新建概念、方法、问题" autocomplete="off"><div class="drop" id="relDrop" hidden></div></div>
+      </div>
+      <div class="field paper-only"><label for="f_url">链接</label><input id="f_url" placeholder="https://…" autocomplete="off"></div>
+    </div>
+    <footer class="dlg-foot"><button type="button" class="btn danger" id="edDelete">删除</button><span class="grow"></span><button type="button" class="btn" data-close>取消</button><button class="btn primary" type="submit">保存</button></footer>
+  </form>
+</div>
+<div class="scrim" id="askScrim" hidden><div class="dialog sm" role="alertdialog" aria-labelledby="askT"><header class="dlg-head"><h2 id="askT"></h2></header><div class="dlg-body" id="askB"></div><footer class="dlg-foot" id="askF"></footer></div></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<noscript><p style="padding:24px">这个页面需要 JavaScript。</p></noscript>
+
+<script>
+(()=>{'use strict';
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const today=()=>new Date().toISOString().slice(0,10);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const clip=(s,n)=>{s=String(s||'');return s.length>n?s.slice(0,n-1)+'…':s};
+const TAU=Math.PI*2, RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const LS_DB='mailuo_db', LS_UI='mailuo_ui';
+
+/* ---------- icons ---------- */
+const I={
+ plus:'<path d="M12 5v14M5 12h14"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+ more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+ filter:'<path d="M4 6h16M7 12h10M10 18h4"/>',
+ link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+ fit:'<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',zin:'<path d="M12 6v12M6 12h12"/>',zout:'<path d="M6 12h12"/>',
+ edit:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="m13.5 6.5 4 4"/>',
+ trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
+ copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+ ext:'<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+ x:'<path d="M6 6l12 12M18 6 6 18"/>',down:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',up:'<path d="M12 16V5M7 9l5-5 5 5M5 20h14"/>',
+ star:'<path d="m12 3 2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 16.9 6.6 19.8l1.1-6.1L3.2 9.4l6.1-.8z"/>',
+ swap:'<path d="M7 7h13l-3-3M17 17H4l3 3"/>',key:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M8 14h8"/>',
+ spark:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
+ label:'<path d="M5 7h14M5 12h9M5 17h12"/>',pin:'<path d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7"/>',relay:'<path d="M20 11a8 8 0 0 0-14.5-4M4 4v4h4M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4"/>',arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>'
+};
+const ic=(n,s=18)=>`<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]}</svg>`;
+$$('[data-ic]').forEach(el=>{el.outerHTML=ic(el.dataset.ic,+el.dataset.s||18)});
+function shapeSvg(t,s=14,hollow=false){
+  const c=`var(--c-${t})`, a=hollow?`fill="none" stroke="${c}" stroke-width="2"`:`fill="${c}"`;
+  const p={paper:`<circle cx="8" cy="8" r="${hollow?5:6}" ${a}/>`,concept:`<path d="M8 1.5 14.5 8 8 14.5 1.5 8z" ${a}/>`,
+    method:`<path d="M8 1.6 13.6 4.8v6.4L8 14.4 2.4 11.2V4.8z" ${a}/>`,question:`<rect x="2.3" y="2.3" width="11.4" height="11.4" rx="3.4" ${a}/>`}[t];
+  return `<svg width="${s}" height="${s}" viewBox="0 0 16 16" aria-hidden="true">${p}</svg>`;
+}
+
+/* ---------- vocabulary ---------- */
+const TYPES={
+  paper:{label:'文献',core:'核心结论（一句话）',call:'核心结论'},
+  concept:{label:'概念',core:'定义（一句话）',call:'定义'},
+  method:{label:'方法',core:'目的（一句话）',call:'目的'},
+  question:{label:'问题',core:'问题描述',call:'问题'}};
+const STATUS={todo:'未读',read:'已读',deep:'精读'};
+const RELS={
+  based:{label:'基于',inv:'后续工作',directed:true,col:'ink3'},
+  improves:{label:'改进',inv:'被改进为',directed:true,col:'good'},
+  refutes:{label:'反驳',inv:'被反驳',directed:true,col:'bad'},
+  uses:{label:'使用方法',inv:'用到它的文献',directed:true,col:'method'},
+  about:{label:'涉及概念',inv:'涉及它的文献',directed:true,col:'concept'},
+  answers:{label:'回答问题',inv:'回答它的文献',directed:true,col:'question'},
+  related:{label:'相关',inv:'相关',directed:false,col:'ink3'}};
+function defaultLink(a,b){
+  const m={concept:'about',method:'uses',question:'answers'};
+  if(a==='paper'&&b==='paper')return{rel:'based',dir:'out'};
+  if(a==='paper'&&m[b])return{rel:m[b],dir:'out'};
+  if(b==='paper'&&m[a])return{rel:m[a],dir:'in'};
+  return{rel:'related',dir:'out'};
+}
+
+/* ---------- data ---------- */
+let db={version:1,nodes:[],edges:[],demo:false};
+let byId=new Map(), adj=new Map();
+const ui={view:'graph',layout:'force',theme:null,labels:true,q:'',sel:null,linkMode:false,sort:{key:'year',dir:-1},
+  f:{types:new Set(Object.keys(TYPES)),status:new Set(Object.keys(STATUS)),tags:new Set(),y0:null,y1:null}};
+const undoStack=[];
+
+function demoData(){
+  const P=(id,title,authors,year,venue,doi,core,status,tags,star)=>({id,type:'paper',title,authors,year,venue,doi,url:'',core,notes:'',tags,status,star:!!star,created:today()});
+  const N=(id,type,title,core,tags=[])=>({id,type,title,authors:'',year:null,venue:'',doi:'',url:'',core,notes:'',tags,status:'todo',star:false,created:today()});
+  const nodes=[
+    P('d-purcell','Spontaneous emission probabilities at radio frequencies','E. M. Purcell',1946,'Physical Review','10.1103/PhysRev.69.674','把发射体放进共振腔，可以增强它的自发辐射速率。','read',['腔 QED'],true),
+    P('d-jc','Comparison of quantum and semiclassical radiation theories with application to the beam maser','E. T. Jaynes, F. W. Cummings',1963,'Proceedings of the IEEE','10.1109/PROC.1963.1664','给出二能级原子与单模量子化光场相互作用的可解模型。','deep',['腔 QED'],true),
+    P('d-thompson','Observation of normal-mode splitting for an atom in an optical cavity','R. J. Thompson, G. Rempe, H. J. Kimble',1992,'Physical Review Letters','10.1103/PhysRevLett.68.1132','在光学腔里观测到平均约一个原子引起的 normal-mode splitting，光学频段进入强耦合。','read',['腔 QED','实验']),
+    P('d-kimble','The quantum internet','H. J. Kimble',2008,'Nature','10.1038/nature07127','提出量子互联网的图景：量子节点通过光子信道相连。','read',['量子网络']),
+    P('d-reiserer','Cavity-based quantum networks with single atoms and optical photons','A. Reiserer, G. Rempe',2015,'Reviews of Modern Physics','10.1103/RevModPhys.87.1379','综述：光学腔中的单原子作为量子网络节点。','todo',['腔 QED','量子网络','综述'],true),
+    P('d-jaksch','Fast quantum gates for neutral atoms','D. Jaksch, J. I. Cirac, P. Zoller, S. L. Rolston, R. Côté, M. D. Lukin',2000,'Physical Review Letters','10.1103/PhysRevLett.85.2208','提出用 Rydberg 态之间的偶极相互作用实现中性原子的快速两比特门。','read',['中性原子','Rydberg'],true),
+    P('d-saffman','Quantum information with Rydberg atoms','M. Saffman, T. G. Walker, K. Mølmer',2010,'Reviews of Modern Physics','10.1103/RevModPhys.82.2313','综述：用 Rydberg blockade 做量子信息处理。','todo',['中性原子','Rydberg','综述']),
+    P('d-evered','High-fidelity parallel entangling gates on a neutral-atom quantum computer','S. J. Evered et al.',2023,'Nature','10.1038/s41586-023-06481-y','在中性原子阵列上并行实现保真度 99.5% 的两比特纠缠门。','read',['中性原子','实验']),
+    P('d-bluvstein','Logical quantum processor based on reconfigurable atom arrays','D. Bluvstein et al.',2024,'Nature','10.1038/s41586-023-06927-3','在可重构原子阵列上实现最多 48 个逻辑量子比特的逻辑处理器。','todo',['中性原子','实验','纠错']),
+    N('d-c-purcell','concept','Purcell 效应','腔改变了发射体周围的光学态密度，从而改变自发辐射速率。',['腔 QED']),
+    N('d-c-strong','concept','强耦合','原子与腔的相干耦合强度超过原子和腔各自的耗散速率。',['腔 QED']),
+    N('d-c-blockade','concept','Rydberg blockade','一个原子被激发到 Rydberg 态后，相互作用使附近原子无法被同一束光共振激发。',['Rydberg']),
+    N('d-m-shuttle','method','可重构光镊阵列','在计算过程中移动光镊里的原子，改变量子比特之间的连接。',['中性原子']),
+    N('d-q-cavity','question','怎样把光学腔和中性原子阵列结合起来？','腔提供光子接口，阵列提供多比特处理，两者如何放进同一套装置。',['腔 QED','中性原子'])];
+  const E=(s,t,r)=>({id:'e-'+s+'-'+t,source:s,target:t,rel:r});
+  const edges=[E('d-purcell','d-c-purcell','about'),E('d-jc','d-c-strong','about'),E('d-thompson','d-jc','based'),E('d-thompson','d-c-strong','about'),
+    E('d-reiserer','d-kimble','based'),E('d-reiserer','d-c-strong','about'),E('d-reiserer','d-c-purcell','about'),E('d-reiserer','d-q-cavity','answers'),
+    E('d-jaksch','d-c-blockade','about'),E('d-saffman','d-jaksch','based'),E('d-saffman','d-c-blockade','about'),E('d-evered','d-jaksch','based'),
+    E('d-evered','d-c-blockade','about'),E('d-bluvstein','d-evered','based'),E('d-bluvstein','d-m-shuttle','uses'),E('d-bluvstein','d-q-cavity','related')];
+  return{version:1,nodes,edges,demo:true};
+}
+function normalize(d){
+  const out={version:1,nodes:[],edges:[],demo:!!d.demo};
+  for(const n of (Array.isArray(d.nodes)?d.nodes:[])){
+    if(!n||!n.id||!TYPES[n.type])continue;
+    out.nodes.push({id:String(n.id),type:n.type,title:String(n.title||'未命名'),authors:String(n.authors||''),year:Number.isFinite(+n.year)&&+n.year?+n.year:null,
+      venue:String(n.venue||''),doi:String(n.doi||''),url:String(n.url||''),core:String(n.core||''),notes:String(n.notes||''),
+      tags:Array.isArray(n.tags)?n.tags.map(String).filter(Boolean):[],status:STATUS[n.status]?n.status:'todo',star:!!n.star,created:n.created||today(),
+      x:Number.isFinite(n.x)?n.x:undefined,y:Number.isFinite(n.y)?n.y:undefined,pin:!!n.pin&&Number.isFinite(n.px)&&Number.isFinite(n.py),px:n.px,py:n.py});
+  }
+  const ids=new Set(out.nodes.map(n=>n.id));
+  for(const e of (Array.isArray(d.edges)?d.edges:[])){
+    if(e&&ids.has(e.source)&&ids.has(e.target)&&e.source!==e.target&&RELS[e.rel])out.edges.push({id:String(e.id||uid()),source:e.source,target:e.target,rel:e.rel});
+  }
+  return out;
+}
+function load(){
+  try{const raw=localStorage.getItem(LS_DB); if(raw){db=normalize(JSON.parse(raw));return;}}catch(e){}
+  db=demoData();
+}
+let saveT=0;
+function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(LS_DB,JSON.stringify(db))}catch(e){toast('保存失败：浏览器存储不可用，请先导出备份',{bad:true})}},200)}
+function saveUi(){try{localStorage.setItem(LS_UI,JSON.stringify({view:ui.view,layout:ui.layout,theme:ui.theme,labels:ui.labels}))}catch(e){}}
+function checkpoint(){undoStack.push(JSON.stringify(db));if(undoStack.length>40)undoStack.shift()}
+function undo(){const s=undoStack.pop();if(!s)return toast('没有可以撤销的操作');db=JSON.parse(s);if(!db.nodes.some(n=>n.id===ui.sel))ui.sel=null;changed();toast('已撤销')}
+function reindex(){
+  byId=new Map(db.nodes.map(n=>[n.id,n]));adj=new Map(db.nodes.map(n=>[n.id,new Set()]));
+  db.edges=db.edges.filter(e=>byId.has(e.source)&&byId.has(e.target));
+  for(const e of db.edges){adj.get(e.source).add(e.target);adj.get(e.target).add(e.source)}
+}
+function changed(heat=.7){reindex();save();renderRail();refreshGraph(heat);renderList();renderDetail();renderChrome()}
+function passes(n){
+  const f=ui.f; if(!f.types.has(n.type))return false;
+  if(n.type==='paper'){ if(!f.status.has(n.status))return false;
+    if(n.year){if(f.y0!=null&&n.year<f.y0)return false;if(f.y1!=null&&n.year>f.y1)return false} }
+  if(f.tags.size&&!n.tags.some(t=>f.tags.has(t)))return false;
+  return true;
+}
+function matches(n,q){
+  if(!q)return true;
+  const hay=[n.title,n.authors,n.core,n.venue,n.year||'',n.tags.join(' '),TYPES[n.type].label].join(' ').toLowerCase();
+  return q.toLowerCase().split(/\s+/).filter(Boolean).every(w=>hay.includes(w));
+}
+function search(q,pool){
+  q=q.trim();const l=q.toLowerCase(),rank=n=>{const t=n.title.toLowerCase();return t===l?0:t.startsWith(l)?1:t.includes(l)?2:3};
+  return pool.filter(n=>matches(n,q)).sort((a,b)=>rank(a)-rank(b));
+}
+function shortLabel(n){
+  if(n.type!=='paper')return clip(n.title,20);
+  const au=n.authors||'', first=au.split(/[,;，；]|\s+and\s+/)[0].replace(/et al\.?/i,'').trim();
+  let fam=first; if(first&&!/[一-鿿]/.test(first)){const p=first.split(/\s+/);fam=p[p.length-1]}
+  const multi=/[,;，；]|\s+and\s+|et al/i.test(au);
+  return (fam?fam+(multi?' 等':''):clip(n.title,16))+(n.year?' '+n.year:'');
+}
+function filtersActive(){const f=ui.f;return f.types.size<4||f.status.size<3||f.tags.size>0||f.y0!=null||f.y1!=null}
+function resetFilters(){ui.f={types:new Set(Object.keys(TYPES)),status:new Set(Object.keys(STATUS)),tags:new Set(),y0:null,y1:null}}
+
+/* ---------- toast / ask ---------- */
+function toast(msg,o={}){
+  const el=document.createElement('div');el.className='toast'+(o.bad?' bad':'');el.innerHTML=`<span>${esc(msg)}</span>`;
+  if(o.action){const b=document.createElement('button');b.textContent=o.action.label;b.onclick=()=>{o.action.fn();el.remove()};el.appendChild(b)}
+  $('#toasts').appendChild(el);setTimeout(()=>el.remove(),o.action?6000:2600);
+}
+function ask(title,body,buttons){
+  return new Promise(res=>{
+    $('#askT').textContent=title;$('#askB').innerHTML=`<p style="color:var(--ink-2)">${esc(body)}</p>`;
+    const f=$('#askF');f.innerHTML='<span class="grow"></span>';
+    for(const b of buttons){const el=document.createElement('button');el.type='button';el.className='btn '+(b.kind||'');el.textContent=b.label;el.onclick=()=>{$('#askScrim').hidden=true;res(b.value)};f.appendChild(el)}
+    $('#askScrim').hidden=false;f.lastChild.focus();
+    askCancel=()=>{$('#askScrim').hidden=true;res(null)};
+  });
+}
+let askCancel=null;
+
+/* ---------- rail ---------- */
+function renderRail(){
+  const papers=db.nodes.filter(n=>n.type==='paper'), done=papers.filter(n=>n.status!=='todo').length, deep=papers.filter(n=>n.status==='deep').length;
+  const lonely=db.nodes.filter(n=>!adj.get(n.id)?.size).length;
+  const cnt=t=>db.nodes.filter(n=>n.type===t).length, scnt=s=>papers.filter(n=>n.status===s).length;
+  const tagC=new Map();for(const n of db.nodes)for(const t of n.tags)tagC.set(t,(tagC.get(t)||0)+1);
+  const tags=[...tagC].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'zh'));
+  const pct=v=>papers.length?(v/papers.length*100).toFixed(1):0;
+  let h=`<section>
+    <div class="stat"><span class="stat-n">${papers.length}</span><span class="stat-l">篇文献<br>${db.edges.length} 条关系</span></div>
+    <div class="bar" title="精读 ${deep} · 已读 ${done-deep} · 未读 ${papers.length-done}"><i style="width:${pct(deep)}%;background:var(--good)"></i><i style="width:${pct(done-deep)}%;background:var(--c-paper)"></i></div>
+    <div class="stat-row"><span>读过 <b>${done}</b> / ${papers.length}</span><span>${lonely?`<b>${lonely}</b> 个还没连线`:'全部已连线'}</span></div>
+  </section>
+  <section><h3>类型${filtersActive()?'<button data-reset>重置筛选</button>':''}</h3><div class="tog">${Object.keys(TYPES).map(t=>
+    `<button data-type="${t}" aria-pressed="${ui.f.types.has(t)}">${shapeSvg(t)}<span>${TYPES[t].label}</span><span class="cnt">${cnt(t)}</span></button>`).join('')}</div></section>
+  <section><h3>阅读状态</h3><div class="chips">${Object.keys(STATUS).map(s=>
+    `<button class="chip" data-status="${s}" aria-pressed="${ui.f.status.has(s)}">${STATUS[s]}<span class="cnt">${scnt(s)}</span></button>`).join('')}</div></section>`;
+  const ys=papers.filter(n=>n.year).map(n=>n.year);
+  if(ys.length&&Math.min(...ys)<Math.max(...ys)){
+    const lo=Math.min(...ys),hi=Math.max(...ys),step=Math.ceil((hi-lo+1)/36),bins=[];
+    for(let y=lo;y<=hi;y+=step)bins.push({y,n:ys.filter(v=>v>=y&&v<y+step).length});
+    const mx=Math.max(...bins.map(b=>b.n));
+    h+=`<section><h3>年份</h3><div class="hist" id="hist">${bins.map(b=>`<i data-y="${b.y}" data-s="${step}" style="height:${b.n?10+b.n/mx*34:3}px" title="${b.y}${step>1?'–'+(b.y+step-1):''}：${b.n} 篇"></i>`).join('')}</div>
+      <div class="dual"><input type="range" id="y0" min="${lo}" max="${hi}" value="${ui.f.y0??lo}" aria-label="起始年份"><input type="range" id="y1" min="${lo}" max="${hi}" value="${ui.f.y1??hi}" aria-label="结束年份"></div>
+      <div class="yr"><span id="y0v"></span><span id="y1v"></span></div></section>`;
+  }
+  if(tags.length)h+=`<section><h3>标签</h3><div class="chips">${tags.map(([t,c])=>`<button class="chip" data-tag="${esc(t)}" aria-pressed="${ui.f.tags.has(t)}">${esc(t)}<span class="cnt">${c}</span></button>`).join('')}</div></section>`;
+  h+=`<section><h3>关系图例</h3><div class="legend">${Object.entries(RELS).map(([k,r])=>{
+      const col={ink3:'var(--ink-3)',good:'var(--good)',bad:'var(--bad)',method:'var(--c-method)',concept:'var(--c-concept)',question:'var(--c-question)'}[r.col];
+      const dash=k==='refutes'?'5 4':k==='related'?'2 4':'none';
+      return `<svg width="38" height="10" viewBox="0 0 38 10"><path d="M1 5h${r.directed?30:36}" stroke="${col}" stroke-width="1.6" stroke-dasharray="${dash}" fill="none"/>${r.directed?`<path d="M30 1.5 37 5l-7 3.5z" fill="${col}"/>`:''}</svg><span>${r.label}</span>`}).join('')}
+    </div><p class="muted" style="margin-top:10px">空心圆是未读，实心是已读，带外环是精读。</p></section>`;
+  $('#rail').innerHTML=h; paintYears();
+}
+function paintYears(){
+  const a=$('#y0'),b=$('#y1'); if(!a)return;
+  const lo=+a.min,hi=+a.max,v0=+a.value,v1=+b.value;
+  $('#y0v').textContent=v0; $('#y1v').textContent=v1;
+  $$('#hist i').forEach(i=>{const y=+i.dataset.y,s=+i.dataset.s;i.classList.toggle('in',y+s-1>=v0&&y<=v1)});
+  ui.f.y0=v0>lo?v0:null; ui.f.y1=v1<hi?v1:null;
+}
+$('#rail').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  const tg=(set,v)=>{set.has(v)?set.delete(v):set.add(v)};
+  if(b.dataset.type)tg(ui.f.types,b.dataset.type);
+  else if(b.dataset.status)tg(ui.f.status,b.dataset.status);
+  else if(b.dataset.tag)tg(ui.f.tags,b.dataset.tag);
+  else if('reset' in b.dataset)resetFilters();
+  else return;
+  renderRail();refreshGraph(.5);renderList();
+});
+$('#rail').addEventListener('input',e=>{
+  if(e.target.id!=='y0'&&e.target.id!=='y1')return;
+  const a=$('#y0'),b=$('#y1'); if(+a.value>+b.value){e.target.id==='y0'?a.value=b.value:b.value=a.value}
+  paintYears();refreshGraph(.4);renderList();
+});
+$('#rail').addEventListener('change',e=>{if(e.target.id==='y0'||e.target.id==='y1')renderRail()});
+
+/* ---------- graph ---------- */
+const cv=$('#cv'),ctx=cv.getContext('2d');
+const G={x:0,y:0,k:1,w:0,h:0,dpr:1,alpha:1,vis:[],visSet:new Set(),visEdges:[],qm:null,yx:new Map(),vel:new Map(),hover:null,down:null,ptrs:new Map(),pinch:null,
+  dragNode:null,linkFrom:null,linkTo:null,linkPos:null,anim:null,dirty:true,cols:{},needSave:false,lastTap:null,lastBg:null,pending:null};
+const KMIN=.18,KMAX=3.2;
+const V=n=>{let v=G.vel.get(n.id);if(!v){v={vx:0,vy:0};G.vel.set(n.id,v)}return v};
+const rad=n=>(n.type==='paper'?7:8)+Math.min(9,Math.sqrt(adj.get(n.id)?.size||0)*2.6)+(n.star?2:0);
+const zf=()=>clamp(Math.pow(G.k,.75),.45,2.4);
+function readCols(){
+  const s=getComputedStyle(document.documentElement),g=n=>s.getPropertyValue(n).trim();
+  G.cols={bg:g('--bg'),raise:g('--raise'),ink:g('--ink'),ink2:g('--ink-2'),ink3:g('--ink-3'),line:g('--line'),grid:g('--grid'),accent:g('--accent'),
+    paper:g('--c-paper'),concept:g('--c-concept'),method:g('--c-method'),question:g('--c-question'),good:g('--good'),bad:g('--bad'),
+    dark:document.documentElement.dataset.theme==='dark',font:g('--font-body'),mono:g('--font-mono')};
+  G.dirty=true;
+}
+function resize(){
+  const r=$('#stage').getBoundingClientRect(); if(!r.width)return;
+  const first=!G.w; G.w=r.width;G.h=r.height;G.dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.width=Math.round(G.w*G.dpr);cv.height=Math.round(G.h*G.dpr);cv.style.width=G.w+'px';cv.style.height=G.h+'px';
+  if(first){G.x=G.w/2;G.y=G.h/2} G.dirty=true;
+}
+function refreshGraph(heat=0){
+  G.vis=db.nodes.filter(passes);G.visSet=new Set(G.vis.map(n=>n.id));
+  G.visEdges=db.edges.filter(e=>G.visSet.has(e.source)&&G.visSet.has(e.target));
+  const q=ui.q.trim();G.qm=q?new Set(G.vis.filter(n=>matches(n,q)).map(n=>n.id)):null;
+  let i=0;for(const n of G.vis){ if(n.x===undefined||n.y===undefined){ // place near a neighbour, else on a loose ring
+      const nb=[...(adj.get(n.id)||[])].map(id=>byId.get(id)).find(m=>m&&m.x!==undefined);
+      const a=Math.random()*TAU,r=nb?70:140+40*Math.sqrt(i++);
+      n.x=(nb?nb.x:0)+Math.cos(a)*r;n.y=(nb?nb.y:0)+Math.sin(a)*r;} }
+  const ys=[...new Set(G.vis.filter(n=>n.type==='paper'&&n.year).map(n=>n.year))].sort((a,b)=>a-b);
+  G.yx=new Map();let x=0;ys.forEach((y,j)=>{if(j)x+=clamp((y-ys[j-1])*14,84,190);G.yx.set(y,x)});
+  for(const [y,v] of G.yx)G.yx.set(y,v-x/2);
+  if(G.hover&&!G.visSet.has(G.hover.id))G.hover=null;
+  if(heat)G.alpha=Math.max(G.alpha,heat);
+  G.dirty=true;renderEmpty();
+}
+function tick(){
+  const ns=G.vis,n=ns.length,a=G.alpha,tl=ui.layout==='time'; if(!n)return;
+  const tall=G.h>G.w*1.15,gx=tall?.07:.035,gy=tall?.026:.045;
+  for(let i=0;i<n;i++){const A=ns[i],va=V(A);
+    for(let j=i+1;j<n;j++){const B=ns[j];let dx=B.x-A.x,dy=B.y-A.y,d2=dx*dx+dy*dy;
+      if(d2<.01){dx=Math.random()-.5;dy=Math.random()-.5;d2=dx*dx+dy*dy}
+      if(d2>640000)continue;
+      const f=620*a/d2,vb=V(B);va.vx-=dx*f;va.vy-=dy*f;vb.vx+=dx*f;vb.vy+=dy*f;
+      const min=rad(A)+rad(B)+26; if(d2<min*min){const d=Math.sqrt(d2),p=(min-d)/d*.12;va.vx-=dx*p;va.vy-=dy*p;vb.vx+=dx*p;vb.vy+=dy*p}
+    }}
+  for(const e of G.visEdges){const A=byId.get(e.source),B=byId.get(e.target),dx=B.x-A.x,dy=B.y-A.y,d=Math.hypot(dx,dy)||1;
+    const L=(tl?150:118)+rad(A)+rad(B),f=(d-L)/d*(tl?.05:.16)*a,va=V(A),vb=V(B);va.vx+=dx*f;va.vy+=dy*f;vb.vx-=dx*f;vb.vy-=dy*f}
+  for(const A of ns){const v=V(A);
+    if(tl){ if(A.type==='paper'&&A.year&&G.yx.has(A.year)){v.vx+=(G.yx.get(A.year)-A.x)*.3*a;v.vy+=(0-A.y)*.1*a}
+      else{const band=A.type==='paper'?0:A.type==='concept'?-210:210;v.vy+=(band-A.y)*.16*a;v.vx-=A.x*.004*a} }
+    else{v.vx-=A.x*gx*a;v.vy-=A.y*gy*a}
+    if(A===G.dragNode){v.vx=v.vy=0;continue}
+    if(A.pin&&!tl){A.x=A.px;A.y=A.py;v.vx=v.vy=0;continue}
+    v.vx*=.62;v.vy*=.62;const sp=Math.hypot(v.vx,v.vy);if(sp>40){v.vx*=40/sp;v.vy*=40/sp}
+    A.x+=v.vx;A.y+=v.vy}
+  G.alpha*=.978;
+}
+function shape(t,x,y,r){
+  ctx.beginPath();
+  if(t==='paper')ctx.arc(x,y,r,0,TAU);
+  else if(t==='concept'){const q=r*1.18;ctx.moveTo(x,y-q);ctx.lineTo(x+q,y);ctx.lineTo(x,y+q);ctx.lineTo(x-q,y);ctx.closePath()}
+  else if(t==='method'){for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3,px=x+Math.cos(a)*r*1.1,py=y+Math.sin(a)*r*1.1;i?ctx.lineTo(px,py):ctx.moveTo(px,py)}ctx.closePath()}
+  else rr(x-r*.92,y-r*.92,r*1.84,r*1.84,r*.34);
+}
+function rr(x,y,w,h,r){if(ctx.roundRect){ctx.roundRect(x,y,w,h,r)}else{ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}}
+function draw(){
+  const c=G.cols,k=G.k,z=zf();
+  ctx.setTransform(G.dpr,0,0,G.dpr,0,0);ctx.clearRect(0,0,G.w,G.h);
+  // graticule
+  let step=34*k;while(step<20)step*=2;while(step>80)step/=2;
+  const ox=((G.x%step)+step)%step,oy=((G.y%step)+step)%step;ctx.fillStyle=c.grid;
+  for(let x=ox;x<G.w;x+=step)for(let y=oy;y<G.h;y+=step)ctx.fillRect(x-.7,y-.7,1.4,1.4);
+  // year columns
+  if(ui.layout==='time'&&G.yx.size){
+    ctx.font=`500 11px ${c.mono}`;ctx.textAlign='center';ctx.textBaseline='middle';
+    for(const [y,wx] of G.yx){const sx=wx*k+G.x; if(sx<-30||sx>G.w+30)continue;
+      ctx.strokeStyle=c.line;ctx.lineWidth=1;ctx.setLineDash([2,5]);ctx.beginPath();ctx.moveTo(sx,84);ctx.lineTo(sx,G.h);ctx.stroke();ctx.setLineDash([]);
+      const tw=ctx.measureText(y).width+14;ctx.fillStyle=c.raise;ctx.strokeStyle=c.line;ctx.beginPath();rr(sx-tw/2,62,tw,20,10);ctx.fill();ctx.stroke();
+      ctx.fillStyle=c.ink2;ctx.fillText(y,sx,72.5)}
+  }
+  const selN=ui.sel&&G.visSet.has(ui.sel)?byId.get(ui.sel):null, focus=G.hover||selN;
+  const hi=focus?new Set([focus.id,...adj.get(focus.id)]):null, qm=G.qm;
+  const dim=n=>(hi&&!hi.has(n.id))||(qm&&!qm.has(n.id));
+  const S=n=>[n.x*k+G.x,n.y*k+G.y];
+  // edges
+  const tags=[];
+  for(const e of G.visEdges){
+    const A=byId.get(e.source),B=byId.get(e.target),[ax,ay]=S(A),[bx,by]=S(B),ra=rad(A)*z,rb=rad(B)*z;
+    const dx=bx-ax,dy=by-ay,d=Math.hypot(dx,dy); if(d<ra+rb+6)continue;
+    const ux=dx/d,uy=dy/d,R=RELS[e.rel],col=c[R.col],on=focus&&(e.source===focus.id||e.target===focus.id);
+    const x1=ax+ux*(ra+3),y1=ay+uy*(ra+3),hd=R.directed?7*clamp(z,.7,1.3):0,x2=bx-ux*(rb+4),y2=by-uy*(rb+4);
+    const faded=(hi&&!on)||(qm&&!(qm.has(A.id)&&qm.has(B.id)));
+    ctx.globalAlpha=faded?.1:on?1:.62;ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=on?1.9:1.15;
+    ctx.setLineDash(e.rel==='refutes'?[5,4]:e.rel==='related'?[2,4]:[]);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2-ux*hd*.7,y2-uy*hd*.7);ctx.stroke();ctx.setLineDash([]);
+    if(hd){ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-ux*hd-uy*hd*.5,y2-uy*hd+ux*hd*.5);ctx.lineTo(x2-ux*hd+uy*hd*.5,y2-uy*hd-ux*hd*.5);ctx.closePath();ctx.fill()}
+    if(on&&k>.45)tags.push([(x1+x2)/2,(y1+y2)/2,R.label,col]);
+  }
+  // nodes
+  for(const n of G.vis){
+    const [sx,sy]=S(n),r=rad(n)*z; if(sx<-60||sx>G.w+60||sy<-60||sy>G.h+60)continue;
+    const col=c[n.type],isSel=n.id===ui.sel,isHov=n===G.hover||n===G.linkTo;
+    ctx.globalAlpha=dim(n)?.16:1;
+    if(isSel||isHov){ctx.save();ctx.globalAlpha*=isSel?.2:.14;ctx.fillStyle=isSel?c.accent:col;ctx.beginPath();ctx.arc(sx,sy,r+9,0,TAU);ctx.fill();ctx.restore()}
+    const hollow=n.type==='paper'&&n.status==='todo';
+    if(c.dark&&!hollow&&!dim(n)){ctx.shadowColor=col;ctx.shadowBlur=14}
+    shape(n.type,sx,sy,r);
+    if(hollow){ctx.fillStyle=c.bg;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=col;ctx.stroke()}
+    else{ctx.fillStyle=col;ctx.fill();ctx.shadowBlur=0;ctx.lineWidth=1.5;ctx.strokeStyle=c.bg;ctx.stroke()}
+    ctx.shadowBlur=0;
+    if(n.type==='paper'&&n.status==='deep'){ctx.beginPath();ctx.arc(sx,sy,r+3.6,0,TAU);ctx.lineWidth=1.4;ctx.strokeStyle=col;ctx.stroke()}
+    if(isSel){ctx.beginPath();ctx.arc(sx,sy,r+8,0,TAU);ctx.lineWidth=2;ctx.strokeStyle=c.accent;ctx.stroke()}
+    if(n.star){ctx.beginPath();ctx.arc(sx+r*.78,sy-r*.78,3.3,0,TAU);ctx.fillStyle=c.accent;ctx.fill();ctx.lineWidth=1.3;ctx.strokeStyle=c.bg;ctx.stroke()}
+  }
+  // labels
+  if(ui.labels){
+    ctx.textAlign='center';ctx.textBaseline='top';ctx.lineJoin='round';
+    const isImp=n=>n.id===ui.sel||n===G.hover||(hi&&hi.has(n.id)),boxes=[];
+    const order=G.vis.map(n=>[n,isImp(n)?1e4:(n.star?100:0)+adj.get(n.id).size]).sort((a,b)=>b[1]-a[1]);
+    for(const [n] of order){
+      const imp=isImp(n);
+      if(!(imp||k>=.58||(n.star&&k>=.34)))continue;
+      if(!imp&&dim(n))continue;
+      const [sx,sy]=S(n),r=rad(n)*z; if(sx<-80||sx>G.w+80||sy<-40||sy>G.h+40)continue;
+      ctx.globalAlpha=1;ctx.font=`${imp?600:500} ${imp?12.5:11.5}px ${c.font}`;
+      const t=shortLabel(n),ty=sy+r+(n.type==='concept'?r*.18:0)+6,hw=ctx.measureText(t).width/2+3;
+      if(!imp&&boxes.some(b=>sx-hw<b[1]&&sx+hw>b[0]&&ty<b[3]&&ty+15>b[2]))continue; // skip a label that would sit on another
+      boxes.push([sx-hw,sx+hw,ty,ty+15]);
+      ctx.strokeStyle=c.bg;ctx.lineWidth=4;ctx.strokeText(t,sx,ty);ctx.fillStyle=imp?c.ink:c.ink2;ctx.fillText(t,sx,ty);
+    }
+  }
+  // relation tags on the focused node's edges
+  ctx.globalAlpha=1;ctx.font=`500 10.5px ${c.font}`;ctx.textAlign='center';ctx.textBaseline='middle';
+  for(const [x,y,t,col] of tags){const w=ctx.measureText(t).width+12;ctx.fillStyle=c.raise;ctx.strokeStyle=c.line;ctx.lineWidth=1;ctx.beginPath();rr(x-w/2,y-9,w,18,9);ctx.fill();ctx.stroke();ctx.fillStyle=col===c.ink3?c.ink2:col;ctx.fillText(t,x,y+.5)}
+  // link being drawn
+  if(G.linkFrom&&G.linkPos){const [ax,ay]=S(G.linkFrom);let bx=G.linkPos.x,by=G.linkPos.y;if(G.linkTo)[bx,by]=S(G.linkTo);
+    ctx.strokeStyle=c.accent;ctx.lineWidth=2;ctx.setLineDash([6,5]);ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();ctx.setLineDash([])}
+}
+function frame(){
+  if(ui.view==='graph'&&G.w){
+    let moving=false;
+    if(G.alpha>.004){const reps=RM?400:1;for(let i=0;i<reps&&G.alpha>.004;i++)tick();moving=true}
+    if(G.anim){stepAnim();moving=true}
+    if(moving||G.dirty){draw();G.dirty=false}
+    if(!moving&&G.needSave){G.needSave=false;save()}
+    else if(moving&&G.alpha<=.004)G.needSave=true;
+  }
+  requestAnimationFrame(frame);
+}
+function camTo(x,y,k,animate=true){
+  if(!animate||RM){G.x=x;G.y=y;G.k=k;G.anim=null;G.dirty=true;return}
+  G.anim={t0:performance.now(),d:460,f:{x:G.x,y:G.y,k:G.k},t:{x,y,k}};
+}
+function stepAnim(){const a=G.anim;let t=(performance.now()-a.t0)/a.d;if(t>=1){t=1;G.anim=null}const e=1-Math.pow(1-t,3);
+  G.x=a.f.x+(a.t.x-a.f.x)*e;G.y=a.f.y+(a.t.y-a.f.y)*e;G.k=a.f.k+(a.t.k-a.f.k)*e}
+const wide=()=>innerWidth>860;
+function fit(animate=true){
+  if(!G.vis.length||!G.w)return;
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const n of G.vis){x0=Math.min(x0,n.x);x1=Math.max(x1,n.x);y0=Math.min(y0,n.y);y1=Math.max(y1,n.y)}
+  const side=wide()?96:44,pl=side,pr=(ui.sel&&wide()?400:0)+side,pt=ui.layout==='time'?110:80,pb=(ui.sel&&!wide()?G.h*.6:0)+(db.demo?120:76);
+  const w=Math.max(120,G.w-pl-pr),h=Math.max(120,G.h-pt-pb);
+  const k=clamp(Math.min(w/Math.max(x1-x0,60),h/Math.max(y1-y0,60)),KMIN,1.35);
+  camTo(pl+w/2-(x0+x1)/2*k,pt+h/2-(y0+y1)/2*k,k,animate);
+}
+function focusNode(n){
+  const k=Math.max(G.k,.8),cx=wide()&&ui.sel?(G.w-400)/2:G.w/2,cy=!wide()&&ui.sel?G.h*.2:G.h/2;
+  camTo(cx-n.x*k,cy-n.y*k,k);
+}
+function zoomAt(px,py,nk){nk=clamp(nk,KMIN,KMAX);const wx=(px-G.x)/G.k,wy=(py-G.y)/G.k;G.k=nk;G.x=px-wx*nk;G.y=py-wy*nk;G.anim=null;G.dirty=true}
+function hit(px,py,slop=5){
+  const z=zf();for(let i=G.vis.length-1;i>=0;i--){const n=G.vis[i],dx=n.x*G.k+G.x-px,dy=n.y*G.k+G.y-py,r=rad(n)*z+slop;if(dx*dx+dy*dy<=r*r)return n}
+  return null;
+}
+const ptr=e=>{const r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
+cv.addEventListener('pointerdown',e=>{
+  if(e.button>0)return; try{cv.setPointerCapture(e.pointerId)}catch(_){}
+  const p=ptr(e);G.ptrs.set(e.pointerId,p);hideTip();closeRelPop();G.anim=null;
+  if(G.ptrs.size===2){const [a,b]=[...G.ptrs.values()];G.pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,k:G.k,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,x:G.x,y:G.y};
+    G.down=null;G.dragNode=null;G.linkFrom=G.linkTo=G.linkPos=null;return}
+  const n=hit(p.x,p.y,e.pointerType==='mouse'?5:12);
+  G.down={x:p.x,y:p.y,node:n,moved:false,mode:n?((ui.linkMode||e.shiftKey)?'link':'node'):'pan',ox:G.x,oy:G.y,nx:n?n.x:0,ny:n?n.y:0};
+  if(G.down.mode==='link'){G.linkFrom=n;G.linkPos=p}
+  if(!n)cv.classList.add('grabbing');
+});
+cv.addEventListener('pointermove',e=>{
+  const p=ptr(e); if(G.ptrs.has(e.pointerId))G.ptrs.set(e.pointerId,p);
+  if(G.pinch&&G.ptrs.size>=2){const [a,b]=[...G.ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y)||1,cx=(a.x+b.x)/2,cy=(a.y+b.y)/2,P=G.pinch;
+    const nk=clamp(P.k*d/P.d,KMIN,KMAX),wx=(P.cx-P.x)/P.k,wy=(P.cy-P.y)/P.k;G.k=nk;G.x=cx-wx*nk;G.y=cy-wy*nk;G.dirty=true;return}
+  const dn=G.down;
+  if(!dn){ if(e.pointerType==='mouse'){const n=hit(p.x,p.y);if(n!==G.hover){G.hover=n;G.dirty=true;cv.style.cursor=n?'pointer':'';n?showTip(n,p):hideTip()}else if(n)placeTip(p)} return}
+  if(!dn.moved&&Math.hypot(p.x-dn.x,p.y-dn.y)>(e.pointerType==='mouse'?4:8))dn.moved=true;
+  if(!dn.moved)return;
+  if(dn.mode==='pan'){G.x=dn.ox+p.x-dn.x;G.y=dn.oy+p.y-dn.y;G.dirty=true}
+  else if(dn.mode==='node'){dn.node.x=dn.nx+(p.x-dn.x)/G.k;dn.node.y=dn.ny+(p.y-dn.y)/G.k;G.dragNode=dn.node;G.alpha=Math.max(G.alpha,.22);G.dirty=true}
+  else{G.linkPos=p;const t=hit(p.x,p.y,10);G.linkTo=t&&t!==G.linkFrom?t:null;G.dirty=true}
+});
+function pointerEnd(e){
+  const p=ptr(e);G.ptrs.delete(e.pointerId);cv.classList.remove('grabbing');
+  if(G.pinch){if(G.ptrs.size<2)G.pinch=null;G.down=null;return}
+  const dn=G.down;G.down=null;if(!dn)return;
+  const now=performance.now();
+  if(dn.mode==='link'){const a=G.linkFrom,b=G.linkTo;G.linkFrom=G.linkTo=G.linkPos=null;G.dirty=true;
+    if(a&&b)openRelPop(a,b,p);else if(!dn.moved)select(dn.node.id);return}
+  if(dn.mode==='node'){G.dragNode=null;
+    if(dn.moved){if(ui.layout==='force'){dn.node.pin=true;dn.node.px=dn.node.x;dn.node.py=dn.node.y;renderDetail()}G.alpha=Math.max(G.alpha,.12);save();return}
+    if(G.lastTap&&G.lastTap.id===dn.node.id&&now-G.lastTap.t<380){G.lastTap=null;openEditor(dn.node.id)}
+    else{G.lastTap={id:dn.node.id,t:now};select(dn.node.id)}
+    return}
+  if(!dn.moved){
+    if(G.lastBg&&now-G.lastBg.t<380&&Math.hypot(dn.x-G.lastBg.x,dn.y-G.lastBg.y)<14){G.lastBg=null;openEditor(null,{pos:{x:(dn.x-G.x)/G.k,y:(dn.y-G.y)/G.k}})}
+    else{G.lastBg={t:now,x:dn.x,y:dn.y};select(null)}
+  }
+}
+cv.addEventListener('pointerup',pointerEnd);
+cv.addEventListener('pointercancel',e=>{G.ptrs.delete(e.pointerId);G.pinch=null;G.down=null;G.dragNode=null;G.linkFrom=G.linkTo=G.linkPos=null;G.dirty=true;cv.classList.remove('grabbing')});
+cv.addEventListener('pointerleave',()=>{if(G.hover){G.hover=null;G.dirty=true}hideTip()});
+cv.addEventListener('wheel',e=>{e.preventDefault();const p=ptr(e);zoomAt(p.x,p.y,G.k*Math.exp(-e.deltaY*(e.ctrlKey?.012:.0016)));hideTip()},{passive:false});
+function showTip(n,p){
+  const t=$('#tip');
+  const meta=n.type==='paper'?[n.authors&&clip(n.authors,60),[n.year,n.venue].filter(Boolean).join(' · ')].filter(Boolean).join('<br>'):'';
+  t.innerHTML=`<span class="l-type t-${n.type}">${shapeSvg(n.type,12)}<small>${TYPES[n.type].label}${n.type==='paper'?' · '+STATUS[n.status]:''}</small></span>
+    <h4>${esc(n.title)}</h4>${meta?`<div class="meta">${meta.split('<br>').map(esc).join('<br>')}</div>`:''}${n.core?`<p>${esc(clip(n.core,150))}</p>`:''}`;
+  t.hidden=false;placeTip(p);
+}
+function placeTip(p){const t=$('#tip'),w=300,h=t.offsetHeight;let x=p.x+18,y=p.y+18;if(x+w>G.w-10)x=p.x-w-18;if(y+h>G.h-10)y=Math.max(10,p.y-h-14);t.style.left=Math.max(8,x)+'px';t.style.top=y+'px'}
+function hideTip(){$('#tip').hidden=true}
+function openRelPop(a,b,p){
+  const d=defaultLink(a.type,b.type);G.pending={a:a.id,b:b.id,dir:d.dir,def:d.rel};paintRelPop();
+  const el=$('#relPop');el.hidden=false;el.style.left=clamp(p.x-125,8,G.w-258)+'px';el.style.top=clamp(p.y+14,70,G.h-el.offsetHeight-10)+'px';
+}
+function paintRelPop(){
+  const P=G.pending,src=byId.get(P.dir==='out'?P.a:P.b),tgt=byId.get(P.dir==='out'?P.b:P.a);
+  $('#relPop').innerHTML=`<div class="rp-head"><b title="${esc(src.title)}">${esc(shortLabel(src))}</b>${ic('arrow',14)}<b title="${esc(tgt.title)}">${esc(shortLabel(tgt))}</b>
+    <button class="icon-btn" data-swap title="调换方向" style="width:26px;height:26px">${ic('swap',14)}</button></div>
+    <div class="rp-opts">${Object.entries(RELS).map(([k,r])=>`<button data-rel="${k}" class="${k===P.def?'def':''}"><i class="dot" style="color:var(--${{ink3:'ink-3',good:'good',bad:'bad',method:'c-method',concept:'c-concept',question:'c-question'}[r.col]})"></i>${r.label}</button>`).join('')}</div>`;
+}
+function closeRelPop(){$('#relPop').hidden=true;G.pending=null}
+$('#relPop').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b||!G.pending)return;const P=G.pending;
+  if('swap' in b.dataset){P.dir=P.dir==='out'?'in':'out';paintRelPop();return}
+  const s=P.dir==='out'?P.a:P.b,t=P.dir==='out'?P.b:P.a;closeRelPop();addEdge(s,t,b.dataset.rel);
+});
+function addEdge(s,t,rel){
+  if(db.edges.some(e=>e.rel===rel&&((e.source===s&&e.target===t)||(!RELS[rel].directed&&e.source===t&&e.target===s))))return toast('这条关系已经有了');
+  checkpoint();db.edges.push({id:uid(),source:s,target:t,rel});changed(.35);toast('已连线：'+RELS[rel].label,{action:{label:'撤销',fn:undo}});
+}
+function paintHint(){$('#hint').hidden=!db.nodes.length||(db.demo&&$('#stage').clientWidth<1000)}
+function renderEmpty(){
+  const el=$('#empty');
+  if(!db.nodes.length){el.hidden=false;el.innerHTML=`<div><h2>从第一篇文献开始</h2><p>每读一篇，记下作者、标题和一句话核心，再把它连到相关的概念和别的文献上。</p><div class="row"><button class="btn primary" data-a="new">${ic('plus',16)}添加文献</button><button class="btn" data-a="demo">看看示例</button></div></div>`}
+  else if(!G.vis.length){el.hidden=false;el.innerHTML=`<div><h2>筛选后没有条目</h2><p>当前的类型、状态、年份或标签筛选把所有条目都排除了。</p><div class="row"><button class="btn" data-a="reset">重置筛选</button></div></div>`}
+  else el.hidden=true;
+  paintHint();
+}
+$('#empty').addEventListener('click',e=>{const a=e.target.closest('button')?.dataset.a;if(a==='new')openEditor();if(a==='demo')loadDemo();if(a==='reset'){resetFilters();renderRail();refreshGraph(.5);renderList()}});
+
+/* ---------- selection & detail ---------- */
+function select(id,focus=false){
+  ui.sel=id&&byId.has(id)?id:null;renderDetail();G.dirty=true;
+  $$('#viewList tr.sel').forEach(r=>r.classList.remove('sel'));if(ui.sel)$(`#viewList tr[data-id="${CSS.escape(ui.sel)}"]`)?.classList.add('sel');
+  if(ui.sel&&ui.view==='graph'){const n=byId.get(ui.sel);
+    if(focus){if(!G.visSet.has(n.id)){resetFilters();renderRail();refreshGraph(.3);renderList()}focusNode(n)}
+    else if(G.visSet.has(n.id)){const sx=n.x*G.k+G.x,sy=n.y*G.k+G.y;if(wide()?sx>G.w-420:sy>G.h*.34)focusNode(n)}}
+}
+const safeUrl=u=>{u=String(u||'').trim();if(!u)return'';return /^https?:\/\//i.test(u)?u:'https://'+u.replace(/^\/+/,'')};
+function renderDetail(){
+  const n=byId.get(ui.sel),p=$('#panel');p.classList.toggle('open',!!n);$('#stage').classList.toggle('has-panel',!!n);
+  if(!n){return}
+  const groups=new Map(),push=(k,o,e)=>{if(!groups.has(k))groups.set(k,[]);groups.get(k).push([byId.get(o),e])};
+  for(const e of db.edges){if(e.source===n.id)push(RELS[e.rel].label,e.target,e);else if(e.target===n.id)push(RELS[e.rel].directed?RELS[e.rel].inv:RELS[e.rel].label,e.source,e)}
+  const href=n.doi?'https://doi.org/'+encodeURI(n.doi):safeUrl(n.url);
+  p.innerHTML=`<div class="p-head"><span class="l-type t-${n.type}">${shapeSvg(n.type,13)}<b style="font-weight:600">${TYPES[n.type].label}</b></span>
+      ${n.type==='paper'?`<span class="pill ${n.status}">${STATUS[n.status]}</span>`:''}<span class="grow"></span>
+      ${n.pin?`<button class="icon-btn" data-a="unpin" aria-pressed="true" aria-label="解除固定位置" title="位置已固定，点击解除">${ic('pin')}</button>`:''}
+      ${n.type==='paper'?`<button class="icon-btn ${n.star?'star-on':''}" data-a="star" aria-label="关键文献" title="关键文献" aria-pressed="${n.star}">${ic('star')}</button>`:''}
+      <button class="icon-btn" data-a="close" aria-label="关闭">${ic('x')}</button></div>
+    <div class="p-body">
+      <div><h2 class="p-title">${esc(n.title)}</h2>
+      ${n.type==='paper'&&(n.authors||n.year||n.venue)?`<p class="p-meta" style="margin-top:8px">${esc(n.authors)}${n.authors?'<br>':''}<span class="mono">${n.year||''}</span>${n.year&&n.venue?' · ':''}<i>${esc(n.venue)}</i></p>`:''}</div>
+      ${n.core?`<div class="callout"><small>${TYPES[n.type].call}</small><div class="math">${esc(n.core)}</div></div>`:`<p class="muted">还没写${TYPES[n.type].call}。</p>`}
+      ${n.type==='paper'?`<div class="seg" data-seg="status" style="align-self:flex-start">${Object.keys(STATUS).map(s=>`<button data-st="${s}" aria-pressed="${n.status===s}">${STATUS[s]}</button>`).join('')}</div>`:''}
+      ${n.notes?`<div class="p-sec"><h5>笔记</h5><div class="notes math">${esc(n.notes)}</div></div>`:''}
+      ${n.tags.length?`<div class="chips">${n.tags.map(t=>`<button class="chip" data-tag="${esc(t)}">${esc(t)}</button>`).join('')}</div>`:''}
+      <div class="p-sec"><h5>关系 · ${adj.get(n.id).size}</h5>${groups.size?[...groups].map(([k,items])=>`<div class="rel-g"><span>${k}</span>${items.map(([o])=>
+        `<button class="rel-i" data-go="${esc(o.id)}">${shapeSvg(o.type,12,o.type==='paper'&&o.status==='todo')}<span title="${esc(o.title)}">${esc(o.type==='paper'?shortLabel(o)+' · '+o.title:o.title)}</span></button>`).join('')}</div>`).join('')
+        :'<p class="muted">还没有关系。点下面的「编辑」添加，或在图上按住 Shift 从这个节点拖到另一个节点。</p>'}</div>
+    </div>
+    <div class="p-foot"><button class="btn sm primary" data-a="edit">${ic('edit',15)}编辑</button>
+      ${href?`<a class="btn sm" href="${esc(href)}" target="_blank" rel="noopener" style="text-decoration:none">${ic('ext',15)}原文</a>`:''}
+      <button class="btn sm" data-a="md" title="复制成 Obsidian 笔记">${ic('copy',15)}Obsidian</button><span class="grow"></span>
+      <button class="btn sm danger" data-a="del" aria-label="删除">${ic('trash',15)}</button></div>`;
+  if(window.renderMathInElement)$$('.math',p).forEach(el=>{try{renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false})}catch(_){}});
+}
+$('#panel').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;const n=byId.get(ui.sel);if(!n)return;
+  if(b.dataset.go)return select(b.dataset.go,true);
+  if(b.dataset.st){checkpoint();n.status=b.dataset.st;return changed(0)}
+  if(b.dataset.tag){ui.f.tags=new Set([b.dataset.tag]);renderRail();refreshGraph(.5);renderList();return}
+  const a=b.dataset.a;
+  if(a==='close')select(null);
+  if(a==='edit')openEditor(n.id);
+  if(a==='star'){checkpoint();n.star=!n.star;changed(0)}
+  if(a==='unpin'){n.pin=false;save();renderDetail();G.alpha=Math.max(G.alpha,.4)}
+  if(a==='del')removeNode(n.id);
+  if(a==='md')copyText(toMarkdown(n),'已复制，可以直接粘贴进 Obsidian');
+});
+function removeNode(id){
+  const n=byId.get(id);if(!n)return;checkpoint();
+  db.nodes=db.nodes.filter(x=>x.id!==id);db.edges=db.edges.filter(e=>e.source!==id&&e.target!==id);
+  if(ui.sel===id)ui.sel=null;changed(.3);toast('已删除「'+clip(n.title,18)+'」',{action:{label:'撤销',fn:undo}});
+}
+function copyText(text,ok){
+  const done=()=>toast(ok),fb=()=>{const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();
+    let good=false;try{good=document.execCommand('copy')}catch(_){}ta.remove();good?done():toast('复制失败，浏览器不允许访问剪贴板',{bad:true})};
+  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(text).then(done,fb);else fb();
+}
+function toMarkdown(n){
+  const link=o=>'[['+o.title.replace(/[\\/:*?"<>|#^\[\]]/g,' ').replace(/\s+/g,' ').trim()+']]';
+  const L=['---','type: '+TYPES[n.type].label,'tags: ['+n.tags.join(', ')+']'];
+  if(n.type==='paper'){L.push('aliases: ["'+shortLabel(n).replace(/"/g,'')+'"]');if(n.authors)L.push('authors: "'+n.authors.replace(/"/g,'')+'"');if(n.year)L.push('year: '+n.year);
+    if(n.venue)L.push('journal: "'+n.venue.replace(/"/g,'')+'"');L.push('status: '+STATUS[n.status])}
+  L.push('created: '+(n.created||today()));const src=n.doi?'https://doi.org/'+n.doi:n.url;if(src)L.push('source: '+src);L.push('---','');
+  const head={paper:'[!abstract] 核心',concept:'[!definition]',method:'[!abstract] 目的',question:'[!question]'}[n.type];
+  if(n.core)L.push('> '+head,...n.core.split('\n').map(s=>'> '+s),'');
+  if(n.notes)L.push('## 笔记','',n.notes,'');
+  const g=new Map();for(const e of db.edges){let k,o;if(e.source===n.id){k=RELS[e.rel].label;o=e.target}else if(e.target===n.id){k=RELS[e.rel].directed?RELS[e.rel].inv:RELS[e.rel].label;o=e.source}else continue;
+    if(!g.has(k))g.set(k,[]);g.get(k).push(link(byId.get(o)))}
+  for(const [k,v] of g)L.push('**'+k+'** '+v.join(' · '));
+  return L.join('\n')+'\n';
+}
+
+/* ---------- list ---------- */
+function renderList(){
+  const el=$('#viewList');if(ui.view!=='list')return;
+  const q=ui.q.trim(),s=ui.sort;let rows=db.nodes.filter(passes).filter(n=>matches(n,q));
+  const key={title:n=>n.title.toLowerCase(),authors:n=>(n.authors||'￿').toLowerCase(),year:n=>n.year||0,venue:n=>(n.venue||'￿').toLowerCase(),deg:n=>adj.get(n.id).size,type:n=>Object.keys(TYPES).indexOf(n.type)*10+Object.keys(STATUS).indexOf(n.status)}[s.key];
+  rows.sort((a,b)=>{const x=key(a),y=key(b);return (x<y?-1:x>y?1:0)*s.dir||a.title.localeCompare(b.title)});
+  if(!rows.length){el.innerHTML=`<div class="empty" style="position:static;padding:60px 0"><div><h2>没有符合条件的条目</h2><p>换个搜索词，或者重置左侧的筛选。</p></div></div>`;return}
+  const th=(k,l,c='')=>`<th data-k="${k}" class="${c} ${s.key===k?'sorted':''}">${l}${s.key===k?(s.dir>0?' ↑':' ↓'):''}</th>`;
+  el.innerHTML=`<table class="list"><thead><tr>${th('type','类型')}${th('title','标题')}${th('authors','作者')}${th('year','年份')}${th('venue','期刊')}<th>标签</th>${th('deg','关系')}</tr></thead><tbody>${rows.map(n=>
+    `<tr data-id="${esc(n.id)}" class="${n.id===ui.sel?'sel':''}"><td><span class="l-type t-${n.type}">${shapeSvg(n.type,13,n.type==='paper'&&n.status==='todo')}${n.type==='paper'?`<span class="pill ${n.status}">${STATUS[n.status]}</span>`:`<span>${TYPES[n.type].label}</span>`}</span></td>
+      <td><div class="l-title">${n.star?'<span class="star-on" title="关键文献">★ </span>':''}${esc(n.title)}</div>${n.core?`<div class="l-core">${esc(clip(n.core,110))}</div>`:''}</td>
+      <td class="muted">${esc(clip(n.authors,40))||'<span class="c-hide">—</span>'}</td><td class="mono">${n.year||'<span class="c-hide">—</span>'}</td><td class="muted c-hide"><i>${esc(n.venue)||'—'}</i></td>
+      <td class="c-hide"><div class="chips">${n.tags.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div></td><td class="mono c-hide">${adj.get(n.id).size}</td></tr>`).join('')}</tbody></table>`;
+}
+$('#viewList').addEventListener('click',e=>{
+  const th=e.target.closest('th[data-k]');if(th){const k=th.dataset.k;ui.sort=ui.sort.key===k?{key:k,dir:-ui.sort.dir}:{key:k,dir:k==='year'||k==='deg'?-1:1};return renderList()}
+  const tr=e.target.closest('tr[data-id]');if(tr)select(tr.dataset.id);
+});
+$('#viewList').addEventListener('dblclick',e=>{const tr=e.target.closest('tr[data-id]');if(tr)openEditor(tr.dataset.id)});
+
+/* ---------- editor ---------- */
+let ed=null;
+function openEditor(id,opts={}){
+  const n=id?byId.get(id):null;
+  ed={id:n?n.id:null,type:n?n.type:(opts.type||'paper'),pos:opts.pos||null,tags:n?[...n.tags]:[],status:n?n.status:'todo',rels:[]};
+  if(n)for(const e of db.edges){if(e.source===n.id)ed.rels.push({other:e.target,rel:e.rel,dir:'out'});else if(e.target===n.id)ed.rels.push({other:e.source,rel:e.rel,dir:'in'})}
+  const set=(k,v)=>{$('#f_'+k).value=v??''};
+  set('doi',n?.doi);set('title',n?.title);set('authors',n?.authors);set('year',n?.year);set('venue',n?.venue);set('core',n?.core);set('notes',n?.notes);set('url',n?.url);set('tagIn','');set('rel','');
+  $('#f_star').checked=!!n?.star;$('#edTitle').textContent=n?'编辑条目':'新建条目';$('#edDelete').hidden=!n;$('#relDrop').hidden=true;
+  paintEdType();paintEdTags();paintEdRels();$('#edScrim').hidden=false;
+  setTimeout(()=>$(n||ed.type!=='paper'?'#f_title':'#f_doi').focus(),30);
+}
+function closeEditor(){$('#edScrim').hidden=true;ed=null;document.activeElement?.blur?.()}
+function paintEdType(){
+  $('#edType').innerHTML=Object.keys(TYPES).map(t=>`<button type="button" role="radio" data-t="${t}" aria-checked="${ed.type===t}">${shapeSvg(t,12)}${TYPES[t].label}</button>`).join('');
+  $('#edStatus').innerHTML=Object.keys(STATUS).map(s=>`<button type="button" role="radio" data-s="${s}" aria-checked="${ed.status===s}">${STATUS[s]}</button>`).join('');
+  $$('#edForm .paper-only').forEach(el=>el.hidden=ed.type!=='paper');$('#l_core').textContent=TYPES[ed.type].core;
+}
+function paintEdTags(){
+  $$('#edTags .chip').forEach(c=>c.remove());const inp=$('#f_tagIn');
+  for(const t of ed.tags){const c=document.createElement('span');c.className='chip';c.innerHTML=`${esc(t)}<button type="button" data-rm="${esc(t)}" aria-label="移除 ${esc(t)}">×</button>`;inp.before(c)}
+  const all=[...new Set(db.nodes.flatMap(n=>n.tags))].filter(t=>!ed.tags.includes(t)).slice(0,12);
+  $('#tagSug').innerHTML=all.map(t=>`<button type="button" data-add="${esc(t)}">+ ${esc(t)}</button>`).join('');
+}
+function addTag(t){t=t.trim().replace(/^#/,'');if(t&&!ed.tags.includes(t))ed.tags.push(t);$('#f_tagIn').value='';paintEdTags()}
+const otherOf=r=>typeof r.other==='string'?byId.get(r.other):r.other;
+function paintEdRels(){
+  $('#edRels').innerHTML=ed.rels.map((r,i)=>{const o=otherOf(r),name=`<span class="who" title="${esc(o.title)}">${shapeSvg(o.type,11)} ${esc(o.type==='paper'&&o.id?shortLabel(o)+' · '+o.title:o.title)}${o.id?'':' <small class="muted">（新建）</small>'}</span>`,me='<span class="me">本条目</span>';
+    const sel=`<select data-i="${i}" aria-label="关系类型">${Object.entries(RELS).map(([k,R])=>`<option value="${k}" ${k===r.rel?'selected':''}>${R.label}</option>`).join('')}</select>`;
+    return `<div class="rel-row">${r.dir==='out'?me:name}${sel}${ic('arrow',14)}${r.dir==='out'?name:me}<button type="button" class="icon-btn" data-swap="${i}" title="调换方向" aria-label="调换方向">${ic('swap',15)}</button><button type="button" class="icon-btn" data-rm="${i}" aria-label="移除关系">${ic('x',15)}</button></div>`}).join('');
+}
+function paintRelDrop(){
+  const q=$('#f_rel').value.trim(),d=$('#relDrop');if(!q){d.hidden=true;return}
+  const used=new Set(ed.rels.map(r=>typeof r.other==='string'?r.other:null));
+  const hits=search(q,db.nodes.filter(n=>n.id!==ed.id&&!used.has(n.id))).slice(0,6);
+  const exact=db.nodes.some(n=>n.title.toLowerCase()===q.toLowerCase());
+  d.innerHTML=hits.map(n=>`<button type="button" data-pick="${esc(n.id)}">${shapeSvg(n.type,12)}<span class="d-t">${esc(n.title)}</span><span class="d-m">${esc(n.type==='paper'?shortLabel(n):TYPES[n.type].label)}</span></button>`).join('')
+    +(exact?'':['concept','method','question'].map(t=>`<button type="button" class="d-new" data-new="${t}">${shapeSvg(t,12)}<span class="d-t">新建${TYPES[t].label}「${esc(clip(q,30))}」</span></button>`).join(''));
+  d.hidden=!d.innerHTML;if(!d.hidden)d.scrollIntoView({block:'nearest'});
+}
+$('#edForm').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if('close' in b.dataset)return closeEditor();
+  if(b.dataset.t){ed.type=b.dataset.t;return paintEdType()}
+  if(b.dataset.s){ed.status=b.dataset.s;return paintEdType()}
+  if(b.dataset.add)return addTag(b.dataset.add);
+  if(b.closest('#edTags')&&b.dataset.rm){ed.tags=ed.tags.filter(t=>t!==b.dataset.rm);return paintEdTags()}
+  if(b.closest('#edRels')){if(b.dataset.rm!==undefined)ed.rels.splice(+b.dataset.rm,1);else if(b.dataset.swap!==undefined){const r=ed.rels[+b.dataset.swap];r.dir=r.dir==='out'?'in':'out'}return paintEdRels()}
+  if(b.dataset.pick||b.dataset.new){
+    const other=b.dataset.pick||{type:b.dataset.new,title:$('#f_rel').value.trim()},ot=b.dataset.pick?byId.get(other).type:other.type,d=defaultLink(ed.type,ot);
+    ed.rels.push({other,rel:d.rel,dir:d.dir});$('#f_rel').value='';$('#relDrop').hidden=true;paintEdRels();$('#f_rel').focus();return}
+  if(b.id==='btnFill')return autofill();
+  if(b.id==='edDelete'){const id=ed.id;closeEditor();removeNode(id)}
+});
+$('#edRels').addEventListener('change',e=>{if(e.target.dataset.i!==undefined)ed.rels[+e.target.dataset.i].rel=e.target.value});
+$('#f_tagIn').addEventListener('keydown',e=>{
+  if(e.isComposing)return;
+  if(e.key==='Enter'||e.key===','||e.key==='，'){e.preventDefault();addTag(e.target.value)}
+  else if(e.key==='Backspace'&&!e.target.value&&ed.tags.length){ed.tags.pop();paintEdTags()}
+});
+$('#f_tagIn').addEventListener('blur',e=>{if(e.target.value.trim())addTag(e.target.value)});
+$('#f_rel').addEventListener('input',paintRelDrop);
+$('#f_rel').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();$('#relDrop button')?.click()}});
+$('#f_doi').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();autofill()}});
+$('#edScrim').addEventListener('pointerdown',e=>{if(e.target===e.currentTarget)closeEditor()});
+$('#edForm').addEventListener('submit',e=>{
+  e.preventDefault();const g=k=>$('#f_'+k).value.trim(),title=g('title');
+  if(!title){$('#f_title').focus();return toast('标题不能为空',{bad:true})}
+  if($('#f_tagIn').value.trim())addTag($('#f_tagIn').value);
+  checkpoint();const isP=ed.type==='paper',yr=parseInt(g('year'),10);
+  let n=ed.id?byId.get(ed.id):null;
+  const data={type:ed.type,title,authors:isP?g('authors'):'',year:isP&&yr>0?yr:null,venue:isP?g('venue'):'',doi:isP?g('doi').replace(/^https?:\/\/(dx\.)?doi\.org\//i,''):'',url:isP?g('url'):'',
+    core:g('core'),notes:$('#f_notes').value.replace(/\s+$/,''),tags:[...ed.tags],status:isP?ed.status:'todo',star:isP&&$('#f_star').checked};
+  if(n)Object.assign(n,data);
+  else{n={id:uid(),created:today(),...data};
+    if(ed.pos){n.x=ed.pos.x;n.y=ed.pos.y;if(ui.layout==='force'){n.pin=true;n.px=n.x;n.py=n.y}}
+    else{const nb=ed.rels.map(r=>typeof r.other==='string'?byId.get(r.other):null).find(m=>m&&m.x!==undefined),a=Math.random()*TAU;
+      if(nb){n.x=nb.x+Math.cos(a)*80;n.y=nb.y+Math.sin(a)*80}else{n.x=(G.w/2-G.x)/G.k+Math.cos(a)*30;n.y=(G.h/2-G.y)/G.k+Math.sin(a)*30}}
+    db.nodes.push(n)}
+  db.edges=db.edges.filter(x=>x.source!==n.id&&x.target!==n.id);
+  const seen=new Set();
+  for(const r of ed.rels){let oid=r.other;
+    if(typeof oid!=='string'){const ex=db.nodes.find(m=>m.type===oid.type&&m.title.toLowerCase()===oid.title.toLowerCase());
+      if(ex)oid=ex.id;else{const a=Math.random()*TAU,m={id:uid(),type:oid.type,title:oid.title,authors:'',year:null,venue:'',doi:'',url:'',core:'',notes:'',tags:[],status:'todo',star:false,created:today(),x:(n.x??0)+Math.cos(a)*90,y:(n.y??0)+Math.sin(a)*90};db.nodes.push(m);oid=m.id}}
+    if(oid===n.id)continue;const s=r.dir==='out'?n.id:oid,t=r.dir==='out'?oid:n.id,key=s+'>'+t+'>'+r.rel;if(seen.has(key))continue;seen.add(key);
+    db.edges.push({id:uid(),source:s,target:t,rel:r.rel})}
+  const fresh=!ed.id;ui.f.types.add(n.type);if(isP)ui.f.status.add(n.status);
+  closeEditor();ui.sel=n.id;changed(.6);toast(fresh?'已添加':'已保存');
+  if(fresh&&ui.view==='graph')setTimeout(()=>focusNode(n),350);
+});
+async function autofill(){
+  const raw=$('#f_doi').value.trim(),btn=$('#btnFill');if(!raw)return toast('先填 DOI 或 arXiv 编号');
+  const dm=raw.match(/10\.\d{4,9}\/[^\s"<>]+/),ax=raw.match(/(\d{4}\.\d{4,5})(v\d+)?/);
+  let doi=dm?dm[0].replace(/[.,;)]+$/,''):ax?'10.48550/arXiv.'+ax[1]:null;
+  if(!doi)return toast('认不出这个编号。DOI 以 10. 开头，arXiv 编号形如 2312.03982',{bad:true});
+  btn.disabled=true;btn.textContent='查询中…';
+  const strip=s=>String(s||'').replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
+  try{
+    let m=null;
+    if(!/^10\.48550\//i.test(doi)){const r=await fetch('https://api.crossref.org/works/'+encodeURIComponent(doi));
+      if(r.ok){const w=(await r.json()).message;m={title:strip((w.title||[])[0]),authors:(w.author||[]).map(a=>[a.given,a.family].filter(Boolean).join(' ')||a.name||'').filter(Boolean),
+        year:(w.issued||w.published||{})['date-parts']?.[0]?.[0],venue:strip((w['container-title']||[])[0])}}}
+    if(!m||!m.title){const r=await fetch('https://api.datacite.org/dois/'+encodeURIComponent(doi));
+      if(r.ok){const a=(await r.json()).data.attributes;m={title:strip(a.titles?.[0]?.title),authors:(a.creators||[]).map(c=>c.givenName&&c.familyName?c.givenName+' '+c.familyName:String(c.name||'').split(', ').reverse().join(' ')).filter(Boolean),
+        year:a.publicationYear,venue:/arxiv/i.test(doi)?'arXiv':strip(typeof a.publisher==='string'?a.publisher:a.publisher?.name)}}}
+    if(!m||!m.title)throw new Error('none');
+    const au=m.authors.length>8?m.authors.slice(0,3).join(', ')+' et al.':m.authors.join(', ');
+    $('#f_doi').value=doi;$('#f_title').value=m.title;if(au)$('#f_authors').value=au;if(m.year)$('#f_year').value=m.year;if(m.venue)$('#f_venue').value=m.venue;
+    toast('已填好题录，核对一下');$('#f_core').focus();
+  }catch(err){toast(navigator.onLine===false?'现在没有网络，请手动填写':'没有查到这篇文章，请手动填写',{bad:true})}
+  btn.disabled=false;btn.textContent='自动填充';
+}
+
+/* ---------- chrome: views, search, theme, menu ---------- */
+function renderChrome(){
+  $$('#viewTabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===ui.view));
+  $$('#layoutSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.layout===ui.layout));
+  $('#viewGraph').hidden=ui.view!=='graph';$('#viewList').hidden=ui.view!=='list';
+  $('#btnLink').setAttribute('aria-pressed',ui.linkMode);$('#btnLabels').setAttribute('aria-pressed',ui.labels);
+  $('#btnTheme').innerHTML=ic(document.documentElement.dataset.theme==='dark'?'sun':'moon');
+  $('#demoBanner').hidden=!db.demo||!db.nodes.length;paintHint();
+  $('#hint').textContent=ui.linkMode?'连线模式：从一个节点拖到另一个节点':'拖动节点可固定它的位置 · Shift+拖动连线 · 双击空白处新建';
+}
+function setView(v){ui.view=v;saveUi();renderChrome();if(v==='list')renderList();else{resize();G.dirty=true}}
+function setLayout(l){if(ui.layout===l)return;ui.layout=l;saveUi();renderChrome();G.alpha=1;G.dirty=true;setTimeout(()=>fit(),RM?30:900)}
+function setTheme(t){ui.theme=t;document.documentElement.dataset.theme=t;$('meta[name=theme-color]').content=t==='dark'?'#090e1a':'#f8fafd';readCols();renderChrome();saveUi()}
+$('#viewTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.view)});
+$('#layoutSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setLayout(b.dataset.layout)});
+$('#btnLink').onclick=()=>{ui.linkMode=!ui.linkMode;renderChrome()};
+$('#btnRelay').onclick=()=>{for(const n of db.nodes)n.pin=false;save();renderDetail();G.alpha=1;setTimeout(()=>fit(),RM?30:900);toast('已重新排布')};
+$('#btnLabels').onclick=()=>{ui.labels=!ui.labels;saveUi();renderChrome();G.dirty=true};
+$('#zIn').onclick=()=>zoomAt(G.w/2,G.h/2,G.k*1.3);$('#zOut').onclick=()=>zoomAt(G.w/2,G.h/2,G.k/1.3);$('#zFit').onclick=()=>fit();
+$('#btnTheme').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+$('#btnNew').onclick=()=>openEditor();
+$('#btnRail').onclick=()=>toggleRail(true);$('#railScrim').onclick=()=>toggleRail(false);
+function toggleRail(on){$('#rail').classList.toggle('open',on);$('#railScrim').classList.toggle('open',on)}
+$('#btnMenu').onclick=e=>{e.stopPropagation();$('#menu').hidden=!$('#menu').hidden};
+document.addEventListener('click',e=>{if(!e.target.closest('#menu'))$('#menu').hidden=true;if(!e.target.closest('.search'))$('#qDrop').hidden=true;if(!e.target.closest('.rel-add'))$('#relDrop').hidden=true;if(!e.target.closest('#relPop')&&!e.target.closest('#cv'))closeRelPop()});
+$('#menu').addEventListener('click',async e=>{
+  const a=e.target.closest('button')?.dataset.act;if(!a)return;$('#menu').hidden=true;
+  if(a==='export')exportJson();
+  if(a==='import')$('#fileIn').click();
+  if(a==='demo')loadDemo();
+  if(a==='keys')showKeys();
+  if(a==='clear'){if(!db.nodes.length)return toast('已经是空的');
+    if(await ask('清空全部条目？',`会删除 ${db.nodes.length} 个条目和 ${db.edges.length} 条关系。可以用 Ctrl+Z 撤销，但建议先导出备份。`,[{label:'取消',value:false},{label:'清空',value:true,kind:'danger'}])){checkpoint();db={version:1,nodes:[],edges:[],demo:false};ui.sel=null;resetFilters();changed(0);toast('已清空',{action:{label:'撤销',fn:undo}})}}
+});
+function exportJson(){
+  const blob=new Blob([JSON.stringify({app:'mailuo',exported:new Date().toISOString(),...db},null,1)],{type:'application/json'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='mailuo-'+today()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  toast(`已导出 ${db.nodes.length} 个条目`);
+}
+$('#fileIn').addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;let d;
+  try{d=normalize(JSON.parse(await f.text()))}catch(_){return toast('这个文件不是有效的备份 (JSON 解析失败)',{bad:true})}
+  if(!d.nodes.length)return toast('文件里没有条目',{bad:true});
+  let mode='replace';
+  if(db.nodes.length){mode=await ask('怎样导入？',`文件里有 ${d.nodes.length} 个条目。合并会保留现有条目并跳过重复的；替换会用文件内容覆盖现在的全部数据。`,[{label:'取消',value:null},{label:'替换',value:'replace',kind:'danger'},{label:'合并',value:'merge',kind:'primary'}]);if(!mode)return}
+  checkpoint();
+  if(mode==='replace'){db=d;db.demo=false;ui.sel=null}
+  else{const have=new Set(db.nodes.map(n=>n.id));for(const n of d.nodes)if(!have.has(n.id))db.nodes.push(n);
+    const eh=new Set(db.edges.map(x=>x.source+'>'+x.target+'>'+x.rel));for(const x of d.edges)if(!eh.has(x.source+'>'+x.target+'>'+x.rel))db.edges.push(x)}
+  resetFilters();changed(1);setTimeout(()=>fit(),RM?30:900);toast('导入完成',{action:{label:'撤销',fn:undo}});
+});
+function loadDemo(){
+  const d=demoData(),have=new Set(db.nodes.map(n=>n.id));if(d.nodes.every(n=>have.has(n.id)))return toast('示例数据已经在图里了');
+  checkpoint();const was=db.nodes.length;for(const n of d.nodes)if(!have.has(n.id))db.nodes.push(n);
+  const eh=new Set(db.edges.map(x=>x.id));for(const x of d.edges)if(!eh.has(x.id))db.edges.push(x);
+  db.demo=!was;resetFilters();changed(1);setTimeout(()=>fit(),RM?30:900);toast('已载入示例数据',{action:{label:'撤销',fn:undo}});
+}
+$('#demoClear').onclick=()=>{checkpoint();const keep=db.nodes.filter(n=>!n.id.startsWith('d-')),ids=new Set(keep.map(n=>n.id));
+  db={version:1,nodes:keep,edges:db.edges.filter(e=>ids.has(e.source)&&ids.has(e.target)),demo:false};if(!ids.has(ui.sel))ui.sel=null;resetFilters();changed(.4);toast('示例已清空',{action:{label:'撤销',fn:undo}})};
+$('#demoKeep').onclick=()=>{db.demo=false;save();renderChrome()};
+function showKeys(){
+  $('#askT').textContent='快捷键';
+  $('#askB').innerHTML=`<div class="keys">${[['N','新建条目'],['/','搜索'],['F','适应窗口'],['L','连线模式'],['1 / 2','图谱 / 文献表'],['T','力导向 / 时间轴'],['E','编辑选中的条目'],['Delete','删除选中的条目'],['Ctrl+Z','撤销'],['Esc','关闭']].map(([k,v])=>`<kbd>${k}</kbd><span>${v}</span>`).join('')}</div>`;
+  $('#askF').innerHTML='<span class="grow"></span><button type="button" class="btn primary">知道了</button>';$('#askF button').onclick=()=>$('#askScrim').hidden=true;
+  askCancel=()=>{$('#askScrim').hidden=true};$('#askScrim').hidden=false;
+}
+$('#askScrim').addEventListener('pointerdown',e=>{if(e.target===e.currentTarget&&askCancel)askCancel()});
+
+/* search */
+const qIn=$('#q');
+function paintQDrop(){
+  const q=ui.q.trim(),d=$('#qDrop');if(!q){d.hidden=true;return}
+  const hits=search(q,db.nodes).slice(0,8);
+  d.innerHTML=hits.length?hits.map((n,i)=>`<button data-id="${esc(n.id)}" class="${i?'':'act'}">${shapeSvg(n.type,12,n.type==='paper'&&n.status==='todo')}<span class="d-t">${esc(n.title)}</span><span class="d-m">${esc(n.type==='paper'?shortLabel(n):TYPES[n.type].label)}</span></button>`).join('')
+    :`<div class="muted" style="padding:8px 10px">没有找到「${esc(clip(q,24))}」</div>`;
+  d.hidden=false;
+}
+qIn.addEventListener('input',()=>{ui.q=qIn.value;refreshGraph(0);renderList();paintQDrop()});
+qIn.addEventListener('focus',paintQDrop);
+qIn.addEventListener('keydown',e=>{
+  if(e.isComposing)return;const items=$$('#qDrop button'),i=items.findIndex(b=>b.classList.contains('act'));
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(!items.length)return;items[i]?.classList.remove('act');const j=(i+(e.key==='ArrowDown'?1:-1)+items.length)%items.length;items[j].classList.add('act');items[j].scrollIntoView({block:'nearest'})}
+  else if(e.key==='Enter'){e.preventDefault();(items[i]||items[0])?.click()}
+  else if(e.key==='Escape'){qIn.value='';ui.q='';refreshGraph(0);renderList();$('#qDrop').hidden=true;qIn.blur()}
+});
+$('#qDrop').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$('#qDrop').hidden=true;qIn.blur();select(b.dataset.id,true)});
+
+/* keyboard */
+document.addEventListener('keydown',e=>{
+  const typing=/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName);
+  if(e.key==='Escape'){
+    if(!$('#askScrim').hidden){askCancel&&askCancel();return}
+    if(!$('#edScrim').hidden){if(!$('#relDrop').hidden){$('#relDrop').hidden=true;return}closeEditor();return}
+    if(typing)return; if(!$('#relPop').hidden)return closeRelPop(); if(!$('#menu').hidden){$('#menu').hidden=true;return}
+    if($('#rail').classList.contains('open'))return toggleRail(false);
+    if(ui.linkMode){ui.linkMode=false;return renderChrome()} if(ui.sel)select(null);return}
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();qIn.focus();qIn.select();return}
+  if(typing||!$('#edScrim').hidden||!$('#askScrim').hidden)return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();return undo()}
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const k=e.key.toLowerCase();
+  if(k==='/'){e.preventDefault();qIn.focus();qIn.select()}
+  else if(k==='n'){e.preventDefault();openEditor()}
+  else if(k==='f')fit();
+  else if(k==='l'){ui.linkMode=!ui.linkMode;renderChrome()}
+  else if(k==='t')setLayout(ui.layout==='force'?'time':'force');
+  else if(k==='1')setView('graph'); else if(k==='2')setView('list');
+  else if(k==='e'&&ui.sel)openEditor(ui.sel);
+  else if((k==='delete'||k==='backspace')&&ui.sel)removeNode(ui.sel);
+});
+
+/* ---------- boot ---------- */
+try{const s=JSON.parse(localStorage.getItem(LS_UI)||'{}');if(s.view==='list'||s.view==='graph')ui.view=s.view;if(s.layout==='time')ui.layout='time';if(s.theme)ui.theme=s.theme;if(s.labels===false)ui.labels=false}catch(e){}
+document.documentElement.dataset.theme=ui.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
+$('meta[name=theme-color]').content=document.documentElement.dataset.theme==='dark'?'#090e1a':'#f8fafd';
+load();reindex();readCols();renderRail();renderChrome();resize();
+const unplaced=db.nodes.some(n=>n.x===undefined);refreshGraph(unplaced?1:0);
+if(unplaced)for(let i=0;i<260;i++)tick();
+fit(false);G.alpha=unplaced?.05:0;renderList();renderDetail();
+new ResizeObserver(()=>{const had=G.w;resize();if(!had&&G.w)fit(false)}).observe($('#stage'));
+if(document.fonts?.ready)document.fonts.ready.then(()=>{G.dirty=true});
+window.addEventListener('beforeunload',()=>{try{clearTimeout(saveT);if(byId.size||localStorage.getItem(LS_DB))localStorage.setItem(LS_DB,JSON.stringify(db))}catch(e){}});
+window.__mailuo={get db(){return db},G,ui,fit};
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
