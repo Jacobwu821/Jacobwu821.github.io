@@ -30,14 +30,36 @@
   {
    "id": "lib-zeppenfeld-pinkse-2010",
    "type": "paper",
-   "rev": "2026-11-17",
+   "rev": "2026-11-18b",
    "title": "Calculating the fine structure of a Fabry–Perot resonator using spheroidal wave functions",
    "authors": "M. Zeppenfeld, P. W. H. Pinkse",
    "year": 2010,
    "venue": "Optics Express 18(9), 9580–9591",
    "doi": "",
    "url": "https://arxiv.org/abs/1003.4168",
-   "core": "用椭球坐标（spheroidal coordinates）下的解，算出理想导体镜 Fabry–Pérot 腔的本征模和本征频率在短波长极限下的完整一阶修正。"
+   "core": "用椭球坐标下波动方程的解构造一组新的 Maxwell 方程矢量解，算出理想导体镜 Fabry–Pérot 腔的本征模和本征频率在短波长极限下的完整一阶修正。傍轴近似下简并的模式按总角动量分裂，其中包括轨道角动量与自旋角动量耦合造成的分裂。",
+   "formulas": [
+    {
+     "t": "中心结果，式 (40)：镜面 $\\xi_\\pm$ 对模式 $\\mathbf E_{J\\sigma^+\\nu}$ 贡献的往返相移",
+     "tex": "\\begin{aligned}\\lambda^{\\pm}_{J\\sigma^+\\nu}=\\exp\\Big[&\\pm2i\\Big(\\bar c\\,\\xi_\\pm-(2\\nu+J)\\arctan\\xi_\\pm\\\\&-\\frac{1}{\\bar c}\\Big(\\frac{\\xi_\\pm}{1+\\xi_\\pm^2}\\,\\nu(\\nu+J)\\\\&\\pm f_{4\\pm}\\big(6\\nu(\\nu+J)+J(J+1)\\big)\\Big)\\\\&+\\mathcal O\\big(\\tfrac{1}{\\bar c^{2}}\\big)\\Big)\\Big]\\end{aligned}"
+    },
+    {
+     "t": "式 (41)：模式 $\\mathbf E_{J\\sigma^-,\\nu-1}$ 的结果形式相同，只是把 $J(J+1)$ 换成 $J(J-1)$。",
+     "tex": ""
+    },
+    {
+     "t": "自旋-轨道耦合，式 (42)：$\\nu$ 和 $m$ 相同、自旋相反的两个模式的相移之比",
+     "tex": "\\frac{\\lambda^{\\pm}_{m+1,\\sigma^+\\nu}}{\\lambda^{\\pm}_{m-1,\\sigma^-\\nu}}=\\exp\\!\\Big(\\pm\\frac{2i}{\\bar c}\\,\\frac{\\xi_\\pm}{1+\\xi_\\pm^2}\\,m\\Big)=\\exp\\!\\Big(\\frac{2im}{kR_\\pm}\\Big)"
+    },
+    {
+     "t": "镜面形状与非球面参数，式 (7)(9)",
+     "tex": "\\begin{gathered}\\bar z_\\pm(r,\\varphi)=z_\\pm\\mp\\frac{r^2}{2R_\\pm}\\mp c_{4\\pm}r^4+\\mathcal O(r^6)\\\\[5pt] f_{4\\pm}=\\frac{d\\,\\xi_\\pm^2R_\\pm^2}{2}\\,c_{4\\pm}\\mp\\frac{\\xi_\\pm}{8}\\end{gathered}"
+    },
+    {
+     "t": "符号：$\\bar c=kd/2$，$d$ 是椭球坐标两个焦点的间距，$\\xi_\\pm$ 是两面镜子所在的坐标面，$\\nu$ 是径向模数，$m$ 是轨道角动量，$J=m\\pm1$ 是总角动量，$\\sigma^\\pm$ 是左、右圆偏振，$R_\\pm$ 是镜面曲率半径。",
+     "tex": ""
+    }
+   ]
   },
   {
    "id": "lib-van-exter-2022",
@@ -132,29 +154,33 @@
   {
    "id": "lib-agrawal-pattanayak-1979",
    "type": "paper",
-   "rev": "2026-11-18",
+   "rev": "2026-11-18b",
    "title": "Gaussian beam propagation beyond the paraxial approximation",
    "authors": "G. P. Agrawal, D. N. Pattanayak",
    "year": 1979,
    "venue": "Journal of the Optical Society of America 69(4), 575–578",
    "doi": "10.1364/JOSA.69.000575",
    "url": "",
-   "core": "研究自由空间高斯光束在傍轴近似之外的传播，以 $f=1/(k\\omega_0)$ 为展开参数。结论：$f<0.1$ 时，傍轴场与精确场的差别可以忽略。",
+   "core": "用角谱表示研究高斯光束的传播：场等于傍轴结果加上高阶的非高斯修正项，按 $f^2$ 展开，其中 $f=1/(k\\omega_0)$。二阶修正满足的方程与 Lax、Louisell、McKnight 的结果一致。数值比较显示，$f<0.1$ 时傍轴、精确和修正结果的差别可以忽略。",
    "formulas": [
     {
      "t": "入射面上的高斯场，式 (3)；这里的 $\\omega_0$ 是 $1/e$ 光强半径",
-     "tex": "E\\propto\\exp\\!\\left[-\\frac{r^2}{2\\omega_0^2}\\right]"
+     "tex": "E(x,y,0)=\\exp\\!\\left[-\\frac{x^2+y^2}{2\\omega_0^2}\\right]"
     },
     {
      "t": "展开参数，式 (8)",
      "tex": "f=\\frac{1}{k\\omega_0}"
     },
     {
+     "t": "傍轴场加二阶修正，式 (22)–(24)",
+     "tex": "\\begin{gathered}E(\\mathbf r)=E^{(0)}(\\mathbf r)+f^2E^{(2)}(\\mathbf r)\\\\[5pt] E^{(0)}=\\frac{e^{ikz}}{1+iz/l}\\exp\\!\\left[-\\frac{\\rho^2}{2\\omega_0^2(1+iz/l)}\\right]\\\\[5pt] E^{(2)}=-\\frac{iz/l}{(1+iz/l)^2}\\,L_2\\!\\left(\\frac{\\rho^2}{2\\omega_0^2(1+iz/l)}\\right)E^{(0)}\\end{gathered}"
+    },
+    {
      "t": "换算（非原文）：常规束腰 $w_0=\\sqrt2\\,\\omega_0$，所以 $f<0.1$ 相当于",
      "tex": "kw_0\\gtrsim 10\\sqrt2\\approx 14,\\qquad w_0\\gtrsim 2.25\\,\\lambda"
     },
     {
-     "t": "符号：$k$ 是波数，$\\omega_0$ 是原文的束腰参数，$w_0$ 是常规的 $1/e^2$ 光强半径。",
+     "t": "符号：$k$ 是波数，$\\omega_0$ 是原文的束宽参数，$l=k\\omega_0^2=\\omega_0/f$ 是衍射长度，$\\rho$ 是横向半径，$L_2$ 是二阶 Laguerre 多项式，$w_0$ 是常规的 $1/e^2$ 光强半径。",
      "tex": ""
     }
    ]
