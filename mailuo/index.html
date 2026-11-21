@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090e1a'/%3E%3Cpath d='M9 22 16 9l8 9-15 4z' fill='none' stroke='%236fa5ff' stroke-width='1.6'/%3E%3Ccircle cx='9' cy='22' r='3' fill='%233fd3bd'/%3E%3Ccircle cx='16' cy='9' r='3.4' fill='%23ffc247'/%3E%3Ccircle cx='24' cy='18' r='3' fill='%236fa5ff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Nunito:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&display=swap">
 <script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js"}}</script>
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <script defer src="vendor/katex/katex.min.js"></script>
@@ -314,6 +314,43 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
   .rel-row{flex-wrap:wrap}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- 田园 theme: frosted glass panels over a soft pastel sky; cream, grass green, sky blue, sakura pink, wheat gold ---------- */
+:root[data-theme="meadow"]{
+  --bg:#fbf5e8; --surface:rgba(255,252,245,.52); --raise:rgba(255,255,255,.6); --sunk:rgba(150,170,120,.13);
+  --ink:#4b3f34; --ink-2:#7a6a58; --ink-3:#a8977f; --line:rgba(150,125,95,.22); --line-2:rgba(150,125,95,.12);
+  --grid:rgba(120,160,100,.22); --glow:rgba(255,215,160,.3);
+  --accent:#f7b84b; --accent-ink:#4a3000; --accent-text:#b77812; --accent-soft:rgba(247,184,75,.22);
+  --c-paper:#5d9fdc; --c-concept:#5fb46a; --c-method:#a081df; --c-question:#ec7fa6;
+  --good:#5fb46a; --bad:#e97575;
+  --shadow:0 2px 6px rgba(130,105,70,.08),0 16px 36px rgba(130,105,70,.16);
+  --font-display:"Nunito","PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  --font-body:"Nunito","PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  color-scheme:light;
+}
+:root[data-theme="meadow"] body{background:
+  radial-gradient(38vw 30vw at 6% 10%,rgba(255,196,214,.6),transparent 70%),radial-gradient(36vw 28vw at 94% 6%,rgba(168,214,250,.65),transparent 70%),
+  radial-gradient(44vw 34vw at 88% 96%,rgba(186,228,166,.65),transparent 70%),radial-gradient(40vw 30vw at 12% 92%,rgba(255,228,158,.6),transparent 70%),#fbf5e8}
+:root[data-theme="meadow"] .stage{background:linear-gradient(175deg,#d5ecf8 0%,#eef8f3 52%,#f6f4dc 100%)}
+:root[data-theme="meadow"] #viewList{background:transparent}
+:root[data-theme="meadow"] .top,:root[data-theme="meadow"] .rail{background:rgba(255,252,245,.5);-webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);border-color:rgba(255,255,255,.75)}
+:root[data-theme="meadow"] :is(.panel,.tool,.dlg,.banner,.tip,.relpop,table.list){background:rgba(255,255,255,.56);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);border:1px solid rgba(255,255,255,.8);box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.9)}
+:root[data-theme="meadow"] :is(.drop,.menu){background:rgba(255,252,246,.96)}
+:root[data-theme="meadow"] .panel{border-radius:20px}
+:root[data-theme="meadow"] .tool{border-radius:18px}
+:root[data-theme="meadow"] :is(.btn,.seg,.seg button,.search input,.tool-btn,.tool .icon-btn,.icon-btn){border-radius:999px}
+:root[data-theme="meadow"] .seg{background:rgba(255,255,255,.4)}
+:root[data-theme="meadow"] .seg button[aria-pressed="true"],:root[data-theme="meadow"] .seg button[aria-checked="true"]{background:#fff;box-shadow:0 2px 8px rgba(130,105,70,.16)}
+:root[data-theme="meadow"] .btn{background:rgba(255,255,255,.7)}
+:root[data-theme="meadow"] .btn.primary{background:linear-gradient(135deg,#ffd77f,#ffae8f);color:#5a3500;box-shadow:0 4px 14px rgba(255,170,120,.35)}
+:root[data-theme="meadow"] .search input{background:rgba(255,255,255,.55)}
+:root[data-theme="meadow"] .search input:focus{background:#fff}
+:root[data-theme="meadow"] .brand-name,:root[data-theme="meadow"] .stat-n{font-weight:800}
+:root[data-theme="meadow"] .scrim{background:rgba(250,238,220,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+:root[data-theme="meadow"] .toast{background:rgba(75,63,52,.88);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.stage.day .l3{color:#5b4a3a;font-weight:600;text-shadow:0 0 3px #fffaf0,0 0 3px #fffaf0,0 0 7px #fffaf0,0 0 12px rgba(255,250,240,.9)}
+.stage.day .l3:hover,.stage.day .l3.sel{color:#3b2e22}
+.stage.day .hint{color:#5b4a3a}
 </style>
 </head>
 <body>
@@ -335,7 +372,7 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
   </div>
   <div class="top-actions">
     <button class="btn primary" id="btnNew"><i data-ic="plus" data-s="16"></i><span class="lbl-d">新建</span></button>
-    <button class="icon-btn" id="btnTheme" aria-label="切换明暗主题"></button>
+    <button class="icon-btn" id="btnTheme" aria-label="切换主题"></button>
     <button class="icon-btn" id="btnMenu" aria-label="更多" aria-haspopup="true"><i data-ic="more"></i></button>
     <div class="menu" id="menu" hidden>
       <button data-act="export"><i data-ic="down" data-s="16"></i>导出备份 (JSON)</button>
@@ -375,6 +412,7 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
           <button data-model="galaxy" aria-pressed="true">星系</button>
           <button data-model="city" aria-pressed="false">城市</button>
           <button data-model="atom" aria-pressed="false">原子</button>
+          <button data-model="meadow" aria-pressed="false">田园</button>
         </div></div>
         <div class="tool">
           <button class="tool-btn" id="btnLink" aria-pressed="false" title="连线模式 (L)"><i data-ic="link" data-s="16"></i>连线</button>
@@ -454,6 +492,7 @@ const I={
  plus:'<path d="M12 5v14M5 12h14"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
  moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+ flower:'<circle cx="12" cy="12" r="2.2"/><path d="M12 9.8C9.5 7.5 10 3.5 12 3.5s2.5 4 0 6.3zM12 14.2c2.5 2.3 2 6.3 0 6.3s-2.5-4 0-6.3zM9.8 12c-2.3 2.5-6.3 2-6.3 0s4-2.5 6.3 0zM14.2 12c2.3-2.5 6.3-2 6.3 0s-4 2.5-6.3 0z"/>',
  more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
  filter:'<path d="M4 6h16M7 12h10M10 18h4"/>',
  link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
@@ -1200,14 +1239,15 @@ function renderChrome(){
   $$('#layoutSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.layout===ui.layout));$$('#modelSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.model===ui.model));
   $('#viewGraph').hidden=ui.view!=='graph';$('#viewList').hidden=ui.view!=='list';
   $('#btnLink').setAttribute('aria-pressed',ui.linkMode);$('#btnLabels').setAttribute('aria-pressed',ui.labels);$('#btn3d').setAttribute('aria-pressed',ui.bg3d);
-  $('#btnTheme').innerHTML=ic(document.documentElement.dataset.theme==='dark'?'sun':'moon');
+  {const nx=NEXT_THEME[document.documentElement.dataset.theme]||'light';$('#btnTheme').innerHTML=ic({light:'sun',dark:'moon',meadow:'flower'}[nx]);$('#btnTheme').title='切换主题（下一个：'+{light:'浅色',dark:'深色',meadow:'田园'}[nx]+'）'}
   paintHint();
-  $('#hint').textContent=ui.linkMode?'连线模式：从一个节点拖到另一个节点':ui.layout==='3d'?'拖动旋转 · 滚轮缩放 · 点'+({galaxy:'星球',city:'大楼',atom:'原子'}[ui.model])+'或标题看详情 · 连线请切到其他布局':ui.layout==='force'?'拖动节点可固定它的位置 · Shift+拖动连线 · 双击空白处新建':'点标题看详情 · Shift+拖动连线 · 双击空白处新建';
+  $('#hint').textContent=ui.linkMode?'连线模式：从一个节点拖到另一个节点':ui.layout==='3d'?'拖动旋转 · 滚轮缩放 · 点'+({galaxy:'星球',city:'大楼',atom:'原子',meadow:'小屋'}[ui.model])+'或标题看详情 · 连线请切到其他布局':ui.layout==='force'?'拖动节点可固定它的位置 · Shift+拖动连线 · 双击空白处新建':'点标题看详情 · Shift+拖动连线 · 双击空白处新建';
   window.__bg&&window.__bg.sync();
 }
 function setView(v){ui.view=v;saveUi();renderChrome();if(v==='list')renderList();else{resize();G.dirty=true}}
 function setLayout(l){if(ui.layout===l)return;ui.layout=l;if(l==='3d')ui.linkMode=false;saveUi();refreshGraph(1);renderChrome();G.alpha=1;G.dirty=true;setTimeout(()=>fit(),RM||l==='tidy'||l==='3d'?30:900)}
-function setTheme(t){ui.theme=t;document.documentElement.dataset.theme=t;$('meta[name=theme-color]').content=t==='dark'?'#090e1a':'#f8fafd';readCols();renderChrome();saveUi();window.__bg&&window.__bg.theme()}
+const NEXT_THEME={light:'meadow',meadow:'dark',dark:'light'};
+function setTheme(t){ui.theme=t;document.documentElement.dataset.theme=t;$('meta[name=theme-color]').content=t==='dark'?'#090e1a':t==='meadow'?'#fbf5e8':'#f8fafd';readCols();renderChrome();saveUi();window.__bg&&window.__bg.theme()}
 $('#viewTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.view)});
 $('#layoutSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setLayout(b.dataset.layout)});
 function setModel(m){if(ui.model===m)return;ui.model=m;saveUi();renderChrome();if(ui.sel)select(null)}
@@ -1217,7 +1257,7 @@ $('#btnRelay').onclick=()=>{for(const n of db.nodes)n.pin=false;save();renderDet
 $('#btn3d').onclick=()=>{ui.bg3d=!ui.bg3d;saveUi();renderChrome();G.dirty=true};
 $('#btnLabels').onclick=()=>{ui.labels=!ui.labels;saveUi();renderChrome();G.dirty=true};
 $('#zIn').onclick=()=>live3d()?window.__bg.zoom(.8):zoomAt(G.w/2,G.h/2,G.k*1.3);$('#zOut').onclick=()=>live3d()?window.__bg.zoom(1.25):zoomAt(G.w/2,G.h/2,G.k/1.3);$('#zFit').onclick=()=>fit();
-$('#btnTheme').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+$('#btnTheme').onclick=()=>setTheme(NEXT_THEME[document.documentElement.dataset.theme]||'light');
 $('#btnNew').onclick=()=>openEditor();
 $('#btnRail').onclick=()=>toggleRail(true);$('#railScrim').onclick=()=>toggleRail(false);
 function toggleRail(on){$('#rail').classList.toggle('open',on);$('#railScrim').classList.toggle('open',on)}
@@ -1368,7 +1408,7 @@ function importBib(text){
 $('#bibIn').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{importBib(await f.text())}catch(_){toast('读取文件失败',{bad:true})}});
 function showKeys(){
   $('#askT').textContent='快捷键';
-  $('#askB').innerHTML=`<div class="keys">${[['N','新建条目'],['/','搜索'],['F','适应窗口'],['L','连线模式'],['1 / 2','图谱 / 文献表'],['T','切换布局'],['M','立体模型：星系 / 城市 / 原子'],['E','编辑选中的条目'],['Delete','删除选中的条目'],['Ctrl+Z','撤销'],['Esc','关闭']].map(([k,v])=>`<kbd>${k}</kbd><span>${v}</span>`).join('')}</div>`;
+  $('#askB').innerHTML=`<div class="keys">${[['N','新建条目'],['/','搜索'],['F','适应窗口'],['L','连线模式'],['1 / 2','图谱 / 文献表'],['T','切换布局'],['M','立体模型：星系 / 城市 / 原子 / 田园'],['E','编辑选中的条目'],['Delete','删除选中的条目'],['Ctrl+Z','撤销'],['Esc','关闭']].map(([k,v])=>`<kbd>${k}</kbd><span>${v}</span>`).join('')}</div>`;
   $('#askF').innerHTML='<span class="grow"></span><button type="button" class="btn primary">知道了</button>';$('#askF button').onclick=()=>$('#askScrim').hidden=true;
   askCancel=()=>{$('#askScrim').hidden=true};$('#askScrim').hidden=false;
 }
@@ -1413,14 +1453,14 @@ document.addEventListener('keydown',e=>{
   else if(k==='f')fit();
   else if(k==='l'){ui.linkMode=!ui.linkMode;renderChrome()}
   else if(k==='t')setLayout({'3d':'tidy',tidy:'force',force:'time',time:'3d'}[ui.layout]);
-  else if(k==='m'&&ui.layout==='3d')setModel({galaxy:'city',city:'atom',atom:'galaxy'}[ui.model]);
+  else if(k==='m'&&ui.layout==='3d')setModel({galaxy:'city',city:'atom',atom:'meadow',meadow:'galaxy'}[ui.model]);
   else if(k==='1')setView('graph'); else if(k==='2')setView('list');
   else if(k==='e'&&ui.sel)openEditor(ui.sel);
   else if((k==='delete'||k==='backspace')&&ui.sel)removeNode(ui.sel);
 });
 
 /* ---------- boot ---------- */
-try{const s=JSON.parse(localStorage.getItem(LS_UI)||'{}');if(s.view==='list'||s.view==='graph')ui.view=s.view;if(['3d','tidy','force','time'].includes(s.layout3))ui.layout=s.layout3;if(['galaxy','city','atom'].includes(s.model))ui.model=s.model;if(s.theme)ui.theme=s.theme;if(s.bg3d===false)ui.bg3d=false;if(s.labels===false)ui.labels=false}catch(e){}
+try{const s=JSON.parse(localStorage.getItem(LS_UI)||'{}');if(s.view==='list'||s.view==='graph')ui.view=s.view;if(['3d','tidy','force','time'].includes(s.layout3))ui.layout=s.layout3;if(['galaxy','city','atom','meadow'].includes(s.model))ui.model=s.model;if(s.theme)ui.theme=s.theme;if(s.bg3d===false)ui.bg3d=false;if(s.labels===false)ui.labels=false}catch(e){}
 document.documentElement.dataset.theme=ui.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
 $('meta[name=theme-color]').content=document.documentElement.dataset.theme==='dark'?'#090e1a':'#f8fafd';
 load();reindex();readCols();renderRail();renderChrome();resize();
@@ -1491,27 +1531,38 @@ function updateBackdrop(t){
 const REL={based:'--ink-3',improves:'--good',refutes:'--bad',uses:'--c-method',about:'--c-concept',answers:'--c-question',related:'--ink-3'};
 // the galaxy and the city are night scenes in both themes
 const NIGHT={'--bg':'#04060e','--c-paper':'#6fa5ff','--c-concept':'#3fd3bd','--c-method':'#ab92ff','--c-question':'#ff7daa','--accent':'#ffc247','--ink-2':'#a8b4c8','--ink-3':'#9cc2ff','--good':'#4cd08b','--bad':'#ff6b6b'};
+// the 田园 model is a sunny day in both themes
+const DAY={'--bg':'#e4eff0','--c-paper':'#6aa8e0','--c-concept':'#72c07a','--c-method':'#ab8fe6','--c-question':'#f28fb1','--accent':'#ffbf47','--ink-2':'#7a6a58','--ink-3':'#eba15e','--good':'#5fbf7a','--bad':'#ef7f7f'};
 const MODELS={
-  galaxy:{night:true,moving:true,az:-.55,pol:.98,ty:0,hy:1.6,arc0:.3,arcK:.22,min:3.2,fog:.01,hov:1.22,bloom:[.45,.3,.7]},
-  city:{night:true,flat:true,hl:true,az:-.6,pol:1.07,ty:1.2,hy:3.4,arc0:.7,arcK:.18,min:4,fog:.026,hov:1.05,bloom:[.6,.4,.5]},
-  atom:{az:-.25,pol:.9,ty:-.25,hy:1.9,arc0:.65,arcK:.2,min:4,fog:.018,hov:1.22}};
+  galaxy:{pal:NIGHT,night:true,moving:true,az:-.55,pol:.98,ty:0,hy:1.6,arc0:.3,arcK:.22,min:3.2,fog:.01,hov:1.22,bloom:[.45,.3,.7]},
+  city:{pal:NIGHT,night:true,flat:true,hl:true,corr:true,az:-.6,pol:1.07,ty:1.2,hy:3.4,arc0:.7,arcK:.18,min:4,fog:.026,hov:1.05,bloom:[.6,.4,.5]},
+  atom:{az:-.25,pol:.9,ty:-.25,hy:1.9,arc0:.65,arcK:.2,min:4,fog:.018,hov:1.22},
+  meadow:{pal:DAY,day:true,flat:true,hl:true,sky:true,shadow:true,bunting:true,sag:.42,az:-.5,pol:1.31,ty:1.5,hy:3.4,arc0:.4,arcK:.14,min:3.5,fog:.0105,hov:1.08}};
 let M=MODELS.atom,model='';
-const col=k=>M.night?NIGHT[k]:css(k);
+const col=k=>M.pal?M.pal[k]:css(k);
 let seed=1;const rnd=()=>{seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}; // seeded, so a rebuild draws the same sky
 const DX=2.35,DZ=3.2,FLOOR=-1.3,BH=1.25,TU={value:0},PX={value:900};
 let scene,cam,world,GEO,items=new Map(),links=[],pulses=null,selRing,ver=-1,fitDist=12,extent={hx:3,hz:2},introAt=0,touched=0,hoverId=null,scrMap=new Map(),orbT=0,lastT=0,tickFn=null;
 const orb={az:-.25,pol:.9,dist:12,tx:0,ty:-.25,tz:0},cur={az:-1.6,pol:.4,dist:30,tx:0,ty:-.25,tz:0};
-let V,V2,Q0,ONE,MAT,amb,sun;
+let V,V2,Q0,ONE,MAT,amb,sun,TOON,Q1,E1;
 function buildWorld(){
-  scene=new T.Scene();cam=new T.PerspectiveCamera(40,1,.1,500);world=new T.Group();scene.add(world);V=new T.Vector3();V2=new T.Vector3();Q0=new T.Quaternion();ONE=new T.Vector3(1,1,1);MAT=new T.Matrix4();
-  amb=new T.AmbientLight(0xffffff,1.1);sun=new T.DirectionalLight(0xffffff,2.2);sun.position.set(4,9,6);scene.add(amb,sun);
+  scene=new T.Scene();cam=new T.PerspectiveCamera(40,1,.1,500);world=new T.Group();scene.add(world);V=new T.Vector3();V2=new T.Vector3();Q0=new T.Quaternion();ONE=new T.Vector3(1,1,1);MAT=new T.Matrix4();Q1=new T.Quaternion();E1=new T.Euler();
+  TOON=new T.DataTexture(new Uint8Array([95,175,255]),3,1,T.RedFormat);TOON.minFilter=TOON.magFilter=T.NearestFilter;TOON.needsUpdate=true; // three tones: the cel look
+  amb=new T.AmbientLight(0xffffff,1.1);sun=new T.DirectionalLight(0xffffff,2.2);sun.position.set(4,9,6);scene.add(amb,sun);sun.shadow.mapSize.set(innerWidth<700?1024:2048,innerWidth<700?1024:2048);sun.shadow.bias=-.0005;sun.shadow.normalBias=.03;
   const lathe=[];for(let i=0;i<=28;i++){const y=-BH+2*BH*i/28;lathe.push(new T.Vector2(.04*Math.sqrt(1+(y/.17)**2),y))} // tweezer: a focused beam, waist at the atom
   const circ=[];for(let i=0;i<96;i++)circ.push(new T.Vector3(Math.cos(i/96*6.2832),0,Math.sin(i/96*6.2832)));
+  const tri=a=>{const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(new Float32Array(a),3));g.computeVertexNormals();return g};
   const up=g=>g.translate(0,.5,0),box=up(new T.BoxGeometry(1,1,1)),cyl=up(new T.CylinderGeometry(.5,.5,1,24)),hex=up(new T.CylinderGeometry(.5,.5,1,6));
   GEO={paper:new T.SphereGeometry(.27,40,24),concept:new T.OctahedronGeometry(.36),method:new T.CylinderGeometry(.3,.3,.34,6),question:new T.BoxGeometry(.42,.42,.42),
     shell:new T.SphereGeometry(.3,14,10),ring:new T.TorusGeometry(.46,.012,8,72),halo:new T.TorusGeometry(.6,.016,8,80),beam:new T.LatheGeometry(lathe,28),
     circle:new T.BufferGeometry().setFromPoints(circ),box,cyl,hex,boxE:new T.EdgesGeometry(box),cylE:new T.EdgesGeometry(cyl,30),hexE:new T.EdgesGeometry(hex),
-    shaft:new T.CylinderGeometry(.3,.1,1,16,1,true).translate(0,.5,0),pillar:new T.CylinderGeometry(.03,.03,1,8,1,true).translate(0,.5,0),roof:new T.ConeGeometry(.7071,.55,4).rotateY(Math.PI/4).translate(0,.275,0)};
+    shaft:new T.CylinderGeometry(.3,.1,1,16,1,true).translate(0,.5,0),
+    wall:new T.BoxGeometry(1,1,1),roofP:new T.ExtrudeGeometry(new T.Shape([new T.Vector2(-.64,0),new T.Vector2(.64,0),new T.Vector2(0,.62)]),{depth:1.04,bevelEnabled:false}).center(),
+    chim:new T.BoxGeometry(.15,.36,.15),door:new T.BoxGeometry(.2,.32,.02),win:new T.BoxGeometry(.17,.17,.02),box1:new T.BoxGeometry(1,1,1),silo:new T.CylinderGeometry(.4,.4,1,24),cone:new T.ConeGeometry(.5,.55,24),
+    mill:new T.CylinderGeometry(.28,.42,1,10),millCap:new T.ConeGeometry(.36,.42,10),blade:new T.BoxGeometry(.13,.74,.025),knob:new T.SphereGeometry(.05,10,8),stem:new T.CylinderGeometry(.3,.36,1,18),
+    cap:new T.SphereGeometry(.62,28,14,0,6.2832,0,Math.PI/2),dot:new T.SphereGeometry(.07,10,8),pole:new T.CylinderGeometry(.018,.018,.3,6),flagPole:new T.CylinderGeometry(.02,.02,1.6,6),
+    flag:tri([0,0,0,.42,-.1,0,0,-.24,0]),flagTri:tri([-.07,0,0,.07,0,0,0,-.17,0]),trunk:new T.CylinderGeometry(.08,.12,.7,7),crown:new T.SphereGeometry(.62,16,12).scale(1,.9,1),
+    bud:new T.SphereGeometry(.055,6,4),tuft:new T.ConeGeometry(.05,.24,4).translate(0,.12,0),peak:new T.ConeGeometry(1,1,8).translate(0,.5,0),puff:new T.SphereGeometry(1,16,12),pillar:new T.CylinderGeometry(.03,.03,1,8,1,true).translate(0,.5,0),roof:new T.ConeGeometry(.7071,.55,4).rotateY(Math.PI/4).translate(0,.275,0)};
   selRing=new T.Mesh(new T.TorusGeometry(.72,.022,8,90),new T.MeshBasicMaterial({transparent:true,depthWrite:false}));selRing.visible=false;scene.add(selRing);
 }
 function clearWorld(){
@@ -1648,18 +1699,132 @@ function buildCity(G,adj,old){
 const flowMat=(c,dir)=>new T.ShaderMaterial({uniforms:{uColor:{value:c},uOp:{value:1},uDir:{value:dir?1:0},uLen:{value:1},uT:TU},transparent:true,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending,
   vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
   fragmentShader:'uniform vec3 uColor;uniform float uOp;uniform float uDir;uniform float uLen;uniform float uT;varying vec2 vUv;void main(){float s=fract(vUv.x*uLen*1.4-uT*0.8);float band=smoothstep(0.0,0.12,s)*(1.0-smoothstep(0.4,0.62,s));float a=uDir>0.5?0.12+0.62*band:0.3;gl_FragColor=vec4(uColor,a*uOp);\n#include <colorspace_fragment>\n}'});
-const BUILD={galaxy:buildGalaxy,city:buildCity,atom:buildAtoms};
+/* ---- model: 田园 ---- */
+// An anime countryside: flat cel shading (three tones) with ink outlines drawn as slightly larger back faces.
+// Every entry is a little building — papers are cottages, concepts silos, methods windmills, questions mushroom houses.
+// A thread of papers is one village lane, oldest at the left; relations are bunting lines strung between little poles on the roofs.
+const INK='#5b4636',sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)},hh=n=>{const s=Math.sin(n*12.9898)*43758.5453;return s-Math.floor(s)};
+const toon=(c,o={})=>new T.MeshToonMaterial({color:c,gradientMap:TOON,transparent:true,...o});
+const addW=o=>{o.frustumCulled=false;world.add(o);return o};
+let BFLY=null;
+function bflyTex(){const c=document.createElement('canvas');c.width=64;c.height=40;const g=c.getContext('2d');g.fillStyle='#fff';
+  for(const s of [-1,1]){g.beginPath();g.ellipse(32+s*14,15,13,12,s*.35,0,6.2832);g.fill();g.beginPath();g.ellipse(32+s*10,29,8,8,0,0,6.2832);g.fill()}
+  g.fillStyle='#5b4636';g.fillRect(30,8,4,26);return new T.CanvasTexture(c)}
+function buildMeadow(G,adj,old){
+  const CX=2.6,CZ=3.4,rows=rowsOf(G),w=Math.max(1,...rows.map(r=>r.length)),ox=-(w-1)*CX/2,oz=-(rows.length-1)*CZ/2,small=innerWidth<700;
+  extent={hx:(w-1)*CX/2+1.6,hz:(rows.length-1)*CZ/2+1.6};
+  addW(new T.HemisphereLight('#d9efff','#b9dd92',1.05));
+  const homes=[],lanes=[];
+  rows.forEach((row,j)=>{
+    const z=oz+j*CZ,x0=ox-1.3,x1=ox+(row.length-1)*CX+1.3;lanes.push([x0,x1,z+1.08]);
+    const lane=own(new T.Mesh(new T.PlaneGeometry(x1-x0,.64).rotateX(-Math.PI/2),toon('#f0ddb0',{transparent:false})));lane.position.set((x0+x1)/2,.015,z+1.08);lane.receiveShadow=true;
+    row.forEach((n,i)=>{
+      const home=new T.Vector3(ox+i*CX,0,z);homes.push(home);
+      const deg=adj.get(n.id)?.size||0,paper=n.type==='paper',lit=!paper||n.status!=='todo',deep=paper&&n.status==='deep',c=col('--c-'+n.type);
+      const g=new T.Group(),body=new T.Group();g.position.copy(old.get(n.id)||home);g.add(body);const mats=[];
+      const part=(geo,mat,x,y,zz,ol,par=body)=>{mats.push(mat);const m=new T.Mesh(geo,mat);m.position.set(x,y,zz);m.castShadow=m.receiveShadow=true;par.add(m);
+        if(ol){const hm=new T.MeshBasicMaterial({color:INK,side:T.BackSide,transparent:true});mats.push(hm);const hu=new T.Mesh(geo,hm);hu.scale.setScalar(ol);m.add(hu)}return m};
+      const win=lit?'#ffe08a':'#86705f',wood='#a9744f';let top,front,sail=null,flag=null,chim=null;
+      if(n.type==='paper'){ // cottage
+        part(GEO.wall,toon('#fff3dc'),0,.36,0,1.045).scale.set(1.05,.72,.9);
+        part(GEO.roofP,toon(c),0,1.03,0,1.05);
+        chim=part(GEO.chim,toon('#e08f72'),.3,1.05,-.16,1.1);
+        part(GEO.door,new T.MeshBasicMaterial({color:wood,transparent:true}),0,.17,.456);
+        for(const s of [-1,1])part(GEO.win,new T.MeshBasicMaterial({color:win,transparent:true}),s*.31,.44,.456);
+        if(deep)for(const s of [-1,1])part(GEO.box1,toon('#8fcf7f'),s*.31,.3,.5,1.12).scale.set(.24,.06,.08); // flower boxes under the windows
+        top=1.34;front=.45;
+      }else if(n.type==='concept'){ // silo
+        part(GEO.silo,toon('#fff3dc'),0,.55,0,1.05).scale.set(1,1.1,1);
+        part(GEO.cone,toon(c),0,1.375,0,1.06);
+        part(GEO.door,new T.MeshBasicMaterial({color:wood,transparent:true}),0,.17,.405);
+        part(GEO.win,new T.MeshBasicMaterial({color:win,transparent:true}),0,.72,.405);
+        top=1.65;front=.4;
+      }else if(n.type==='method'){ // windmill: the sails turn
+        part(GEO.mill,toon('#fff3dc'),0,.65,0,1.05).scale.set(1,1.3,1);
+        part(GEO.millCap,toon(c),0,1.51,0,1.07);
+        const hub=new T.Group();hub.position.set(0,1.2,.36);body.add(hub);sail=new T.Group();hub.add(sail);
+        for(let q=0;q<4;q++){const arm=new T.Group();arm.rotation.z=q*Math.PI/2;sail.add(arm);part(GEO.blade,toon(q%2?'#fff8ec':c),0,.43,0,1.12,arm)}
+        part(GEO.knob,toon(c),0,0,.03,1.15,hub);
+        part(GEO.door,new T.MeshBasicMaterial({color:wood,transparent:true}),0,.17,.395);
+        top=1.72;front=.4;
+      }else{ // question: a mushroom house
+        part(GEO.stem,toon('#fff1dc'),0,.37,0,1.05).scale.set(1,.74,1);
+        part(GEO.cap,toon(c,{side:T.DoubleSide}),0,.7,0,1.06);
+        for(let q=0;q<6;q++){const th=.55+.45*hh(q+3),ph=q*1.13+.4;part(GEO.dot,toon('#ffffff'),.6*Math.sin(th)*Math.cos(ph),.7+.6*Math.cos(th),.6*Math.sin(th)*Math.sin(ph))}
+        part(GEO.door,new T.MeshBasicMaterial({color:wood,transparent:true}),0,.17,.345);
+        part(GEO.win,new T.MeshBasicMaterial({color:win,transparent:true}),0,.48,.33);
+        top=1.32;front=.36;
+      }
+      if(deg){part(GEO.pole,toon('#fffaf0'),0,top+.15,0);part(GEO.knob,toon(col('--accent')),0,top+.31,0,1.15)} // the bunting hangs from here
+      if(n.star){part(GEO.flagPole,toon('#fffaf0'),.78,.8,.1);flag=new T.Group();flag.position.set(.78,1.5,.1);body.add(flag);part(GEO.flag,toon(col('--accent'),{side:T.DoubleSide}),0,0,0,0,flag)} // 关键文献 fly a golden pennant
+      const smoke=[];if(deep)for(let q=0;q<3;q++){const s=new T.Sprite(new T.SpriteMaterial({map:tex,color:'#ffffff',transparent:true,depthWrite:false}));g.add(s);smoke.push(s)}
+      const sc=1+Math.min(.3,Math.sqrt(deg)*.13)+(n.star?.08:0),it=addItem(n,g,home,body,{up:true,sc,delay:(j*3+i)*110,old:old.get(n.id)});
+      for(const m of mats)it.dims.push([m,1,.22]);
+      it.r=.62;it.cy=top*sc/2;it.ly=(top+(deg?.38:0))*sc+.3;it.ayAbs=(top+.31)*sc;it.selY=.035;it.selS=1.05;
+      it.anim=t=>{const k=clamp(it.s/it.sc,0,1),pop=it.s*(1+.22*Math.sin(k*Math.PI)),hop=it.hl&&!RM?Math.abs(Math.sin(t*5.5))*.16:0; // buildings pop up, linked ones hop
+        g.position.x+=(home.x-g.position.x)*.15;g.position.z+=(home.z-g.position.z)*.15;g.position.y=hop;g.scale.setScalar(Math.max(.0001,pop));
+        if(sail&&!RM)sail.rotation.z-=.018;if(flag)flag.rotation.y=RM?0:.4*Math.sin(t*3.1);
+        smoke.forEach((s,q)=>{const u=RM?.25+q*.25:(t*.3+q/3)%1;s.position.set(.3+u*.18,1.3+u*1.1,-.16);s.scale.setScalar(.16+u*.42);s.material.opacity=.8*(1-u)*(it.dim?.3:1)})};
+    })});
+  if(lanes.length>1){const za=lanes[0][2],zb=lanes[lanes.length-1][2],xr=Math.min(...lanes.map(l=>l[0]))+.32,rd=own(new T.Mesh(new T.PlaneGeometry(.64,zb-za+.64).rotateX(-Math.PI/2),toon('#f0ddb0',{transparent:false})));rd.position.set(xr,.014,(za+zb)/2);rd.receiveShadow=true;lanes.push([xr-.32,xr+.32,(za+zb)/2,(zb-za)/2+.32])} // a road joins the lanes
+  // the land: flat around the village, rolling hills and a patchwork of fields further out
+  const d0=(x,z)=>Math.hypot(Math.max(0,Math.abs(x)-extent.hx-1),Math.max(0,Math.abs(z)-extent.hz-1));
+  const hgt=(x,z)=>{const d=d0(x,z);return sstep(1,12,d)*.7*(1.3*Math.sin(x*.11+1.3)*Math.cos(z*.09+.4)+.9*Math.sin(x*.05-z*.07)+.4*Math.sin(x*.23+z*.19)+1.2)*(1+d*.025)};
+  const seg=small?90:150,gg=new T.PlaneGeometry(240,240,seg,seg).rotateX(-Math.PI/2),gp=gg.attributes.position,gc=new Float32Array(gp.count*3);
+  const fields=['#a6d889','#c9e69b','#f2db88','#b2dc8c','#dccbf0','#9ed28a','#f7d39d'].map(h=>new T.Color(h)),ga=new T.Color('#a7d98a'),gb=new T.Color('#bfe39a'),cc=new T.Color();
+  for(let i=0;i<gp.count;i++){const x=gp.getX(i),z=gp.getZ(i),d=d0(x,z);gp.setY(i,hgt(x,z));
+    cc.copy(ga).lerp(gb,.5+.5*Math.sin(x*.42)*Math.sin(z*.37));cc.lerp(fields[Math.floor(hh(Math.floor(x/7+99)*131+Math.floor(z/7+99)*71)*fields.length)],sstep(6,12,d));cc.toArray(gc,i*3)}
+  gg.setAttribute('color',new T.BufferAttribute(gc,3));gg.computeVertexNormals();
+  const ground=own(new T.Mesh(gg,new T.MeshToonMaterial({vertexColors:true,gradientMap:TOON})));ground.receiveShadow=true;
+  const inLane=(x,z,m)=>lanes.some(([a,b,lz,hz])=>x>a-m&&x<b+m&&Math.abs(z-lz)<(hz||.32)+m),nearHome=(x,z,m)=>homes.some(h=>Math.abs(x-h.x)<m&&Math.abs(z-h.z)<m);
+  // trees, a few of them cherry trees
+  const TN=small?80:190,tr=[];for(let q=0;q<TN*8&&tr.length<TN;q++){const x=(rnd()-.5)*96,z=(rnd()-.5)*96-6,d=d0(x,z);if(d<2.6||(d>30&&rnd()<.6))continue;tr.push([x,z,.75+rnd()*.7,hgt(x,z)])}
+  const trunk=addW(new T.InstancedMesh(GEO.trunk,toon('#a8795a',{transparent:false}),tr.length)),crown=addW(new T.InstancedMesh(GEO.crown,toon('#ffffff',{transparent:false}),tr.length)),crownO=addW(new T.InstancedMesh(GEO.crown,new T.MeshBasicMaterial({color:INK,side:T.BackSide}),tr.length));
+  const greens=['#7cc576','#8fd07a','#6fbb70','#a3d47c','#7cc28c'].map(h=>new T.Color(h)),pink=new T.Color('#f7b7cb');
+  tr.forEach(([x,z,s,y],i)=>{MAT.compose(V.set(x,y+.35*s,z),Q0,V2.setScalar(s));trunk.setMatrixAt(i,MAT);V.set(x,y+1.12*s,z);MAT.compose(V,Q0,V2.setScalar(s));crown.setMatrixAt(i,MAT);MAT.compose(V,Q0,V2.setScalar(s*1.07));crownO.setMatrixAt(i,MAT);
+    crown.setColorAt(i,rnd()<.15?pink:greens[Math.floor(rnd()*greens.length)])});
+  trunk.castShadow=crown.castShadow=true;
+  // flowers and grass around the houses
+  const FN=small?320:850,fl=addW(new T.InstancedMesh(GEO.bud,new T.MeshBasicMaterial({color:'#ffffff'}),FN)),fcol=['#ffffff','#ffd3e0','#ffe680','#f6a8c8','#cbb8f2','#ffffff'].map(h=>new T.Color(h));let fi=0;
+  for(let q=0;q<FN*6&&fi<FN;q++){const x=(rnd()-.5)*(extent.hx*2+16),z=(rnd()-.5)*(extent.hz*2+16);if(inLane(x,z,.1)||nearHome(x,z,.85))continue;MAT.compose(V.set(x,hgt(x,z)+.05,z),Q0,ONE);fl.setMatrixAt(fi,MAT);fl.setColorAt(fi++,fcol[Math.floor(rnd()*fcol.length)])}
+  fl.count=fi;
+  const GN=small?150:380,tu=addW(new T.InstancedMesh(GEO.tuft,toon('#7dbd68',{transparent:false}),GN));let ti=0;
+  for(let q=0;q<GN*6&&ti<GN;q++){const x=(rnd()-.5)*(extent.hx*2+24),z=(rnd()-.5)*(extent.hz*2+24);if(inLane(x,z,.05)||nearHome(x,z,.75))continue;MAT.compose(V.set(x,hgt(x,z),z),Q0,V2.setScalar(.7+rnd()*.8));tu.setMatrixAt(ti++,MAT)}
+  tu.count=ti;
+  // far mountains in the haze, the tall ones with snow
+  const mm=new T.MeshToonMaterial({color:'#a3c1e2',emissive:'#86a3cb',emissiveIntensity:.35,gradientMap:TOON}),snow=new T.MeshToonMaterial({color:'#ffffff',emissive:'#c7d6ec',emissiveIntensity:.4,gradientMap:TOON});
+  for(let i=0;i<15;i++){const a=-2.7+(i+.5)/15*3.4+(rnd()-.5)*.15,R=96+rnd()*16,h=6+rnd()*8,r=12+rnd()*8,x=R*Math.cos(a),z=R*Math.sin(a);
+    const m=addW(new T.Mesh(GEO.peak,mm));m.scale.set(r,h,r);m.position.set(x,-1.5,z);if(h>11){const s=addW(new T.Mesh(GEO.peak,snow));s.scale.set(r*.3,h*.3,r*.3);s.position.set(x,-1.5+h*.7,z)}}
+  // soft clouds drifting by
+  const cm=new T.MeshToonMaterial({color:'#ffffff',emissive:'#b2c7e3',emissiveIntensity:.62,gradientMap:TOON}),clouds=[];
+  for(let i=0;i<(small?6:11);i++){const cg=new T.Group(),k=4+Math.floor(rnd()*3);for(let q=0;q<k;q++){const s=new T.Mesh(GEO.puff,cm),r=.8+rnd()*.8;s.scale.set(r*1.2,r*.78,r);s.position.set((q-k/2)*1.05+(rnd()-.5)*.4,(rnd()-.3)*.5,(rnd()-.5)*.8);cg.add(s)}
+    cg.position.set((rnd()-.5)*120,8+rnd()*7,-30-rnd()*50);cg.scale.setScalar(1.3+rnd()*1.7);addW(cg);clouds.push([cg,.25+rnd()*.35])}
+  // the sky: deep blue above, warm near the horizon
+  const sky=own(new T.Mesh(new T.SphereGeometry(170,32,16),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,fog:false,
+    vertexShader:'varying vec3 vD;void main(){vD=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:'varying vec3 vD;void main(){float y=vD.y;vec3 c=mix(vec3(0.99,0.95,0.87),vec3(0.73,0.88,0.97),smoothstep(-0.02,0.13,y));c=mix(c,vec3(0.43,0.72,0.94),smoothstep(0.13,0.62,y));vec3 s=normalize(vec3(0.55,0.2,-0.8));float g=max(dot(vD,s),0.0);c+=vec3(1.0,0.86,0.62)*(pow(g,6.0)*0.2+pow(g,120.0)*0.4);c=pow(c,vec3(2.2));gl_FragColor=vec4(c,1.0);\n#include <colorspace_fragment>\n}'})));
+  sky.renderOrder=-1;
+  // butterflies over the flowers
+  BFLY=BFLY||bflyTex();const bf=[],bcol=['#ffb3c7','#ffe27a','#bfe3ff','#d7c4ff','#ffffff'];
+  for(let i=0;i<(small?5:10);i++){const s=addW(new T.Sprite(new T.SpriteMaterial({map:BFLY,color:bcol[i%5],transparent:true,depthWrite:false})));bf.push([s,(rnd()-.5)*extent.hx*2,(rnd()-.5)*extent.hz*2+1,.4+rnd()*.5,rnd()*6])}
+  tickFn=t=>{if(RM)t=0;for(const [cg,v] of clouds){cg.position.x+=v*.016;if(cg.position.x>70)cg.position.x=-70}
+    for(const [s,x,z,v,p] of bf){const a=t*v+p;s.position.set(x+1.3*Math.sin(a),.45+.25*Math.sin(a*2.7)+.1*Math.sin(a*9),z+1.1*Math.cos(a*.8));s.scale.set(.2*(.35+.65*Math.abs(Math.cos(t*14+p))),.13,1)}};
+}
+const BUILD={galaxy:buildGalaxy,city:buildCity,atom:buildAtoms,meadow:buildMeadow};
 function rebuild(){
   if(!scene)return;const G=app.G,key=BUILD[app.ui.model]?app.ui.model:'galaxy',fresh=key!==model,old=fresh?new Map():new Map([...items].map(([id,it])=>[id,it.g.position.clone()]));
-  clearWorld();model=key;M=MODELS[key];seed=20261121;stage.classList.toggle('night',!!M.night);themeBackdrop();if(M.night&&!fx&&!fxFail)fxInit();
-  scene.fog=new T.FogExp2(col('--bg'),M.fog);amb.intensity=M.night?.55:1.1;sun.intensity=M.night?1.3:2.2; // the bloom adds light at night
-  BUILD[key](G,app.adj(),old);
+  clearWorld();model=key;M=MODELS[key];seed=20261121;stage.classList.toggle('night',!!M.night);stage.classList.toggle('day',!!M.day);themeBackdrop();if(M.night&&!fx&&!fxFail)fxInit();
+  scene.fog=new T.FogExp2(col('--bg'),M.fog);  BUILD[key](G,app.adj(),old);
+  amb.intensity=M.night?.55:M.day?.5:1.1;sun.intensity=M.night?1.3:M.day?2.4:2.2;sun.color.set(M.day?'#fff1db':'#ffffff');sun.castShadow=!!M.shadow; // the bloom adds light at night; the day has a warm sun with cel shadows
+  if(M.shadow){const S=Math.max(extent.hx,extent.hz)+8,sc=sun.shadow.camera;sun.position.set(9,18,11);sc.left=sc.bottom=-S;sc.right=sc.top=S;sc.near=1;sc.far=70;sc.updateProjectionMatrix()}else sun.position.set(4,9,6);
   // relations: arcs of light; pulses travel from the citing paper to the cited one
   const dark=isDark()||M.night,pcol=[];for(const e of G.visEdges){const A=items.get(e.source),B=items.get(e.target);if(!A||!B)continue;
     const colr=new T.Color(col(REL[e.rel]||'--ink-3')),o={color:colr,transparent:true,opacity:e.rel==='related'?.38:.7,depthWrite:false,fog:!M.night};
     const mesh=M.moving?new T.Line(new T.BufferGeometry().setAttribute('position',new T.BufferAttribute(new Float32Array(93),3)),new T.LineBasicMaterial(o)):new T.Mesh(new T.BufferGeometry(),new T.MeshBasicMaterial(o));own(mesh);
     const L={e,A,B,mesh,curve:new T.QuadraticBezierCurve3(new T.Vector3(),new T.Vector3(),new T.Vector3()),key:'',dir:e.rel!=='related',op:o.opacity*(M.night?1.25:1)};links.push(L);
-    if(M.flat){if(A.home.distanceTo(B.home)<3.4)L.lv=Math.max(.5,Math.min(A.h,B.h)-.32);L.sh=own(new T.Mesh(new T.BufferGeometry(),flowMat(colr,L.dir)))} // neighbours get a level corridor between their walls, the others an arch over the roofs
+    if(M.bunting){const fl=new T.InstancedMesh(GEO.flagTri,new T.MeshBasicMaterial({color:'#ffffff',side:T.DoubleSide,transparent:true}),64),cr=new T.Color('#fffaf0'),pc=['#ffd6e2','#fff0a8','#cdeaff','#dccfff'].map(h=>new T.Color(h));
+      fl.count=0;for(let q=0;q<64;q++)fl.setColorAt(q,q%2?(q%4===1?cr:pc[(q>>2)%4]):colr);L.fl=addW(fl)} // little pennants on the line, in the colour of the relation
+    if(M.corr){if(A.home.distanceTo(B.home)<3.4)L.lv=Math.max(.5,Math.min(A.h,B.h)-.32);L.sh=own(new T.Mesh(new T.BufferGeometry(),flowMat(colr,L.dir)))} // neighbours get a level corridor between their walls, the others an arch over the roofs
     if(L.dir)for(let q=0;q<2;q++)pcol.push(colr.r,colr.g,colr.b)}
   if(pcol.length){const pg=new T.BufferGeometry();pg.setAttribute('position',new T.BufferAttribute(new Float32Array(pcol.length),3));pg.setAttribute('color',new T.BufferAttribute(new Float32Array(pcol.map(v=>Math.min(1,v*.6+.4))),3));
     pulses=own(new T.Points(pg,new T.PointsMaterial({size:M.night?.26:.2,map:tex,vertexColors:true,transparent:true,opacity:dark?1:.9,blending:dark?T.AdditiveBlending:T.NormalBlending,depthWrite:false,fog:false})))}
@@ -1677,17 +1842,19 @@ function updateWorld(t,now){
   const nbr=sel&&M.hl&&items.has(sel)?app.adj().get(sel)||new Set():null;
   for(const it of items.values()){
     const grow=RM||now-introAt>it.delay?1:0,target=grow*it.sc*(it.n.id===hoverId?M.hov:1);it.s+=(target-it.s)*(RM?1:.12);
-    const me=it.n.id,dim=(qm&&!qm.has(me))||(nbr&&me!==sel&&!nbr.has(me)),hl=nbr&&!dim;it.dim=dim;for(const d of it.dims){const v=Math.min(1,d[1]*(dim?d[2]:hl&&d[3]||1));if(d[0].uniforms)d[0].uniforms.uOp.value=v;else d[0].opacity=v}
+    const me=it.n.id,dim=(qm&&!qm.has(me))||(nbr&&me!==sel&&!nbr.has(me)),hl=nbr&&!dim;it.dim=dim;it.hl=hl;for(const d of it.dims){const v=Math.min(1,d[1]*(dim?d[2]:hl&&d[3]||1));if(d[0].uniforms)d[0].uniforms.uOp.value=v;else d[0].opacity=v}
     it.anim(t);
   }
   tickFn&&tickFn(t);
   let pi=0;const pa=pulses&&pulses.geometry.attributes.position,end=(it,o)=>{o.copy(it.g.position);if(it.ayAbs!=null)o.y=it.ayAbs;else o.y+=it.ay};
   for(const L of links){
-    const c=L.curve,a=c.v0,b=c.v2;end(L.A,a);end(L.B,b);c.v1.addVectors(a,b).multiplyScalar(.5);if(L.lv!=null)a.y=b.y=c.v1.y=L.lv*Math.min(1,L.A.s,L.B.s);else c.v1.y=Math.max(a.y,b.y)+M.arc0+M.arcK*a.distanceTo(b);
+    const c=L.curve,a=c.v0,b=c.v2;end(L.A,a);end(L.B,b);c.v1.addVectors(a,b).multiplyScalar(.5);if(L.lv!=null)a.y=b.y=c.v1.y=L.lv*Math.min(1,L.A.s,L.B.s);else{const dd=a.distanceTo(b);c.v1.y=Math.max(a.y,b.y)+(M.sag&&dd<3.4?-M.sag:M.arc0+M.arcK*dd)} // neighbours' bunting sags, longer lines arch over
     if(M.moving){const pp=L.mesh.geometry.attributes.position;for(let i=0;i<=30;i++){c.getPoint(i/30,V);pp.setXYZ(i,V.x,V.y,V.z)}pp.needsUpdate=true}
-    else{const key=a.x.toFixed(2)+a.y.toFixed(2)+a.z.toFixed(2)+b.x.toFixed(2)+b.y.toFixed(2)+b.z.toFixed(2);if(key!==L.key){L.key=key;L.mesh.geometry.dispose();L.mesh.geometry=new T.TubeGeometry(c,40,L.sh?.034:(L.e.rel==='related'?.011:.016)*(M.night?1.9:1),6,false);
+    else{const key=a.x.toFixed(2)+a.y.toFixed(2)+a.z.toFixed(2)+b.x.toFixed(2)+b.y.toFixed(2)+b.z.toFixed(2);if(key!==L.key){L.key=key;L.len=0;L.mesh.geometry.dispose();L.mesh.geometry=new T.TubeGeometry(c,40,L.sh?.034:(L.e.rel==='related'?.011:.016)*(M.night?1.9:1),6,false);
       if(L.sh){L.sh.geometry.dispose();L.sh.geometry=new T.TubeGeometry(c,40,.12,12,false);L.sh.material.uniforms.uLen.value=a.distanceTo(b)}}}
-    const on=sel&&(L.e.source===sel||L.e.target===sel);const lo=(sel&&!on?.35:1)*((L.A.dim||L.B.dim)?.2:1);L.mesh.material.opacity=Math.min(1,L.op*lo);if(L.sh)L.sh.material.uniforms.uOp.value=lo*(on?1.5:1);
+    const on=sel&&(L.e.source===sel||L.e.target===sel);if(L.fl){const len=L.len||(L.len=c.getLength()),nf=Math.min(64,Math.max(3,Math.round(len*3.4)));L.fl.count=nf;
+      for(let q=0;q<nf;q++){const u=(q+.5)/nf;c.getPoint(u,V);c.getTangent(u,V2);E1.set(RM?0:.3*Math.sin(t*3+q*.9),Math.atan2(-V2.z,V2.x),0,'YXZ');Q1.setFromEuler(E1);MAT.compose(V,Q1,ONE);L.fl.setMatrixAt(q,MAT)}L.fl.instanceMatrix.needsUpdate=true} // they flutter
+    const lo=(sel&&!on?.35:1)*((L.A.dim||L.B.dim)?.2:1);if(L.fl)L.fl.material.opacity=lo;L.mesh.material.opacity=Math.min(1,L.op*lo);if(L.sh)L.sh.material.uniforms.uOp.value=lo*(on?1.5:1);
     if(L.dir&&pa)for(let q2=0;q2<2;q2++){c.getPoint(RM?(.33+.34*q2):((t*.22+q2*.5+L.A.home.x*.13+9)%1),V);pa.setXYZ(pi++,V.x,V.y,V.z)}
   }
   if(pa)pa.needsUpdate=true;
@@ -1710,7 +1877,7 @@ function updateWorld(t,now){
 const ptrs=new Map();let down=null,pinch=null,lastTap={id:null,t:0};
 const ray=()=>new T.Raycaster();
 function pick(x,y){if(!scene)return null;const r=ray(),rc=lab.getBoundingClientRect();r.setFromCamera(new T.Vector2((x-rc.left)/rc.width*2-1,-((y-rc.top)/rc.height*2-1)),cam);
-  const hit=r.intersectObjects([...items.values()].map(i=>i.core),false)[0];if(hit)return hit.object.userData.id;
+  const hit=r.intersectObjects([...items.values()].map(i=>i.core),true)[0];if(hit){let o=hit.object;while(o&&!o.userData.id)o=o.parent;if(o)return o.userData.id}
   let best=null,bd=26;for(const [id,[sx,sy,rp]] of scrMap){const d=Math.hypot(sx-(x-rc.left),sy-(y-rc.top))-rp;if(d<bd){bd=d;best=id}}return best} // forgiving for fingers
 const zc=d=>clamp(d,M.min,fitDist*3);
 lab.addEventListener('pointerdown',e=>{if(e.button>0||!api.live3d)return;try{lab.setPointerCapture(e.pointerId)}catch(_){}
@@ -1756,7 +1923,7 @@ function frame(){
   if(!document.getElementById('viewGraph').hidden){
     const now=performance.now(),t=(now-t0)/1000;TU.value=t;
     if(api.live3d&&(app.G.ver!==ver||app.ui.model!==model))rebuild();
-    const night=api.live3d&&M.night,bgOn=api.active||night;bgScene.visible=bgOn;if(bgOn)updateBackdrop(t);if(api.live3d)updateWorld(t,now);
+    const night=api.live3d&&M.night,bgOn=(api.active&&!(api.live3d&&M.sky))||night;bgScene.visible=bgOn;if(bgOn)updateBackdrop(t);if(api.live3d)updateWorld(t,now);
     if(night&&fx&&q<2)composer.render();
     else{renderer.setRenderTarget(null);renderer.setClearColor(night?NIGHT['--bg']:0x000000,night?1:0);renderer.clear();if(bgOn)renderer.render(bgScene,bgCam);if(api.live3d){renderer.clearDepth();renderer.render(scene,cam)}}
     if(night&&!HQ&&q<2){const dt=now-qPrev;if(dt<3000&&now-introAt>2500){qT+=dt;if(++qN>=50||qT>3000){if(qT/qN>42){q++;resize()}qT=qN=0}}}qPrev=now;
@@ -1766,7 +1933,7 @@ function frame(){
 const kick=()=>{if(!raf)raf=requestAnimationFrame(frame)};
 let initP=null;
 function init(){return initP||(initP=(async()=>{
-  try{T=await import('./vendor/three/three.module.min.js');renderer=new T.WebGLRenderer({canvas:cv,alpha:true,antialias:true,powerPreference:'high-performance'});renderer.autoClear=false;
+  try{T=await import('./vendor/three/three.module.min.js');renderer=new T.WebGLRenderer({canvas:cv,alpha:true,antialias:true,powerPreference:'high-performance'});renderer.autoClear=false;renderer.shadowMap.enabled=true;
     tex=disc();buildBackdrop();buildWorld();ready=true;resize();themeBackdrop()}
   catch(e){failed=true}
   return ready})())}
@@ -1774,11 +1941,11 @@ const api=window.__bg={active:false,live3d:false,
   async sync(){
     const want3=app.ui.layout==='3d'&&app.ui.view==='graph',wantBg=app.ui.bg3d;
     if((want3||wantBg)&&!ready&&!failed)await init();
-    if(failed){api.active=api.live3d=false;cv.classList.remove('on');stage.classList.remove('is3d','night');
+    if(failed){api.active=api.live3d=false;cv.classList.remove('on');stage.classList.remove('is3d','night','day');
       if(app.ui.layout==='3d'){app.toast('这个浏览器不支持 WebGL，已切回整齐布局');app.setLayout('tidy')}return}
     if(!ready)return;
     const was=api.live3d;api.live3d=app.ui.layout==='3d'&&app.ui.view==='graph';api.active=app.ui.bg3d;
-    stage.classList.toggle('is3d',api.live3d);stage.classList.toggle('night',api.live3d&&!!(MODELS[app.ui.model]||MODELS.galaxy).night);cv.classList.toggle('on',api.active||api.live3d);
+    stage.classList.toggle('is3d',api.live3d);stage.classList.toggle('night',api.live3d&&!!(MODELS[app.ui.model]||MODELS.galaxy).night);stage.classList.toggle('day',api.live3d&&!!(MODELS[app.ui.model]||{}).day);cv.classList.toggle('on',api.active||api.live3d);
     if(api.live3d!==was){themeBackdrop();if(api.live3d){ver=-1;touched=performance.now()}else{for(const it of items.values())it.el.style.display='none'}app.G.dirty=true;if(app.ui.sel)app.placeCard(true)}
     kick()},
   theme(){if(!ready)return;themeBackdrop();if(api.live3d)ver=Math.min(ver,0),rebuildSoon()},
