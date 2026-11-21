@@ -1490,10 +1490,10 @@ function updateBackdrop(t){
 /* ---------- 2. the 立体 view: shared engine ---------- */
 const REL={based:'--ink-3',improves:'--good',refutes:'--bad',uses:'--c-method',about:'--c-concept',answers:'--c-question',related:'--ink-3'};
 // the galaxy and the city are night scenes in both themes
-const NIGHT={'--bg':'#04060e','--c-paper':'#6fa5ff','--c-concept':'#3fd3bd','--c-method':'#ab92ff','--c-question':'#ff7daa','--accent':'#ffc247','--ink-2':'#a8b4c8','--ink-3':'#8090ad','--good':'#4cd08b','--bad':'#ff6b6b'};
+const NIGHT={'--bg':'#04060e','--c-paper':'#6fa5ff','--c-concept':'#3fd3bd','--c-method':'#ab92ff','--c-question':'#ff7daa','--accent':'#ffc247','--ink-2':'#a8b4c8','--ink-3':'#9cc2ff','--good':'#4cd08b','--bad':'#ff6b6b'};
 const MODELS={
   galaxy:{night:true,moving:true,az:-.55,pol:.98,ty:0,hy:1.6,arc0:.3,arcK:.22,min:3.2,fog:.01,hov:1.22,bloom:[.45,.3,.7]},
-  city:{night:true,flat:true,az:-.6,pol:1.07,ty:1.2,hy:3.4,arc0:.7,arcK:.18,min:4,fog:.026,hov:1.05,bloom:[.6,.4,.5]},
+  city:{night:true,flat:true,hl:true,az:-.6,pol:1.07,ty:1.2,hy:3.4,arc0:.7,arcK:.18,min:4,fog:.026,hov:1.05,bloom:[.6,.4,.5]},
   atom:{az:-.25,pol:.9,ty:-.25,hy:1.9,arc0:.65,arcK:.2,min:4,fog:.018,hov:1.22}};
 let M=MODELS.atom,model='';
 const col=k=>M.night?NIGHT[k]:css(k);
@@ -1611,14 +1611,14 @@ function buildCity(G,adj,old){
     const body=new T.Mesh(GEO[geo],mat);body.scale.set(wd,h,wd);g.add(body);
     const em=new T.LineBasicMaterial({color:c,transparent:true,opacity:todo?.6:1}),edge=new T.LineSegments(GEO[geo+'E'],em);edge.scale.copy(body.scale);g.add(edge);
     const glow=new T.Sprite(new T.SpriteMaterial({map:tex,color:c,transparent:true,opacity:todo?.12:deep?.75:.45,blending:T.AdditiveBlending,depthWrite:false,fog:false}));glow.scale.setScalar(deep?1.7:1.2);glow.position.y=h+.1;g.add(glow);
-    const it=addItem(n,g,home,body,{up:true,delay:(j*3+i)*90,old:old.get(n.id)});it.dims.push([mat,1,.22],[em,em.opacity,.2],[glow.material,glow.material.opacity,.1]);
+    const it=addItem(n,g,home,body,{up:true,delay:(j*3+i)*90,old:old.get(n.id)});it.dims.push([mat,1,.22],[em,em.opacity,.2],[glow.material,glow.material.opacity,.1,2.4]);
     const pl=new T.LineSegments(GEO.boxE,em);pl.scale.set(wd*1.7,.001,wd*1.7);pl.position.y=.02;g.add(pl); // the plot it stands on
-    const pm=fadeBeam(c,todo?.16:deep?.55:.34,1.02,true),pil=new T.Mesh(GEO.pillar,pm);pil.scale.set(1,deep?8:6,1);pil.position.y=h;g.add(pil);it.dims.push([pm,pm.uniforms.uOp.value,.1]); // a pillar of light marks every entry
+    const pm=fadeBeam(c,todo?.16:deep?.55:.34,1.02,true),pil=new T.Mesh(GEO.pillar,pm);pil.scale.set(1,deep?8:6,1);pil.position.y=h;g.add(pil);it.dims.push([pm,pm.uniforms.uOp.value,.1,2.2]); // a pillar of light marks every entry
     if(n.type==='question'){const rf=new T.Mesh(GEO.roof,new T.MeshBasicMaterial({color:c,wireframe:true,transparent:true,opacity:.8}));rf.scale.setScalar(wd);rf.position.y=h;g.add(rf);it.dims.push([rf.material,.8,.2])}
     if(deep){it.ring=new T.Mesh(GEO.ring,new T.MeshBasicMaterial({color:c,transparent:true,opacity:.9}));it.ring.rotation.x=Math.PI/2;it.ring.scale.setScalar(wd*1.35);it.ring.position.y=h+.28;g.add(it.ring)}
     if(n.star){it.halo=new T.Mesh(GEO.halo,new T.MeshBasicMaterial({color:NIGHT['--accent'],transparent:true,opacity:.95}));it.halo.rotation.x=Math.PI/2;it.halo.scale.setScalar(wd*1.15);it.halo.position.y=h+.12;g.add(it.halo);
       const sh=new T.Mesh(GEO.shaft,fadeBeam(NIGHT['--accent'],.3,1.02,true));sh.scale.set(1,7,1);sh.position.y=h;g.add(sh)}
-    it.r=wd*.8;it.cy=h/2;it.ly=h+(n.star||deep?.62:.36);it.ayAbs=h+.06;it.selY=.04;it.selS=wd*1.2;
+    it.h=h;it.r=wd*.8;it.cy=h/2;it.ly=h+(n.star||deep?.62:.36);it.ayAbs=h+.06;it.selY=.04;it.selS=wd*1.2;
     it.anim=()=>{g.scale.set(1,Math.max(.001,it.s),1);spin(it)}; // towers rise from the ground
   }));
   // the rest of the city: dark blocks around the downtown, taller towards the horizon
@@ -1644,6 +1644,10 @@ function buildCity(G,adj,old){
   const span=(extent.hx+9)*2;tickFn=t=>{if(RM)t=0;lanes.forEach((a,i)=>{cp[i*3]=a.s*(((t*a.v*.06+a.ph)%1)-.5)*span});cg.attributes.position.needsUpdate=true};
 }
 
+// the glass shell of a sky corridor: bands of light run from the citing paper to the cited one; a 相关 corridor glows evenly
+const flowMat=(c,dir)=>new T.ShaderMaterial({uniforms:{uColor:{value:c},uOp:{value:1},uDir:{value:dir?1:0},uLen:{value:1},uT:TU},transparent:true,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending,
+  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+  fragmentShader:'uniform vec3 uColor;uniform float uOp;uniform float uDir;uniform float uLen;uniform float uT;varying vec2 vUv;void main(){float s=fract(vUv.x*uLen*1.4-uT*0.8);float band=smoothstep(0.0,0.12,s)*(1.0-smoothstep(0.4,0.62,s));float a=uDir>0.5?0.12+0.62*band:0.3;gl_FragColor=vec4(uColor,a*uOp);\n#include <colorspace_fragment>\n}'});
 const BUILD={galaxy:buildGalaxy,city:buildCity,atom:buildAtoms};
 function rebuild(){
   if(!scene)return;const G=app.G,key=BUILD[app.ui.model]?app.ui.model:'galaxy',fresh=key!==model,old=fresh?new Map():new Map([...items].map(([id,it])=>[id,it.g.position.clone()]));
@@ -1655,6 +1659,7 @@ function rebuild(){
     const colr=new T.Color(col(REL[e.rel]||'--ink-3')),o={color:colr,transparent:true,opacity:e.rel==='related'?.38:.7,depthWrite:false,fog:!M.night};
     const mesh=M.moving?new T.Line(new T.BufferGeometry().setAttribute('position',new T.BufferAttribute(new Float32Array(93),3)),new T.LineBasicMaterial(o)):new T.Mesh(new T.BufferGeometry(),new T.MeshBasicMaterial(o));own(mesh);
     const L={e,A,B,mesh,curve:new T.QuadraticBezierCurve3(new T.Vector3(),new T.Vector3(),new T.Vector3()),key:'',dir:e.rel!=='related',op:o.opacity*(M.night?1.25:1)};links.push(L);
+    if(M.flat){if(A.home.distanceTo(B.home)<3.4)L.lv=Math.max(.5,Math.min(A.h,B.h)-.32);L.sh=own(new T.Mesh(new T.BufferGeometry(),flowMat(colr,L.dir)))} // neighbours get a level corridor between their walls, the others an arch over the roofs
     if(L.dir)for(let q=0;q<2;q++)pcol.push(colr.r,colr.g,colr.b)}
   if(pcol.length){const pg=new T.BufferGeometry();pg.setAttribute('position',new T.BufferAttribute(new Float32Array(pcol.length),3));pg.setAttribute('color',new T.BufferAttribute(new Float32Array(pcol.map(v=>Math.min(1,v*.6+.4))),3));
     pulses=own(new T.Points(pg,new T.PointsMaterial({size:M.night?.26:.2,map:tex,vertexColors:true,transparent:true,opacity:dark?1:.9,blending:dark?T.AdditiveBlending:T.NormalBlending,depthWrite:false,fog:false})))}
@@ -1669,18 +1674,20 @@ function updateWorld(t,now){
   cur.az+=(orb.az+(RM||!idle?0:.07*Math.sin(t*.17))-cur.az)*f;cur.pol+=(orb.pol-cur.pol)*f;cur.dist+=(orb.dist-cur.dist)*f;cur.tx+=(orb.tx-cur.tx)*f;cur.ty+=(orb.ty-cur.ty)*f;cur.tz+=(orb.tz-cur.tz)*f;
   cam.position.set(cur.tx+cur.dist*Math.sin(cur.pol)*Math.sin(cur.az),cur.ty+cur.dist*Math.cos(cur.pol),cur.tz+cur.dist*Math.sin(cur.pol)*Math.cos(cur.az));cam.lookAt(cur.tx,cur.ty,cur.tz);cam.updateMatrixWorld();
   if(!sel&&!RM)orbT+=Math.min(.1,Math.max(0,t-lastT));lastT=t; // the planets stop while a card is open, so it stays next to its paper
+  const nbr=sel&&M.hl&&items.has(sel)?app.adj().get(sel)||new Set():null;
   for(const it of items.values()){
     const grow=RM||now-introAt>it.delay?1:0,target=grow*it.sc*(it.n.id===hoverId?M.hov:1);it.s+=(target-it.s)*(RM?1:.12);
-    const dim=qm&&!qm.has(it.n.id);it.dim=dim;for(const d of it.dims){const v=d[1]*(dim?d[2]:1);if(d[0].uniforms)d[0].uniforms.uOp.value=v;else d[0].opacity=v}
+    const me=it.n.id,dim=(qm&&!qm.has(me))||(nbr&&me!==sel&&!nbr.has(me)),hl=nbr&&!dim;it.dim=dim;for(const d of it.dims){const v=Math.min(1,d[1]*(dim?d[2]:hl&&d[3]||1));if(d[0].uniforms)d[0].uniforms.uOp.value=v;else d[0].opacity=v}
     it.anim(t);
   }
   tickFn&&tickFn(t);
   let pi=0;const pa=pulses&&pulses.geometry.attributes.position,end=(it,o)=>{o.copy(it.g.position);if(it.ayAbs!=null)o.y=it.ayAbs;else o.y+=it.ay};
   for(const L of links){
-    const c=L.curve,a=c.v0,b=c.v2;end(L.A,a);end(L.B,b);c.v1.addVectors(a,b).multiplyScalar(.5);c.v1.y=Math.max(a.y,b.y)+M.arc0+M.arcK*a.distanceTo(b);
+    const c=L.curve,a=c.v0,b=c.v2;end(L.A,a);end(L.B,b);c.v1.addVectors(a,b).multiplyScalar(.5);if(L.lv!=null)a.y=b.y=c.v1.y=L.lv*Math.min(1,L.A.s,L.B.s);else c.v1.y=Math.max(a.y,b.y)+M.arc0+M.arcK*a.distanceTo(b);
     if(M.moving){const pp=L.mesh.geometry.attributes.position;for(let i=0;i<=30;i++){c.getPoint(i/30,V);pp.setXYZ(i,V.x,V.y,V.z)}pp.needsUpdate=true}
-    else{const key=a.x.toFixed(2)+a.y.toFixed(2)+a.z.toFixed(2)+b.x.toFixed(2)+b.y.toFixed(2)+b.z.toFixed(2);if(key!==L.key){L.key=key;L.mesh.geometry.dispose();L.mesh.geometry=new T.TubeGeometry(c,40,(L.e.rel==='related'?.011:.016)*(M.night?1.9:1),6,false)}}
-    const on=sel&&(L.e.source===sel||L.e.target===sel);L.mesh.material.opacity=Math.min(1,L.op*(sel&&!on?.35:1)*((L.A.dim||L.B.dim)?.2:1));
+    else{const key=a.x.toFixed(2)+a.y.toFixed(2)+a.z.toFixed(2)+b.x.toFixed(2)+b.y.toFixed(2)+b.z.toFixed(2);if(key!==L.key){L.key=key;L.mesh.geometry.dispose();L.mesh.geometry=new T.TubeGeometry(c,40,L.sh?.034:(L.e.rel==='related'?.011:.016)*(M.night?1.9:1),6,false);
+      if(L.sh){L.sh.geometry.dispose();L.sh.geometry=new T.TubeGeometry(c,40,.12,12,false);L.sh.material.uniforms.uLen.value=a.distanceTo(b)}}}
+    const on=sel&&(L.e.source===sel||L.e.target===sel);const lo=(sel&&!on?.35:1)*((L.A.dim||L.B.dim)?.2:1);L.mesh.material.opacity=Math.min(1,L.op*lo);if(L.sh)L.sh.material.uniforms.uOp.value=lo*(on?1.5:1);
     if(L.dir&&pa)for(let q2=0;q2<2;q2++){c.getPoint(RM?(.33+.34*q2):((t*.22+q2*.5+L.A.home.x*.13+9)%1),V);pa.setXYZ(pi++,V.x,V.y,V.z)}
   }
   if(pa)pa.needsUpdate=true;
