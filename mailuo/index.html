@@ -132,6 +132,14 @@ button.chip:hover{border-color:var(--ink-3)}
 .view{position:absolute;inset:0}
 #bg3d{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity 1.2s}
 #bg3d.on{opacity:1}
+#lab3d{position:absolute;inset:0;overflow:hidden;z-index:2;display:none;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+#lab3d.grabbing{cursor:grabbing}
+.stage.is3d #lab3d{display:block}
+.stage.is3d #cv,.stage.is3d #btnLink,.stage.is3d #btnRelay{display:none}
+.stage.is3d #bg3d{opacity:1}
+.l3{position:absolute;left:0;top:0;width:178px;margin-left:-89px;text-align:center;font:500 12px/1.3 var(--font-body);color:var(--ink-2);text-shadow:0 0 3px var(--bg),0 0 3px var(--bg),0 0 7px var(--bg),0 0 12px var(--bg);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;transform-origin:top center;will-change:transform,opacity;cursor:pointer}
+.l3:hover,.l3.sel{color:var(--ink)}
+.l3.sel{font-weight:600}
 #cv{position:absolute;inset:0;touch-action:none;cursor:grab;display:block}
 #cv.grabbing{cursor:grabbing}
 .float{position:absolute;display:flex;gap:8px;z-index:5}
@@ -349,9 +357,11 @@ table.list{width:100%;border-collapse:separate;border-spacing:0;background:var(-
     <canvas id="bg3d" aria-hidden="true"></canvas>
     <div class="view" id="viewGraph">
       <canvas id="cv" aria-label="文献关系图"></canvas>
+      <div id="lab3d"></div>
       <div class="float tl">
         <div class="tool"><div class="seg" id="layoutSeg" role="group" aria-label="布局">
-          <button data-layout="tidy" aria-pressed="true">整齐</button>
+          <button data-layout="3d" aria-pressed="true">立体</button>
+          <button data-layout="tidy" aria-pressed="false">整齐</button>
           <button data-layout="force" aria-pressed="false">力导向</button>
           <button data-layout="time" aria-pressed="false">时间轴</button>
         </div></div>
@@ -482,7 +492,7 @@ function defaultLink(a,b){
 /* ---------- data ---------- */
 let db={version:1,nodes:[],edges:[],demo:false,gone:[],libEdges:[]},libReady=false;
 let byId=new Map(), adj=new Map();
-const ui={view:'graph',layout:'tidy',theme:null,labels:true,bg3d:true,q:'',sel:null,linkMode:false,sort:{key:'year',dir:-1},
+const ui={view:'graph',layout:'3d',theme:null,labels:true,bg3d:true,q:'',sel:null,linkMode:false,sort:{key:'year',dir:-1},
   f:{types:new Set(Object.keys(TYPES)),status:new Set(Object.keys(STATUS)),tags:new Set(),y0:null,y1:null}};
 const undoStack=[];
 
@@ -530,7 +540,7 @@ async function syncLibrary(){
 }
 let saveT=0;
 function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(LS_DB,JSON.stringify(db))}catch(e){toast('保存失败：浏览器存储不可用，请先导出备份',{bad:true})}},200)}
-function saveUi(){try{localStorage.setItem(LS_UI,JSON.stringify({view:ui.view,layout2:ui.layout,theme:ui.theme,labels:ui.labels,bg3d:ui.bg3d}))}catch(e){}}
+function saveUi(){try{localStorage.setItem(LS_UI,JSON.stringify({view:ui.view,layout3:ui.layout,theme:ui.theme,labels:ui.labels,bg3d:ui.bg3d}))}catch(e){}}
 function checkpoint(){undoStack.push(JSON.stringify(db));if(undoStack.length>40)undoStack.shift()}
 function undo(){const s=undoStack.pop();if(!s)return toast('没有可以撤销的操作');db=JSON.parse(s);if(!db.nodes.some(n=>n.id===ui.sel))ui.sel=null;changed();toast('已撤销')}
 function reindex(){
@@ -662,6 +672,7 @@ function resize(){
   if(first){G.x=G.w/2;G.y=G.h/2} G.dirty=true;
 }
 // 整齐 layout: each connected thread is one column, oldest paper on top; unlinked entries fill extra columns
+const isTidy=()=>ui.layout==='tidy'||ui.layout==='3d',live3d=()=>ui.layout==='3d'&&!!(window.__bg&&window.__bg.live3d);
 function tidyLayout(){
   G.tgt=new Map();const seen=new Set(),comps=[],single=[],yr=n=>n.year||9999,ord=(a,b)=>yr(a)-yr(b)||a.title.localeCompare(b.title);
   const nb=new Map(G.vis.map(n=>[n.id,[]]));for(const e of G.visEdges){nb.get(e.source).push(e.target);nb.get(e.target).push(e.source)}
@@ -669,6 +680,7 @@ function tidyLayout(){
     while(q.length){const id=q.pop();c.push(byId.get(id));for(const o of nb.get(id))if(!seen.has(o)){seen.add(o);q.push(o)}}
     c.length>1?comps.push(c.sort(ord)):single.push(c[0])}
   comps.sort((a,b)=>yr(a[0])-yr(b[0])||b.length-a.length);single.sort(ord);
+  G.comps=comps;G.single=single;
   const ROW=74,COL=370,cols=[...comps];for(let i=0;i<single.length;i+=8)cols.push(single.slice(i,i+8));
   if(G.w&&G.w<700){let y=0;for(const c of cols){for(const n of c){G.tgt.set(n.id,[0,y]);y+=ROW}y+=30}} // phone: stack the threads
   else cols.forEach((c,ci)=>c.forEach((n,ri)=>G.tgt.set(n.id,[ci*COL,ri*ROW])));
@@ -677,9 +689,9 @@ function refreshGraph(heat=0){
   G.vis=db.nodes.filter(passes);G.visSet=new Set(G.vis.map(n=>n.id));
   G.visEdges=db.edges.filter(e=>G.visSet.has(e.source)&&G.visSet.has(e.target));
   const q=ui.q.trim();G.qm=q?new Set(G.vis.filter(n=>matches(n,q)).map(n=>n.id)):null;
-  if(ui.layout==='tidy')tidyLayout();
+  if(isTidy())tidyLayout();G.ver=(G.ver||0)+1;
   let i=0;for(const n of G.vis){ if(n.x===undefined||n.y===undefined){ // place near a neighbour, else on a loose ring
-      const t=ui.layout==='tidy'&&G.tgt.get(n.id);if(t){n.x=t[0];n.y=t[1];continue}
+      const t=isTidy()&&G.tgt.get(n.id);if(t){n.x=t[0];n.y=t[1];continue}
       const nb=[...(adj.get(n.id)||[])].map(id=>byId.get(id)).find(m=>m&&m.x!==undefined);
       const a=Math.random()*TAU,r=nb?70:140+40*Math.sqrt(i++);
       n.x=(nb?nb.x:0)+Math.cos(a)*r;n.y=(nb?nb.y:0)+Math.sin(a)*r;} }
@@ -692,7 +704,7 @@ function refreshGraph(heat=0){
 }
 function tick(){
   const ns=G.vis,n=ns.length,a=G.alpha,tl=ui.layout==='time'; if(!n)return;
-  if(ui.layout==='tidy'){for(const A of ns){const t=G.tgt.get(A.id);if(!t||A===G.dragNode)continue;A.x+=(t[0]-A.x)*.2;A.y+=(t[1]-A.y)*.2}G.alpha*=.94;return}
+  if(isTidy()){for(const A of ns){const t=G.tgt.get(A.id);if(!t||A===G.dragNode)continue;A.x+=(t[0]-A.x)*.2;A.y+=(t[1]-A.y)*.2}G.alpha*=.94;return}
   const tall=G.h>G.w*1.15,gx=tall?.07:.035,gy=tall?.026:.045;
   for(let i=0;i<n;i++){const A=ns[i],va=V(A);
     for(let j=i+1;j<n;j++){const B=ns[j];let dx=B.x-A.x,dy=B.y-A.y,d2=dx*dx+dy*dy;
@@ -735,7 +747,8 @@ function draw(){
   const c=G.cols,k=G.k,z=zf();
   ctx.setTransform(G.dpr,0,0,G.dpr,0,0);ctx.clearRect(0,0,G.w,G.h);
   // graticule
-  const bg=window.__bg;if(bg)bg.view(G.x,G.y,G.k,G.w,G.h);
+  const bg=window.__bg;if(live3d()){ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);return}
+  if(bg)bg.view(G.x,G.y,G.k,G.w,G.h);
   if(!(ui.bg3d&&bg&&bg.active)){
   let step=34*k;while(step<20)step*=2;while(step>80)step/=2;
   const ox=((G.x%step)+step)%step,oy=((G.y%step)+step)%step;ctx.fillStyle=c.grid;
@@ -754,7 +767,7 @@ function draw(){
   const dim=n=>(hi&&!hi.has(n.id))||(qm&&!qm.has(n.id));
   const S=n=>[n.x*k+G.x,n.y*k+G.y];
   // edges
-  const tags=[],tidy=ui.layout==='tidy';
+  const tags=[],tidy=isTidy();
   for(const e of G.visEdges){
     const A=byId.get(e.source),B=byId.get(e.target),[ax,ay]=S(A),[bx,by]=S(B),ra=rad(A)*z,rb=rad(B)*z;
     const dx=bx-ax,dy=by-ay,d=Math.hypot(dx,dy); if(d<ra+rb+6)continue;
@@ -835,7 +848,8 @@ function stepAnim(){const a=G.anim;let t=(performance.now()-a.t0)/a.d;if(t>=1){t
 const wide=()=>innerWidth>860;
 function fit(animate=true){
   if(!G.vis.length||!G.w)return;
-  const tidy=ui.layout==='tidy',P=n=>tidy&&G.tgt.get(n.id)||[n.x,n.y];
+  if(live3d()){window.__bg.reset();return}
+  const tidy=isTidy(),P=n=>tidy&&G.tgt.get(n.id)||[n.x,n.y];
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const n of G.vis){const [x,y]=P(n);x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)}
   if(tidy){x0-=70;x1+=270;y0-=20;y1+=20}
   const side=wide()?96:44,pl=tidy?(wide()?70:16):side,pr=tidy?16:side,pt=ui.layout==='time'?110:80,pb=(ui.sel&&!wide()?G.h*.6:0)+(tidy?40:76);
@@ -943,7 +957,8 @@ $('#empty').addEventListener('click',e=>{const a=e.target.closest('button')?.dat
 function select(id,focus=false){
   ui.sel=id&&byId.has(id)?id:null;renderDetail();G.dirty=true;
   $$('#viewList tr.sel').forEach(r=>r.classList.remove('sel'));if(ui.sel)$(`#viewList tr[data-id="${CSS.escape(ui.sel)}"]`)?.classList.add('sel');
-  if(ui.sel&&ui.view==='graph'){const n=byId.get(ui.sel);
+  if(ui.sel&&ui.view==='graph'&&live3d()){if(focus||!wide())window.__bg.focus(ui.sel,!wide())}
+  else if(ui.sel&&ui.view==='graph'){const n=byId.get(ui.sel);
     if(focus){if(!G.visSet.has(n.id)){resetFilters();renderRail();refreshGraph(.3);renderList()}focusNode(n)}
     else if(G.visSet.has(n.id)&&!wide()&&n.y*G.k+G.y>G.h*.36)focusNode(n)}
 }
@@ -973,8 +988,10 @@ function renderDetail(){
   placeCard(true);paintFigs();
 }
 // the card sits beside its node and follows it
+// where a node is on screen: from the 2D camera, or from the 3D scene when that is showing
+function scr(n){const p=live3d()&&window.__bg.screen(n.id);return p||[n.x*G.k+G.x,n.y*G.k+G.y,rad(n)*zf()]}
 function cardRect(side,n,w,h,sw,sh){
-  const sx=n.x*G.k+G.x,sy=n.y*G.k+G.y,r=rad(n)*zf()+14,lb=ui.layout==='tidy'&&G.lbox.get(n.id),x=side==='r'?(lb?lb[1]+12:sx+r):side==='l'?sx-r-w-(lb?40:0):sx-w/2,y=side==='b'?sy+r:side==='t'?sy-r-h:sy-30;
+  const [sx,sy,r0]=scr(n),r=r0+14,lb=ui.layout==='tidy'&&G.lbox.get(n.id),x=side==='r'?(lb?lb[1]+12:sx+r):side==='l'?sx-r-w-(lb?40:0):sx-w/2,y=side==='b'?sy+r:side==='t'?sy-r-h:sy-30;
   return [clamp(x,10,Math.max(10,sw-w-10)),clamp(y,62,Math.max(62,sh-h-10)),sx,sy];
 }
 function placeCard(pick){
@@ -985,7 +1002,7 @@ function placeCard(pick){
       let best=null;
       for(const side of ['r','l','b','t']){const [cx,cy,sx,sy]=cardRect(side,n,w,h,sw,sh);
         let sc=(sx>cx-6&&sx<cx+w+6&&sy>cy-6&&sy<cy+h+6?100:0)+'rlbt'.indexOf(side)*.1;
-        for(const m of G.vis){if(m===n)continue;const mx=m.x*G.k+G.x,my=m.y*G.k+G.y;if(mx>cx-24&&mx<cx+w+24&&my>cy-50&&my<cy+h+16)sc+=adj.get(n.id).has(m.id)?2:1}
+        for(const m of G.vis){if(m===n)continue;const [mx,my]=scr(m);if(mx>cx-24&&mx<cx+w+24&&my>cy-50&&my<cy+h+16)sc+=adj.get(n.id).has(m.id)?2:1}
         if(!best||sc<best[0])best=[sc,side]}
       G.cardSide=best[1]}
     [x,y]=cardRect(G.cardSide,n,w,h,sw,sh)}
@@ -1059,7 +1076,7 @@ function openEditor(id,opts={}){
   ed={id:n?n.id:null,type:n?n.type:(opts.type||'paper'),pos:opts.pos||null,tags:n?[...n.tags]:[],status:n?n.status:'todo',rels:[]};
   if(n)for(const e of db.edges){if(e.source===n.id)ed.rels.push({other:e.target,rel:e.rel,dir:'out'});else if(e.target===n.id)ed.rels.push({other:e.source,rel:e.rel,dir:'in'})}
   const set=(k,v)=>{$('#f_'+k).value=v??''};
-  set('doi',n?.doi);set('title',n?.title);set('authors',n?.authors);set('year',n?.year);set('venue',n?.venue);set('core',n?.core);set('notes',n?.notes);set('fx',(n?.formulas||[]).map(f=>f.tex?(f.t?f.t+' :: ':'')+f.tex:f.t).join('\n'));set('url',n?.url);set('tagIn','');set('rel','');
+  set('doi',n?.doi);set('title',n?.title);set('authors',n?.authors);set('year',n?.year);set('venue',n?.venue);set('core',n?.core);set('notes',n?.notes);set('fx',(n?.formulas||[]).map(f=>f.tex?(f.t?f.t+' :: ':'')+f.tex:f.t+' ::').join('\n'));set('url',n?.url);set('tagIn','');set('rel','');
   $('#f_star').checked=!!n?.star;$('#edTitle').textContent=n?'编辑条目':'新建条目';$('#edDelete').hidden=!n;$('#relDrop').hidden=true;
   paintEdType();paintEdTags();paintEdRels();$('#edScrim').hidden=false;
   setTimeout(()=>$(n||ed.type!=='paper'?'#f_title':'#f_doi').focus(),30);
@@ -1125,7 +1142,7 @@ $('#edForm').addEventListener('submit',e=>{
   let n=ed.id?byId.get(ed.id):null;
   const data={type:ed.type,title,authors:isP?g('authors'):'',year:isP&&yr>0?yr:null,venue:isP?g('venue'):'',doi:isP?g('doi').replace(/^https?:\/\/(dx\.)?doi\.org\//i,''):'',url:isP?g('url'):'',
     core:g('core'),notes:$('#f_notes').value.replace(/\s+$/,''),
-    formulas:$('#f_fx').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const i=l.indexOf('::');return i<0?(/\\|[_^=]/.test(l)?{t:'',tex:l}:{t:l,tex:''}):{t:l.slice(0,i).trim(),tex:l.slice(i+2).trim()}}),tags:[...ed.tags],status:isP?ed.status:'todo',star:isP&&$('#f_star').checked};
+    formulas:$('#f_fx').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const i=l.indexOf('::');return i<0?(/\\|[_^=]/.test(l)&&!/[$\u3400-\u9fff]/.test(l)?{t:'',tex:l}:{t:l,tex:''}):{t:l.slice(0,i).trim(),tex:l.slice(i+2).trim()}}),tags:[...ed.tags],status:isP?ed.status:'todo',star:isP&&$('#f_star').checked};
   if(n)Object.assign(n,data);
   else{n={id:uid(),created:today(),...data};
     if(ed.pos){n.x=ed.pos.x;n.y=ed.pos.y;if(ui.layout==='force'){n.pin=true;n.px=n.x;n.py=n.y}}
@@ -1174,18 +1191,19 @@ function renderChrome(){
   $('#btnLink').setAttribute('aria-pressed',ui.linkMode);$('#btnLabels').setAttribute('aria-pressed',ui.labels);$('#btn3d').setAttribute('aria-pressed',ui.bg3d);
   $('#btnTheme').innerHTML=ic(document.documentElement.dataset.theme==='dark'?'sun':'moon');
   paintHint();
-  $('#hint').textContent=ui.linkMode?'连线模式：从一个节点拖到另一个节点':ui.layout==='force'?'拖动节点可固定它的位置 · Shift+拖动连线 · 双击空白处新建':'点标题看详情 · Shift+拖动连线 · 双击空白处新建';
+  $('#hint').textContent=ui.linkMode?'连线模式：从一个节点拖到另一个节点':ui.layout==='3d'?'拖动旋转 · 滚轮缩放 · 点原子或标题看详情 · 连线和拖动请切到其他布局':ui.layout==='force'?'拖动节点可固定它的位置 · Shift+拖动连线 · 双击空白处新建':'点标题看详情 · Shift+拖动连线 · 双击空白处新建';
+  window.__bg&&window.__bg.sync();
 }
 function setView(v){ui.view=v;saveUi();renderChrome();if(v==='list')renderList();else{resize();G.dirty=true}}
-function setLayout(l){if(ui.layout===l)return;ui.layout=l;saveUi();renderChrome();refreshGraph(1);G.alpha=1;G.dirty=true;setTimeout(()=>fit(),RM||l==='tidy'?30:900)}
+function setLayout(l){if(ui.layout===l)return;ui.layout=l;if(l==='3d')ui.linkMode=false;saveUi();refreshGraph(1);renderChrome();G.alpha=1;G.dirty=true;setTimeout(()=>fit(),RM||l==='tidy'||l==='3d'?30:900)}
 function setTheme(t){ui.theme=t;document.documentElement.dataset.theme=t;$('meta[name=theme-color]').content=t==='dark'?'#090e1a':'#f8fafd';readCols();renderChrome();saveUi();window.__bg&&window.__bg.theme()}
 $('#viewTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.view)});
 $('#layoutSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setLayout(b.dataset.layout)});
 $('#btnLink').onclick=()=>{ui.linkMode=!ui.linkMode;renderChrome()};
 $('#btnRelay').onclick=()=>{for(const n of db.nodes)n.pin=false;save();renderDetail();G.alpha=1;setTimeout(()=>fit(),RM?30:900);toast('已重新排布')};
-$('#btn3d').onclick=()=>{ui.bg3d=!ui.bg3d;saveUi();renderChrome();G.dirty=true;window.__bg&&window.__bg.enable(ui.bg3d)};
+$('#btn3d').onclick=()=>{ui.bg3d=!ui.bg3d;saveUi();renderChrome();G.dirty=true};
 $('#btnLabels').onclick=()=>{ui.labels=!ui.labels;saveUi();renderChrome();G.dirty=true};
-$('#zIn').onclick=()=>zoomAt(G.w/2,G.h/2,G.k*1.3);$('#zOut').onclick=()=>zoomAt(G.w/2,G.h/2,G.k/1.3);$('#zFit').onclick=()=>fit();
+$('#zIn').onclick=()=>live3d()?window.__bg.zoom(.8):zoomAt(G.w/2,G.h/2,G.k*1.3);$('#zOut').onclick=()=>live3d()?window.__bg.zoom(1.25):zoomAt(G.w/2,G.h/2,G.k/1.3);$('#zFit').onclick=()=>fit();
 $('#btnTheme').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
 $('#btnNew').onclick=()=>openEditor();
 $('#btnRail').onclick=()=>toggleRail(true);$('#railScrim').onclick=()=>toggleRail(false);
@@ -1381,41 +1399,47 @@ document.addEventListener('keydown',e=>{
   else if(k==='n'){e.preventDefault();openEditor()}
   else if(k==='f')fit();
   else if(k==='l'){ui.linkMode=!ui.linkMode;renderChrome()}
-  else if(k==='t')setLayout({tidy:'force',force:'time',time:'tidy'}[ui.layout]);
+  else if(k==='t')setLayout({'3d':'tidy',tidy:'force',force:'time',time:'3d'}[ui.layout]);
   else if(k==='1')setView('graph'); else if(k==='2')setView('list');
   else if(k==='e'&&ui.sel)openEditor(ui.sel);
   else if((k==='delete'||k==='backspace')&&ui.sel)removeNode(ui.sel);
 });
 
 /* ---------- boot ---------- */
-try{const s=JSON.parse(localStorage.getItem(LS_UI)||'{}');if(s.view==='list'||s.view==='graph')ui.view=s.view;if(['tidy','force','time'].includes(s.layout2))ui.layout=s.layout2;if(s.theme)ui.theme=s.theme;if(s.bg3d===false)ui.bg3d=false;if(s.labels===false)ui.labels=false}catch(e){}
+try{const s=JSON.parse(localStorage.getItem(LS_UI)||'{}');if(s.view==='list'||s.view==='graph')ui.view=s.view;if(['3d','tidy','force','time'].includes(s.layout3))ui.layout=s.layout3;if(s.theme)ui.theme=s.theme;if(s.bg3d===false)ui.bg3d=false;if(s.labels===false)ui.labels=false}catch(e){}
 document.documentElement.dataset.theme=ui.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
 $('meta[name=theme-color]').content=document.documentElement.dataset.theme==='dark'?'#090e1a':'#f8fafd';
 load();reindex();readCols();renderRail();renderChrome();resize();
 const unplaced=db.nodes.some(n=>n.x===undefined);refreshGraph(unplaced?1:0);
 if(unplaced)for(let i=0;i<260;i++)tick();
-fit(false);G.alpha=unplaced?.05:ui.layout==='tidy'?1:0;renderList();renderDetail();
+fit(false);G.alpha=unplaced?.05:isTidy()?1:0;renderList();renderDetail();
 new ResizeObserver(()=>{const had=G.w;resize();if(!had&&G.w)fit(false)}).observe($('#stage'));
 if(document.fonts?.ready)document.fonts.ready.then(()=>{G.dirty=true});
 syncLibrary();
 window.addEventListener('beforeunload',()=>{try{clearTimeout(saveT);if(byId.size||localStorage.getItem(LS_DB))localStorage.setItem(LS_DB,JSON.stringify(db))}catch(e){}});
-window.__mailuo={get db(){return db},G,ui,fit,parseBib,detex};
+window.__mailuo={get db(){return db},G,ui,fit,parseBib,detex,select,openEditor,placeCard,setLayout,toast,adj:()=>adj};
 requestAnimationFrame(frame);
 })();
 </script>
 <script type="module">
-// Three.js backdrop: a stylised near-concentric Fabry-Perot standing-wave mode between two spherical mirrors, with distant stars.
-// It is decoration only: it never takes pointer events and the app works without it.
-const cv=document.getElementById('bg3d'),stage=cv.parentElement,app=window.__mailuo;
+// Three.js layer. Two things are drawn on one canvas:
+//  1. a backdrop (stylised near-concentric Fabry-Perot standing-wave mode between two mirrors, distant stars);
+//  2. the 立体 view: every entry is an atom held at the waist of an optical tweezer, threads of papers form the rows of the array.
+// The 2D engine stays the source of truth for data, filters and selection; this module only reads it.
+const cv=document.getElementById('bg3d'),stage=cv.parentElement,lab=document.getElementById('lab3d'),app=window.__mailuo;
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
-let T=null,renderer,scene,camera,rig,mode,stars,mirrorMats=[],capMats=[],raf=0,ready=false,failed=false;
-const want={x:0,y:0,z:9},mouse={x:0,y:0},t0=performance.now();
+let T=null,renderer,ready=false,failed=false,raf=0,tex;
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const isDark=()=>document.documentElement.dataset.theme==='dark';
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),t0=performance.now(),mouse={x:0,y:0};
 function disc(){const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d'),r=g.createRadialGradient(32,32,0,32,32,32);
   r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.35,'rgba(255,255,255,.55)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,64,64);return new T.CanvasTexture(c)}
-function build(){
-  scene=new T.Scene();camera=new T.PerspectiveCamera(40,1,.1,200);camera.position.set(0,0,9);rig=new T.Group();scene.add(rig);
-  const tex=disc(),L=8,w0=.11,zR=.5,kz=Math.PI*23/L,n=innerWidth<700?4500:10000,pos=new Float32Array(n*3);
+
+/* ---------- 1. backdrop ---------- */
+let bgScene,bgCam,rig,mode,stars,mirrorMats=[],capMats=[];const want={x:0,y:0,z:9};
+function buildBackdrop(){
+  bgScene=new T.Scene();bgCam=new T.PerspectiveCamera(40,1,.1,200);bgCam.position.set(0,0,9);rig=new T.Group();bgScene.add(rig);
+  const L=8,w0=.11,zR=.5,kz=Math.PI*23/L,n=innerWidth<700?4500:10000,pos=new Float32Array(n*3);
   // standing wave: intensity ~ cos^2(kz) exp(-2 r^2/w(z)^2), w(z)=w0 sqrt(1+(z/zR)^2); the tight waist and wide ends are the near-concentric shape
   for(let i=0;i<n;){const z=(Math.random()-.5)*L;if(Math.random()>Math.cos(kz*z)**2)continue;
     const w=w0*Math.sqrt(1+(z/zR)**2),r=w/2*Math.sqrt(-2*Math.log(1-Math.random())),a=Math.random()*6.2832;pos[i*3]=z;pos[i*3+1]=r*Math.cos(a);pos[i*3+2]=r*Math.sin(a);i++}
@@ -1432,45 +1456,185 @@ function build(){
     cap.rotation.z=-sgn*Math.PI/2;cap.position.x=zc;capMats.push(cap.material);rig.add(cap)}
   const sn=700,sp=new Float32Array(sn*3);for(let i=0;i<sn;i++){sp[i*3]=(Math.random()-.5)*60;sp[i*3+1]=(Math.random()-.5)*36;sp[i*3+2]=-6-Math.random()*40}
   const sg=new T.BufferGeometry();sg.setAttribute('position',new T.BufferAttribute(sp,3));
-  stars=new T.Points(sg,new T.PointsMaterial({size:.16,map:tex,transparent:true,depthWrite:false,sizeAttenuation:true}));scene.add(stars);
-  theme();resize();
+  stars=new T.Points(sg,new T.PointsMaterial({size:.16,map:tex,transparent:true,depthWrite:false,sizeAttenuation:true}));bgScene.add(stars);
 }
-function theme(){
-  if(!scene)return;const dark=document.documentElement.dataset.theme==='dark';
-  mode.material.color.set(css('--accent'));mode.material.opacity=(dark?.42:.34)*(innerWidth<700?.7:1);mode.material.blending=dark?T.AdditiveBlending:T.NormalBlending;mode.material.needsUpdate=true;
-  for(const m of mirrorMats){m.color.set(css('--c-paper'));m.opacity=dark?.42:.3}
+function themeBackdrop(){
+  const dark=isDark(),soft=api.live3d?.55:1; // quieter behind the 3D array
+  mode.material.color.set(css('--accent'));mode.material.opacity=(dark?.42:.34)*(innerWidth<700?.7:1)*soft;mode.material.blending=dark?T.AdditiveBlending:T.NormalBlending;mode.material.needsUpdate=true;
+  for(const m of mirrorMats){m.color.set(css('--c-paper'));m.opacity=(dark?.42:.3)*soft}
   for(const m of capMats){m.color.set(css('--c-paper'));m.opacity=dark?.06:.05}
   stars.material.color.set(css('--ink-2'));stars.material.opacity=dark?.55:.22;stars.material.blending=dark?T.AdditiveBlending:T.NormalBlending;stars.material.needsUpdate=true;
-  if(RM)render();
 }
+function updateBackdrop(t){
+  rig.rotation.y=(RM?.35:.42*Math.sin(t*.11))+mouse.x*.12;rig.rotation.x=.2+(RM?0:.07*Math.sin(t*.07))+mouse.y*.08;
+  const f=RM?1:.06;bgCam.position.x+=(want.x-bgCam.position.x)*f;bgCam.position.y+=(want.y-bgCam.position.y)*f;bgCam.position.z+=(want.z-bgCam.position.z)*f;
+  stars.position.x=-bgCam.position.x*.5;stars.position.y=-bgCam.position.y*.5;
+}
+
+/* ---------- 2. the atom array ---------- */
+const REL={based:'--ink-3',improves:'--good',refutes:'--bad',uses:'--c-method',about:'--c-concept',answers:'--c-question',related:'--ink-3'};
+const DX=2.35,DZ=3.2,FLOOR=-1.3,BH=1.25;
+let scene,cam,world,GEO,items=new Map(),links=[],pulses=null,beams=null,selRing,ver=-1,fitDist=12,extent={hx:3,hz:2},introAt=0,touched=0,hoverId=null,scrMap=new Map();
+const orb={az:-.25,pol:.9,dist:12,tx:0,ty:-.25,tz:0},cur={az:-1.6,pol:.4,dist:30,tx:0,ty:-.25,tz:0};
+function buildWorld(){
+  scene=new T.Scene();cam=new T.PerspectiveCamera(40,1,.1,400);world=new T.Group();scene.add(world);
+  scene.add(new T.AmbientLight(0xffffff,1.1));const d=new T.DirectionalLight(0xffffff,2.2);d.position.set(4,9,6);scene.add(d);
+  const lathe=[];for(let i=0;i<=28;i++){const y=-BH+2*BH*i/28;lathe.push(new T.Vector2(.04*Math.sqrt(1+(y/.17)**2),y))} // tweezer: a focused beam, waist at the atom
+  GEO={paper:new T.SphereGeometry(.27,40,24),concept:new T.OctahedronGeometry(.36),method:new T.CylinderGeometry(.3,.3,.34,6),question:new T.BoxGeometry(.42,.42,.42),
+    shell:new T.SphereGeometry(.3,14,10),ring:new T.TorusGeometry(.46,.012,8,72),halo:new T.TorusGeometry(.6,.016,8,80),beam:new T.LatheGeometry(lathe,28)};
+  selRing=new T.Mesh(new T.TorusGeometry(.72,.022,8,90),new T.MeshBasicMaterial({transparent:true,depthWrite:false}));selRing.visible=false;scene.add(selRing);
+}
+function clearWorld(){
+  for(const o of [...world.children]){world.remove(o);o.traverse(c=>{if(c.material&&c.material.dispose&&!c.userData.keep)c.material.dispose();if(c.geometry&&c.userData.own)c.geometry.dispose()})}
+  for(const it of items.values())it.el.remove();items=new Map();links=[];pulses=null;beams=null;
+}
+function rebuild(){
+  if(!scene)return;const dark=isDark(),G=app.G,old=new Map([...items].map(([id,it])=>[id,it.g.position.clone()]));clearWorld();
+  scene.fog=new T.FogExp2(css('--bg'),.018);
+  // rows: each connected thread of papers, oldest on the left; entries without links fill further rows
+  const per=stage.clientWidth/stage.clientHeight<.8?3:8,rows=[...(G.comps||[])];for(let i=0;i<(G.single||[]).length;i+=per)rows.push(G.single.slice(i,i+per));
+  const w=Math.max(1,...rows.map(r=>r.length)),ox=-(w-1)*DX/2,oz=-(rows.length-1)*DZ/2;extent={hx:(w-1)*DX/2+2.1,hz:(rows.length-1)*DZ/2+1.3};
+  const adj=app.adj(),beamMat=new T.ShaderMaterial({uniforms:{uColor:{value:new T.Color(css('--c-paper'))},uOp:{value:dark?.2:.16},uH:{value:BH}},transparent:true,depthWrite:false,side:T.DoubleSide,blending:dark?T.AdditiveBlending:T.NormalBlending,
+    vertexShader:'varying float vY;void main(){vY=position.y;vec4 p=vec4(position,1.0);\n#ifdef USE_INSTANCING\np=instanceMatrix*p;\n#endif\ngl_Position=projectionMatrix*modelViewMatrix*p;}',
+    fragmentShader:'uniform vec3 uColor;uniform float uOp;uniform float uH;varying float vY;void main(){float a=1.0-abs(vY)/uH;gl_FragColor=vec4(uColor,uOp*a*a);}'}); // the beam fades away from its waist
+  const all=rows.flat();beams=new T.InstancedMesh(GEO.beam,beamMat,Math.max(1,all.length));beams.count=all.length;beams.frustumCulled=false;world.add(beams);
+  rows.forEach((row,j)=>row.forEach((n,i)=>{
+    const col=css('--c-'+n.type),todo=n.type==='paper'&&n.status==='todo',deep=n.type==='paper'&&n.status==='deep',deg=adj.get(n.id)?.size||0,sc=1+Math.min(.45,Math.sqrt(deg)*.16)+(n.star?.12:0);
+    const g=new T.Group(),home=new T.Vector3(ox+i*DX,0,oz+j*DZ);g.position.copy(old.get(n.id)||home);
+    const mat=new T.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:todo?(dark?.3:.06):deep?(dark?1.2:.35):(dark?.75:.2),roughness:.32,metalness:.12,transparent:true,opacity:todo?.5:1});
+    const core=new T.Mesh(GEO[n.type],mat);core.userData.id=n.id;if(n.type==='question')core.rotation.set(.6,.78,0);g.add(core);
+    if(todo){const sh=new T.Mesh(GEO.shell,new T.MeshBasicMaterial({color:col,wireframe:true,transparent:true,opacity:dark?.26:.34}));g.add(sh)}
+    const glow=new T.Sprite(new T.SpriteMaterial({map:tex,color:col,transparent:true,opacity:(todo?.22:deep?.8:.55)*(dark?1:.5),blending:dark?T.AdditiveBlending:T.NormalBlending,depthWrite:false}));glow.scale.setScalar(todo?1.5:deep?2.5:2);g.add(glow);
+    let ring=null,halo=null;
+    if(deep){ring=new T.Mesh(GEO.ring,new T.MeshBasicMaterial({color:col,transparent:true,opacity:.85}));ring.rotation.x=1.1;g.add(ring)}
+    if(n.star){halo=new T.Mesh(GEO.halo,new T.MeshBasicMaterial({color:css('--accent'),transparent:true,opacity:.9}));halo.rotation.x=Math.PI/2;g.add(halo)}
+    world.add(g);
+    const el=document.createElement('div');el.className='l3';el.dataset.id=n.id;el.textContent=n.title;lab.appendChild(el);
+    items.set(n.id,{n,g,home,core,mat,glow,ring,halo,el,sc,s:old.has(n.id)?1:0,delay:old.has(n.id)?0:(j*3+i)*70,todo,baseOp:mat.opacity,baseGlow:glow.material.opacity});
+  }));
+  // relations: arcs above the array; light pulses travel from the citing paper to the cited one
+  const pcol=[];for(const e of G.visEdges){const A=items.get(e.source),B=items.get(e.target);if(!A||!B)continue;
+    const colr=new T.Color(css(REL[e.rel]||'--ink-3')),mat=new T.MeshBasicMaterial({color:colr,transparent:true,opacity:e.rel==='related'?.38:.7,depthWrite:false});
+    const mesh=new T.Mesh(new T.BufferGeometry(),mat);mesh.userData.own=true;world.add(mesh);const L={e,A,B,mesh,curve:null,key:'',dir:e.rel!=='related'};links.push(L);
+    if(L.dir)for(let q=0;q<2;q++)pcol.push(colr.r,colr.g,colr.b)}
+  if(pcol.length){const pg=new T.BufferGeometry();pg.setAttribute('position',new T.BufferAttribute(new Float32Array(pcol.length),3));pg.setAttribute('color',new T.BufferAttribute(new Float32Array(pcol.map(v=>Math.min(1,v*.6+.4))),3));
+    pulses=new T.Points(pg,new T.PointsMaterial({size:.2,map:tex,vertexColors:true,transparent:true,opacity:dark?1:.9,blending:dark?T.AdditiveBlending:T.NormalBlending,depthWrite:false}));pulses.userData.own=true;pulses.frustumCulled=false;world.add(pulses)}
+  // the trap plane: a faint lattice under the array
+  const nx=Math.ceil(extent.hx/1.15)+7,nz=Math.ceil(extent.hz/1.15)+6,fp=[];for(let a=-nx;a<=nx;a++)for(let b=-nz;b<=nz;b++)fp.push(a*1.15,FLOOR,b*1.15);
+  const fg=new T.BufferGeometry();fg.setAttribute('position',new T.BufferAttribute(new Float32Array(fp),3));
+  const floor=new T.Points(fg,new T.PointsMaterial({size:.07,map:tex,color:css('--ink-3'),transparent:true,opacity:dark?.5:.45,depthWrite:false}));floor.userData.own=true;world.add(floor);
+  selRing.material.color.set(css('--accent'));
+  const asp=stage.clientWidth/Math.max(1,stage.clientHeight),tan=Math.tan(20*Math.PI/180);fitDist=Math.max(7,extent.hx/(tan*asp),(extent.hz*Math.cos(.9)+1.9)/tan)*1.04;
+  if(ver<0){orb.dist=fitDist;cur.dist=fitDist*1.9;introAt=performance.now()}else if(orb.dist<fitDist*.5||orb.dist>fitDist*2.2)orb.dist=fitDist;
+  ver=G.ver;
+}
+const v3=()=>new T.Vector3(),tmpM=()=>new T.Matrix4();
+function updateWorld(t,now){
+  const G=app.G,ui=app.ui,sel=ui.sel,qm=G.qm,idle=!sel&&now-touched>3500&&!down,f=RM?1:(now-introAt<2200?.045:.14);
+  cur.az+=(orb.az+(RM||!idle?0:.07*Math.sin(t*.17))-cur.az)*f;cur.pol+=(orb.pol-cur.pol)*f;cur.dist+=(orb.dist-cur.dist)*f;cur.tx+=(orb.tx-cur.tx)*f;cur.ty+=(orb.ty-cur.ty)*f;cur.tz+=(orb.tz-cur.tz)*f;
+  cam.position.set(cur.tx+cur.dist*Math.sin(cur.pol)*Math.sin(cur.az),cur.ty+cur.dist*Math.cos(cur.pol),cur.tz+cur.dist*Math.sin(cur.pol)*Math.cos(cur.az));cam.lookAt(cur.tx,cur.ty,cur.tz);cam.updateMatrixWorld();
+  const m=tmpM(),q=new T.Quaternion(),one=new T.Vector3(1,1,1);let k=0;
+  for(const it of items.values()){
+    it.g.position.lerp(it.home,RM?1:.12);
+    const grow=RM||now-introAt>it.delay?1:0,target=grow*it.sc*(it.n.id===hoverId?1.22:1);it.s+=(target-it.s)*(RM?1:.12);it.g.scale.setScalar(Math.max(.0001,it.s));
+    it.g.position.y=RM?0:.05*Math.sin(t*1.1+it.home.x*1.7+it.home.z); // atoms breathe a little in their traps
+    if(it.n.type!=='paper'){it.core.rotation.y+=RM?0:.006}
+    if(it.ring){it.ring.rotation.z+=RM?0:.012}if(it.halo){it.halo.rotation.z-=RM?0:.008}
+    const dim=qm&&!qm.has(it.n.id);it.mat.opacity=it.baseOp*(dim?.18:1);it.glow.material.opacity=it.baseGlow*(dim?.12:1);it.dim=dim;
+    m.compose(new T.Vector3(it.home.x,0,it.home.z),q,one);beams.setMatrixAt(k++,m);
+  }
+  if(beams)beams.instanceMatrix.needsUpdate=true;
+  let pi=0;const pa=pulses&&pulses.geometry.attributes.position;
+  for(const L of links){
+    const a=L.A.g.position,b=L.B.g.position,key=a.x.toFixed(2)+a.z.toFixed(2)+b.x.toFixed(2)+b.z.toFixed(2);
+    if(key!==L.key){L.key=key;const d=a.distanceTo(b),mid=a.clone().add(b).multiplyScalar(.5);mid.y=.75+.2*d;L.curve=new T.QuadraticBezierCurve3(a.clone().setY(.1),mid,b.clone().setY(.1));
+      L.mesh.geometry.dispose();L.mesh.geometry=new T.TubeGeometry(L.curve,40,L.e.rel==='related'?.011:.016,6,false)}
+    const on=sel&&(L.e.source===sel||L.e.target===sel);L.mesh.material.opacity=(L.e.rel==='related'?.38:.7)*(sel&&!on?.35:1)*((L.A.dim||L.B.dim)?.2:1);
+    if(L.dir&&pa)for(let q2=0;q2<2;q2++){const p=L.curve.getPoint(RM?(.33+.34*q2):((t*.22+q2*.5+L.A.home.x*.13)%1));pa.setXYZ(pi++,p.x,p.y,p.z)}
+  }
+  if(pa)pa.needsUpdate=true;
+  const S=items.get(sel);selRing.visible=!!S;if(S){selRing.position.copy(S.g.position);selRing.quaternion.copy(cam.quaternion);selRing.scale.setScalar(S.sc*(RM?1:1+.07*Math.sin(t*3.2)))}
+  // labels: titles under the atoms, nearest first; a label that would cover another one is hidden
+  const w=stage.clientWidth,h=stage.clientHeight,p=v3(),list=[];scrMap=new Map();
+  for(const it of items.values()){p.copy(it.g.position);const dist=cam.position.distanceTo(p);p.project(cam);
+    const sx=(p.x*.5+.5)*w,sy=(-p.y*.5+.5)*h,pxu=h/(2*Math.tan(20*Math.PI/180)*dist);scrMap.set(it.n.id,[sx,sy,.3*it.sc*pxu]);list.push([dist,it,sx,sy+.42*it.sc*pxu,p.z<1])}
+  list.sort((a,b)=>a[0]-b[0]);const boxes=[];
+  for(const [dist,it,sx,ly,front] of list){
+    const s=clamp(fitDist/dist,.72,1.12),bw=89*s,bh=34*s,isSel=it.n.id===sel;let show=ui.labels&&front&&sx>-90&&sx<w+90&&ly>-20&&ly<h+10&&it.s>.5;
+    if(show&&!isSel&&boxes.some(b=>sx-bw<b[1]&&sx+bw>b[0]&&ly<b[3]&&ly+bh>b[2]))show=false;
+    if(show)boxes.push([sx-bw,sx+bw,ly,ly+bh]);
+    it.el.style.display=show?'':'none';if(show){it.el.style.transform=`translate(${sx.toFixed(1)}px,${ly.toFixed(1)}px) scale(${s.toFixed(3)})`;it.el.style.opacity=it.dim?.25:clamp(1.25-dist/(fitDist*2.2),.45,1);it.el.classList.toggle('sel',isSel)}
+  }
+  if(sel)app.placeCard();
+}
+/* pointer: drag orbits, wheel or pinch zooms, a tap picks */
+const ptrs=new Map();let down=null,pinch=null,lastTap={id:null,t:0};
+const ray=()=>new T.Raycaster();
+function pick(x,y){if(!scene)return null;const r=ray(),rc=lab.getBoundingClientRect();r.setFromCamera(new T.Vector2((x-rc.left)/rc.width*2-1,-((y-rc.top)/rc.height*2-1)),cam);
+  const hit=r.intersectObjects([...items.values()].map(i=>i.core),false)[0];if(hit)return hit.object.userData.id;
+  let best=null,bd=26;for(const [id,[sx,sy,rp]] of scrMap){const d=Math.hypot(sx-(x-rc.left),sy-(y-rc.top))-rp;if(d<bd){bd=d;best=id}}return best} // forgiving for fingers
+lab.addEventListener('pointerdown',e=>{if(e.button>0||!api.live3d)return;try{lab.setPointerCapture(e.pointerId)}catch(_){}
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});touched=performance.now();
+  if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,dist:orb.dist};down=null;return}
+  down={x:e.clientX,y:e.clientY,az:orb.az,pol:orb.pol,moved:false,label:e.target.closest?.('.l3')?.dataset.id||null,touch:e.pointerType!=='mouse'};lab.classList.add('grabbing')});
+lab.addEventListener('pointermove',e=>{if(!api.live3d)return;if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pinch&&ptrs.size>=2){const [a,b]=[...ptrs.values()];orb.dist=clamp(pinch.dist*pinch.d/(Math.hypot(a.x-b.x,a.y-b.y)||1),4,fitDist*3);touched=performance.now();return}
+  if(down){const dx=e.clientX-down.x,dy=e.clientY-down.y;if(!down.moved&&Math.hypot(dx,dy)>(down.touch?9:5))down.moved=true;
+    if(down.moved){orb.az=down.az-dx*.0062;orb.pol=clamp(down.pol-dy*.005,.22,1.47);touched=performance.now()}return}
+  if(e.pointerType==='mouse'){const id=e.target.closest?.('.l3')?.dataset.id||pick(e.clientX,e.clientY);if(id!==hoverId){hoverId=id;lab.style.cursor=id?'pointer':''}}});
+function up(e){ptrs.delete(e.pointerId);lab.classList.remove('grabbing');if(pinch){if(ptrs.size<2)pinch=null;down=null;return}
+  const d=down;down=null;if(!d||d.moved||!api.live3d)return;const id=d.label||pick(e.clientX,e.clientY),now=performance.now(),dbl=lastTap.id===id&&now-lastTap.t<380;lastTap={id,t:now};
+  if(id){dbl?app.openEditor(id):app.select(id)}else if(dbl){lastTap.t=0;app.openEditor()}else app.select(null)}
+lab.addEventListener('pointerup',up);lab.addEventListener('pointercancel',e=>{ptrs.delete(e.pointerId);pinch=null;down=null;lab.classList.remove('grabbing')});
+lab.addEventListener('pointerleave',()=>{hoverId=null});
+lab.addEventListener('wheel',e=>{if(!api.live3d)return;e.preventDefault();orb.dist=clamp(orb.dist*Math.exp(e.deltaY*(e.ctrlKey?.01:.0013)),4,fitDist*3);touched=performance.now()},{passive:false});
+
+/* ---------- shared ---------- */
 function resize(){
   if(!renderer)return;const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(w,h,false);bgCam.aspect=cam.aspect=w/h;bgCam.updateProjectionMatrix();cam.updateProjectionMatrix();
   const tall=w/h<.8; // keep the cavity off the band where the titles sit: low on wide screens, to the right on phones
-  rig.rotation.z=tall?1.22:-.2;rig.scale.setScalar(tall?.8:Math.min(.9,w/h/1.55));rig.position.set(tall?.8:0,tall?0:-1.35,0);if(RM)render();
+  rig.rotation.z=tall?1.22:-.2;rig.scale.setScalar(tall?.8:Math.min(.9,w/h/1.55));rig.position.set(tall?.8:0,tall?0:-1.35,0);ver=Math.min(ver,0);
 }
-function render(){
-  if(!renderer)return;const t=(performance.now()-t0)/1000;
-  rig.rotation.y=(RM?.35:.42*Math.sin(t*.11))+mouse.x*.12;rig.rotation.x=.2+(RM?0:.07*Math.sin(t*.07))+mouse.y*.08;
-  camera.position.x+=(want.x-camera.position.x)*.06;camera.position.y+=(want.y-camera.position.y)*.06;camera.position.z+=(want.z-camera.position.z)*.06;
-  if(RM)camera.position.set(want.x,want.y,want.z);
-  stars.position.x=-camera.position.x*.5;stars.position.y=-camera.position.y*.5;
-  renderer.render(scene,camera);
+function frame(){
+  raf=0;if(!(api.active||api.live3d)||document.hidden)return;
+  if(!document.getElementById('viewGraph').hidden){
+    const now=performance.now(),t=(now-t0)/1000;
+    if(api.live3d&&app.G.ver!==ver)rebuild();
+    renderer.clear();if(api.active){updateBackdrop(t);renderer.render(bgScene,bgCam)}
+    if(api.live3d){updateWorld(t,now);renderer.clearDepth();renderer.render(scene,cam)}
+  }
+  raf=requestAnimationFrame(frame);
 }
-function loop(){raf=0;if(!api.active||document.hidden)return;if(!document.getElementById('viewGraph').hidden)render();raf=requestAnimationFrame(loop)}
-function kick(){if(RM){render();return}if(!raf)raf=requestAnimationFrame(loop)}
-const api=window.__bg={active:false,
-  async enable(on){
-    if(!on||failed){api.active=false;cv.classList.remove('on');return}
-    if(!ready){try{T=await import('./vendor/three/three.module.min.js');renderer=new T.WebGLRenderer({canvas:cv,alpha:true,antialias:true,powerPreference:'low-power'});build();ready=true}
-      catch(e){failed=true;api.active=false;if(app)app.G.dirty=true;return}}
-    if(app&&!app.ui.bg3d)return;api.active=true;cv.classList.add('on');if(app)app.G.dirty=true;kick()},
-  theme,
-  view(x,y,k,w,h){if(!w||!h)return;want.x=-(x-w/2)/w*1.6;want.y=(y-h/2)/h*1.1;want.z=9/Math.min(1.6,Math.max(.6,Math.pow(k,.3)));if(RM&&api.active)render()}};
+const kick=()=>{if(!raf)raf=requestAnimationFrame(frame)};
+let initP=null;
+function init(){return initP||(initP=(async()=>{
+  try{T=await import('./vendor/three/three.module.min.js');renderer=new T.WebGLRenderer({canvas:cv,alpha:true,antialias:true,powerPreference:'high-performance'});renderer.autoClear=false;
+    tex=disc();buildBackdrop();buildWorld();ready=true;resize();themeBackdrop()}
+  catch(e){failed=true}
+  return ready})())}
+const api=window.__bg={active:false,live3d:false,
+  async sync(){
+    const want3=app.ui.layout==='3d'&&app.ui.view==='graph',wantBg=app.ui.bg3d;
+    if((want3||wantBg)&&!ready&&!failed)await init();
+    if(failed){api.active=api.live3d=false;cv.classList.remove('on');stage.classList.remove('is3d');
+      if(app.ui.layout==='3d'){app.toast('这个浏览器不支持 WebGL，已切回整齐布局');app.setLayout('tidy')}return}
+    if(!ready)return;
+    const was=api.live3d;api.live3d=app.ui.layout==='3d'&&app.ui.view==='graph';api.active=app.ui.bg3d;
+    stage.classList.toggle('is3d',api.live3d);cv.classList.toggle('on',api.active||api.live3d);
+    if(api.live3d!==was){themeBackdrop();if(api.live3d){ver=-1;touched=performance.now()}else{for(const it of items.values())it.el.style.display='none'}app.G.dirty=true;if(app.ui.sel)app.placeCard(true)}
+    kick()},
+  theme(){if(!ready)return;themeBackdrop();if(api.live3d)ver=Math.min(ver,0),rebuildSoon()},
+  view(x,y,k,w,h){if(!w||!h)return;want.x=-(x-w/2)/w*1.6;want.y=(y-h/2)/h*1.1;want.z=9/Math.min(1.6,Math.max(.6,Math.pow(k,.3)))},
+  screen:id=>scrMap.get(id)||null,
+  zoom(f){orb.dist=clamp(orb.dist*f,4,fitDist*3);touched=performance.now()},
+  reset(){orb.az=-.25;orb.pol=.9;orb.dist=fitDist;orb.tx=0;orb.ty=-.25;orb.tz=0;touched=performance.now()},
+  focus(id,lift){const it=items.get(id);if(!it)return;orb.tx=it.home.x;orb.tz=it.home.z;orb.dist=Math.min(orb.dist,Math.max(7,fitDist*.7));orb.ty=lift?-orb.dist*.21:-.25;touched=performance.now()}};
+function rebuildSoon(){if(app.G.ver===ver)app.G.ver++}
 new ResizeObserver(resize).observe(stage);
 addEventListener('pointermove',e=>{mouse.x=e.clientX/innerWidth*2-1;mouse.y=e.clientY/innerHeight*2-1},{passive:true});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&api.active)kick()});
-if(!app||app.ui.bg3d)(window.requestIdleCallback||setTimeout)(()=>api.enable(true));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)kick()});
+(window.requestIdleCallback||setTimeout)(()=>api.sync());
 </script>
 </body>
 </html>
